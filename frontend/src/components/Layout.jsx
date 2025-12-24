@@ -109,8 +109,8 @@ const Layout = () => {
             <Shield className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-gray-900">SafetyPermit</h1>
-            <p className="text-xs text-gray-500">Work Permit System</p>
+            <h1 className="text-lg font-bold text-gray-900">MIS</h1>
+            <p className="text-xs text-gray-500">Management Information System</p>
           </div>
           <button
             className="lg:hidden ml-auto p-1 rounded-lg hover:bg-gray-100"

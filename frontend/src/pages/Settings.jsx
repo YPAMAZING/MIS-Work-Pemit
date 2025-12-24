@@ -226,7 +226,7 @@ const Settings = () => {
           <div className="grid md:grid-cols-2 gap-4 text-sm">
             <div>
               <p className="text-gray-500">Application</p>
-              <p className="font-medium text-gray-900">SafetyPermit MIS</p>
+              <p className="font-medium text-gray-900">MIS - Work Permit System</p>
             </div>
             <div>
               <p className="text-gray-500">Version</p>

@@ -8,8 +8,9 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --only=production
 
-# Copy prisma schema
+# Copy prisma schema (use PostgreSQL schema for production)
 COPY prisma ./prisma/
+RUN cp prisma/schema.postgresql.prisma prisma/schema.prisma
 
 # Generate Prisma Client
 RUN npx prisma generate

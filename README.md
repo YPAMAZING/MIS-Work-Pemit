@@ -1,4 +1,4 @@
-# SafetyPermit MIS - Work Permit Management System
+# MIS - Work Permit Management System
 
 A production-ready **Management Information System (MIS)** for industrial work permit management, designed for industrial, MEP, and security operations. Built with modern web technologies and deployable on any Linux VPS.
 

@@ -19,10 +19,10 @@ module.exports = {
     {
       name: 'permit-frontend',
       cwd: './frontend',
-      script: 'npx',
-      args: 'vite preview --host 0.0.0.0 --port 3000',
+      script: 'server.cjs',
       env: {
-        NODE_ENV: 'production'
+        PORT: 3000,
+        API_URL: 'http://localhost:5000'
       },
       watch: false,
       instances: 1,

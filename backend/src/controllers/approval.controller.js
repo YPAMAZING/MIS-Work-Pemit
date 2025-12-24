@@ -1,7 +1,17 @@
 const { PrismaClient } = require('@prisma/client');
 const { createAuditLog } = require('../services/audit.service');
+const { transformPermitResponse } = require('../utils/arrayHelpers');
 
 const prisma = new PrismaClient();
+
+// Helper to transform approval with permit
+const transformApproval = (approval) => {
+  if (!approval) return null;
+  return {
+    ...approval,
+    permit: approval.permit ? transformPermitResponse(approval.permit) : null,
+  };
+};
 
 // Get all approvals (Safety Officer & Admin only)
 const getAllApprovals = async (req, res) => {
@@ -26,8 +36,8 @@ const getAllApprovals = async (req, res) => {
     if (search) {
       where.permit = {
         OR: [
-          { title: { contains: search, mode: 'insensitive' } },
-          { location: { contains: search, mode: 'insensitive' } },
+          { title: { contains: search } },
+          { location: { contains: search } },
         ],
       };
     }
@@ -58,7 +68,7 @@ const getAllApprovals = async (req, res) => {
     ]);
 
     res.json({
-      approvals,
+      approvals: approvals.map(transformApproval),
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
@@ -114,7 +124,7 @@ const getApprovalById = async (req, res) => {
       return res.status(404).json({ message: 'Approval not found' });
     }
 
-    res.json({ approval });
+    res.json({ approval: transformApproval(approval) });
   } catch (error) {
     console.error('Get approval error:', error);
     res.status(500).json({ message: 'Error fetching approval' });
@@ -202,7 +212,7 @@ const updateApprovalDecision = async (req, res) => {
 
     res.json({
       message: `Permit ${decision.toLowerCase()} successfully`,
-      approval: completeApproval,
+      approval: transformApproval(completeApproval),
     });
   } catch (error) {
     console.error('Update approval error:', error);

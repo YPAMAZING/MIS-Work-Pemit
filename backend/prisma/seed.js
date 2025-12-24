@@ -68,7 +68,7 @@ async function main() {
   });
   console.log('✅ Requestor created:', requestor2.email);
 
-  // Create sample permit requests (JSON strings for arrays)
+  // Create sample permit requests (arrays as JSON strings for SQLite)
   const permit1 = await prisma.permitRequest.create({
     data: {
       title: 'Hot Work Permit - Welding Operation',

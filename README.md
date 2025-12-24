@@ -1,149 +1,139 @@
-# SafetyPermit - Work Permit Management System
+# SafetyPermit MIS - Work Permit Management System
 
-A production-ready web application for Permit Management & Approval System designed for industrial, MEP, and security operations.
+A production-ready **Management Information System (MIS)** for industrial work permit management, designed for industrial, MEP, and security operations. Built with modern web technologies and deployable on any Linux VPS.
 
-![SafetyPermit Dashboard](https://via.placeholder.com/800x400?text=SafetyPermit+Dashboard)
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Node](https://img.shields.io/badge/node-v20+-green.svg)
+![React](https://img.shields.io/badge/react-v18-blue.svg)
+![PostgreSQL](https://img.shields.io/badge/postgresql-v15-blue.svg)
 
-## 🚀 Features
+## 🎯 Features
 
 ### Core Functionality
-- **JWT Authentication** - Secure email/password login with role-based access
+- **Work Permit Requests** - Create, view, update, and track permit requests
+- **Approval Workflow** - Automated approval process with Safety Officer review
 - **Role-Based Access Control (RBAC)** - Admin, Safety Officer, and Requestor roles
-- **Permit Request Management** - Create, view, edit, and delete permit requests
-- **Approval Workflow** - Automated approval process with comments
-- **Dashboard Analytics** - Real-time statistics and charts
-- **Audit Logging** - Track all system activities
+- **Real-time Dashboard** - Statistics, charts, and activity tracking
+- **Audit Logging** - Complete audit trail for compliance
 
 ### User Roles
 | Role | Permissions |
 |------|-------------|
-| **Admin** | Full system access, user management, view all data |
-| **Safety Officer** | View all permits, approve/reject permits |
+| **Admin** | Full system access, user management, all permits |
+| **Safety Officer** | View all permits, approve/reject requests |
 | **Requestor** | Create permits, view own permits only |
 
 ### Permit Types Supported
 - 🔥 Hot Work
 - 📦 Confined Space Entry
 - ⚡ Electrical Work
-- ⬆️ Working at Height
+- ↗️ Working at Height
 - 🏗️ Excavation
 - 🏋️ Lifting Operations
-- ⚗️ Chemical Handling
+- 🧪 Chemical Handling
 - ☢️ Radiation Work
 - 🔧 General Work
 
 ## 🛠️ Tech Stack
 
-| Component | Technology |
-|-----------|------------|
-| **Backend** | Node.js + Express |
-| **Frontend** | React + Vite |
-| **Database** | PostgreSQL |
+| Layer | Technology |
+|-------|------------|
+| **Frontend** | React 18, Vite, TailwindCSS, React Router |
+| **Backend** | Node.js, Express.js |
+| **Database** | PostgreSQL 15 |
 | **ORM** | Prisma |
-| **Authentication** | JWT |
-| **Styling** | TailwindCSS |
-| **Deployment** | Docker + Docker Compose |
+| **Auth** | JWT (JSON Web Tokens) |
+| **Deployment** | Docker, Docker Compose, Nginx |
 
 ## 📁 Project Structure
 
 ```
 webapp/
 ├── backend/
-│   ├── prisma/
-│   │   ├── schema.prisma      # Database schema
-│   │   └── seed.js            # Database seeding
 │   ├── src/
-│   │   ├── config/            # Configuration
-│   │   ├── controllers/       # Request handlers
-│   │   ├── middleware/        # Auth & validation
-│   │   ├── routes/            # API routes
-│   │   ├── services/          # Business logic
-│   │   └── index.js           # Entry point
+│   │   ├── config/          # Configuration files
+│   │   ├── controllers/     # Route controllers
+│   │   ├── middleware/      # Auth & validation middleware
+│   │   ├── routes/          # API routes
+│   │   ├── services/        # Business logic services
+│   │   └── index.js         # Entry point
+│   ├── prisma/
+│   │   ├── schema.prisma    # Database schema
+│   │   └── seed.js          # Database seeder
 │   ├── Dockerfile
 │   └── package.json
 ├── frontend/
 │   ├── src/
-│   │   ├── components/        # React components
-│   │   ├── context/           # Auth context
-│   │   ├── pages/             # Page components
-│   │   ├── services/          # API services
-│   │   └── App.jsx            # Main app
+│   │   ├── components/      # Reusable components
+│   │   ├── context/         # React context (Auth)
+│   │   ├── pages/           # Page components
+│   │   ├── services/        # API services
+│   │   └── main.jsx         # Entry point
 │   ├── Dockerfile
-│   ├── nginx.conf
+│   ├── nginx.conf           # Nginx configuration
 │   └── package.json
-├── docker-compose.yml
-├── .env.example
+├── docker-compose.yml       # Production deployment
+├── docker-compose.dev.yml   # Development deployment
 └── README.md
 ```
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 18+ (for local development)
-- Docker & Docker Compose (for deployment)
-- PostgreSQL 14+ (if not using Docker)
+- Node.js 20+
+- PostgreSQL 15+
+- Docker & Docker Compose (for containerized deployment)
 
 ### Option 1: Docker Deployment (Recommended)
 
-1. **Clone and configure**
-   ```bash
-   git clone <repository-url>
-   cd webapp
-   cp .env.example .env
-   ```
+```bash
+# 1. Clone the repository
+git clone <repository-url>
+cd webapp
 
-2. **Edit `.env` file**
-   ```env
-   DB_PASSWORD=your-secure-password
-   JWT_SECRET=your-super-secret-jwt-key-minimum-32-characters
-   ```
+# 2. Create environment file
+cp .env.example .env
 
-3. **Start all services**
-   ```bash
-   docker-compose up -d
-   ```
+# 3. Edit .env with your settings
+nano .env
 
-4. **Run database migrations and seed**
-   ```bash
-   docker-compose exec backend npx prisma migrate deploy
-   docker-compose exec backend npm run prisma:seed
-   ```
+# 4. Start all services
+docker-compose up -d
 
-5. **Access the application**
-   - Frontend: http://localhost:3000
-   - Backend API: http://localhost:5000/api
+# 5. Run database migrations
+docker-compose exec backend npx prisma migrate deploy
 
-### Option 2: Local Development
+# 6. Seed the database (optional - creates demo users)
+docker-compose exec backend npm run prisma:seed
 
-1. **Start PostgreSQL**
-   ```bash
-   # Using Docker
-   docker run -d --name permit_db \
-     -e POSTGRES_USER=postgres \
-     -e POSTGRES_PASSWORD=postgres \
-     -e POSTGRES_DB=permit_management \
-     -p 5432:5432 \
-     postgres:15-alpine
-   ```
+# 7. Access the application
+# Frontend: http://localhost
+# Backend API: http://localhost:5000
+```
 
-2. **Setup Backend**
-   ```bash
-   cd backend
-   cp .env.example .env
-   npm install
-   npx prisma migrate dev
-   npm run prisma:seed
-   npm run dev
-   ```
+### Option 2: Manual Installation
 
-3. **Setup Frontend**
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
+```bash
+# Backend Setup
+cd backend
+npm install
+cp .env.example .env
+# Edit .env with your DATABASE_URL
+npx prisma generate
+npx prisma migrate deploy
+npm run prisma:seed  # Optional: seed demo data
+npm start
 
-## 👤 Demo Accounts
+# Frontend Setup (new terminal)
+cd frontend
+npm install
+npm run build
+npm run preview
+```
+
+## 🔐 Default Credentials
+
+After seeding, use these demo accounts:
 
 | Role | Email | Password |
 |------|-------|----------|
@@ -151,59 +141,56 @@ webapp/
 | Safety Officer | safety@permitmanager.com | safety123 |
 | Requestor | requestor@permitmanager.com | user123 |
 
+⚠️ **Change these passwords immediately in production!**
+
 ## 📡 API Endpoints
 
 ### Authentication
-```
-POST /api/auth/register    - Register new user
-POST /api/auth/login       - User login
-GET  /api/auth/me          - Get current user
-POST /api/auth/change-password - Change password
-```
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/auth/register` | Register new user |
+| POST | `/api/auth/login` | User login |
+| GET | `/api/auth/me` | Get current user |
+| POST | `/api/auth/change-password` | Change password |
 
 ### Permits
-```
-GET    /api/permits            - List all permits
-GET    /api/permits/:id        - Get permit by ID
-POST   /api/permits            - Create permit
-PUT    /api/permits/:id        - Update permit
-DELETE /api/permits/:id        - Delete permit
-GET    /api/permits/work-types - Get work types
-```
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/permits` | List permits |
+| GET | `/api/permits/:id` | Get permit details |
+| POST | `/api/permits` | Create permit |
+| PUT | `/api/permits/:id` | Update permit |
+| DELETE | `/api/permits/:id` | Delete permit |
+| GET | `/api/permits/work-types` | Get work types |
 
-### Approvals (Safety Officer & Admin)
-```
-GET  /api/approvals              - List all approvals
-GET  /api/approvals/:id          - Get approval details
-PUT  /api/approvals/:id/decision - Approve/Reject permit
-GET  /api/approvals/pending-count - Get pending count
-GET  /api/approvals/stats        - Get statistics
-```
+### Approvals
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/approvals` | List approvals |
+| GET | `/api/approvals/:id` | Get approval details |
+| PUT | `/api/approvals/:id/decision` | Approve/Reject permit |
+| GET | `/api/approvals/stats` | Get approval statistics |
+| GET | `/api/approvals/pending-count` | Get pending count |
 
 ### Users (Admin only)
-```
-GET    /api/users      - List all users
-GET    /api/users/:id  - Get user by ID
-POST   /api/users      - Create user
-PUT    /api/users/:id  - Update user
-DELETE /api/users/:id  - Deactivate user
-```
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/users` | List users |
+| GET | `/api/users/:id` | Get user details |
+| POST | `/api/users` | Create user |
+| PUT | `/api/users/:id` | Update user |
+| DELETE | `/api/users/:id` | Deactivate user |
 
 ### Dashboard
-```
-GET /api/dashboard/stats    - Get dashboard statistics
-GET /api/dashboard/activity - Get activity feed
-```
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/dashboard/stats` | Get dashboard statistics |
+| GET | `/api/dashboard/activity` | Get activity feed |
 
-## 🔧 VPS Deployment Guide
+## 🖥️ VPS Deployment Guide
 
-### 1. Server Requirements
-- Ubuntu 20.04+ or Debian 11+
-- 2GB RAM minimum (4GB recommended)
-- Docker & Docker Compose installed
-- Domain name (optional, for SSL)
+### 1. Prepare Your VPS
 
-### 2. Install Docker
 ```bash
 # Update system
 sudo apt update && sudo apt upgrade -y
@@ -211,16 +198,14 @@ sudo apt update && sudo apt upgrade -y
 # Install Docker
 curl -fsSL https://get.docker.com -o get-docker.sh
 sudo sh get-docker.sh
+sudo usermod -aG docker $USER
 
 # Install Docker Compose
-sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
-
-# Add user to docker group
-sudo usermod -aG docker $USER
+sudo apt install docker-compose-plugin -y
 ```
 
-### 3. Deploy Application
+### 2. Deploy Application
+
 ```bash
 # Clone repository
 git clone <repository-url> /opt/permit-system
@@ -228,17 +213,18 @@ cd /opt/permit-system
 
 # Configure environment
 cp .env.example .env
-nano .env  # Edit with production values
+nano .env  # Set production values
 
 # Start services
-docker-compose up -d
+docker compose up -d
 
-# Verify services
-docker-compose ps
-docker-compose logs -f
+# Initialize database
+docker compose exec backend npx prisma migrate deploy
+docker compose exec backend npm run prisma:seed
 ```
 
-### 4. Nginx Reverse Proxy (Optional)
+### 3. Configure Nginx Reverse Proxy (Optional)
+
 ```nginx
 # /etc/nginx/sites-available/permit-system
 server {
@@ -246,7 +232,7 @@ server {
     server_name your-domain.com;
 
     location / {
-        proxy_pass http://localhost:3000;
+        proxy_pass http://localhost:80;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -259,90 +245,122 @@ server {
 }
 ```
 
-Enable the site:
-```bash
-sudo ln -s /etc/nginx/sites-available/permit-system /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl reload nginx
-```
+### 4. SSL with Let's Encrypt
 
-### 5. SSL with Certbot
 ```bash
-sudo apt install certbot python3-certbot-nginx
+sudo apt install certbot python3-certbot-nginx -y
 sudo certbot --nginx -d your-domain.com
 ```
 
-## 🔐 Security Considerations
+## 🔧 Environment Variables
 
-1. **Environment Variables** - Never commit `.env` files
-2. **JWT Secret** - Use a strong, unique secret (32+ characters)
-3. **Database Password** - Use a strong password
-4. **HTTPS** - Always use SSL in production
-5. **Rate Limiting** - Consider adding rate limiting for API
-6. **Firewall** - Configure firewall to only expose needed ports
-
-## 📊 Database Schema
-
-### Users
-| Field | Type | Description |
-|-------|------|-------------|
-| id | UUID | Primary key |
-| email | String | Unique email |
-| password | String | Hashed password |
-| firstName | String | First name |
-| lastName | String | Last name |
-| role | Enum | ADMIN, SAFETY_OFFICER, REQUESTOR |
-| department | String | Department name |
-| isActive | Boolean | Account status |
-
-### Permit Requests
-| Field | Type | Description |
-|-------|------|-------------|
-| id | UUID | Primary key |
-| title | String | Permit title |
-| description | String | Work description |
-| location | String | Work location |
-| workType | String | Type of work |
-| status | Enum | PENDING, APPROVED, REJECTED |
-| priority | String | LOW, MEDIUM, HIGH, CRITICAL |
-| hazards | Array | Identified hazards |
-| precautions | Array | Safety precautions |
-| equipment | Array | Required equipment |
-| startDate | DateTime | Work start date |
-| endDate | DateTime | Work end date |
-| createdBy | UUID | Requestor ID |
-
-### Permit Approvals
-| Field | Type | Description |
-|-------|------|-------------|
-| id | UUID | Primary key |
-| permitId | UUID | Foreign key to permit |
-| approverName | String | Approver's name |
-| approverRole | String | Approver's role |
-| decision | Enum | PENDING, APPROVED, REJECTED |
-| comment | String | Approval comment |
-| approvedAt | DateTime | Decision timestamp |
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `DB_USER` | PostgreSQL username | postgres |
+| `DB_PASSWORD` | PostgreSQL password | postgres |
+| `DB_NAME` | Database name | permit_management |
+| `JWT_SECRET` | JWT signing secret | (required) |
+| `JWT_EXPIRES_IN` | Token expiration | 24h |
+| `FRONTEND_URL` | Frontend URL for CORS | http://localhost |
+| `NODE_ENV` | Environment mode | production |
 
 ## 🔄 Automation Logic
 
 ### On Permit Creation:
-1. Create new permit_request record with status = PENDING
-2. Automatically create permit_approval record
-3. Link approval to permit via permit_id
-4. Set approval decision = PENDING
-5. Set approver_role = SAFETY_OFFICER
+1. ✅ Permit request created with status `PENDING`
+2. ✅ Approval record automatically created
+3. ✅ Linked to permit via `permit_id`
+4. ✅ Default decision = `PENDING`
+5. ✅ Assigned to Safety Officer role
 
 ### On Approval Decision:
-1. Update permit_approval.decision
-2. Update permit_requests.status (mirror decision)
-3. Save approved_at timestamp
-4. Record approver information
-5. Create audit log entry
+1. ✅ Safety Officer reviews permit
+2. ✅ Decision (APPROVED/REJECTED) saved
+3. ✅ Comment added (required for rejection)
+4. ✅ `permit_requests.status` automatically updated
+5. ✅ `approved_at` timestamp recorded
+6. ✅ Audit log entry created
+
+## 📊 Database Schema
+
+```
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
+│     users       │     │ permit_requests  │     │ permit_approvals│
+├─────────────────┤     ├──────────────────┤     ├─────────────────┤
+│ id (UUID)       │────<│ created_by (FK)  │     │ id (UUID)       │
+│ email           │     │ id (UUID)        │────<│ permit_id (FK)  │
+│ password        │     │ title            │     │ approver_name   │
+│ firstName       │     │ description      │     │ approver_role   │
+│ lastName        │     │ location         │     │ decision        │
+│ role            │     │ work_type        │     │ comment         │
+│ department      │     │ status           │     │ approved_at     │
+│ isActive        │     │ priority         │     │ created_at      │
+│ created_at      │     │ hazards[]        │     └─────────────────┘
+│ updated_at      │     │ precautions[]    │
+└─────────────────┘     │ equipment[]      │
+                        │ start_date       │
+                        │ end_date         │
+                        │ created_at       │
+                        │ updated_at       │
+                        └──────────────────┘
+```
+
+## 🛡️ Security Features
+
+- ✅ JWT-based authentication
+- ✅ Password hashing with bcrypt
+- ✅ Role-based access control
+- ✅ Input validation & sanitization
+- ✅ CORS protection
+- ✅ Security headers (X-Frame-Options, X-Content-Type-Options, etc.)
+- ✅ SQL injection prevention (Prisma ORM)
+- ✅ XSS protection
+
+## 🐛 Troubleshooting
+
+### Database Connection Issues
+```bash
+# Check if PostgreSQL is running
+docker compose ps
+
+# View backend logs
+docker compose logs backend
+
+# Reset database
+docker compose down -v
+docker compose up -d
+docker compose exec backend npx prisma migrate deploy
+```
+
+### Permission Issues
+```bash
+# Fix Docker permissions
+sudo chown -R $USER:$USER .
+```
+
+### Port Conflicts
+```bash
+# Check what's using port 80 or 5000
+sudo lsof -i :80
+sudo lsof -i :5000
+```
 
 ## 📝 License
 
-MIT License - feel free to use for personal or commercial projects.
+MIT License - see LICENSE file for details.
 
-## 🤝 Support
+## 🤝 Contributing
 
-For issues or questions, please open an issue on the repository.
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Open a Pull Request
+
+## 📞 Support
+
+For support, email support@safetypermit.com or create an issue in the repository.
+
+---
+
+**Built with ❤️ for industrial safety**

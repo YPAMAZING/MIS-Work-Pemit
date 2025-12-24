@@ -1,60 +1,67 @@
-// Helper functions to handle JSON arrays in SQLite
+/**
+ * Helper functions to handle JSON array fields for SQLite
+ * SQLite doesn't support native arrays, so we store them as JSON strings
+ */
 
 /**
- * Convert array to JSON string for storage
+ * Parse a JSON string field to array, with fallback
  */
-const toJsonString = (arr) => {
-  if (!arr) return '[]';
-  if (typeof arr === 'string') return arr;
-  return JSON.stringify(arr);
-};
-
-/**
- * Parse JSON string to array
- */
-const fromJsonString = (str) => {
-  if (!str) return [];
-  if (Array.isArray(str)) return str;
+const parseJsonArray = (value) => {
+  if (Array.isArray(value)) return value;
+  if (!value) return [];
   try {
-    return JSON.parse(str);
-  } catch (e) {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
     return [];
   }
 };
 
 /**
- * Transform permit data for response (parse JSON strings to arrays)
+ * Stringify an array to JSON for storage
+ */
+const stringifyArray = (value) => {
+  if (!value) return '[]';
+  if (typeof value === 'string') return value;
+  return JSON.stringify(value);
+};
+
+/**
+ * Transform permit response - parse JSON array fields
  */
 const transformPermitResponse = (permit) => {
-  if (!permit) return permit;
+  if (!permit) return null;
+  
   return {
     ...permit,
-    hazards: fromJsonString(permit.hazards),
-    precautions: fromJsonString(permit.precautions),
-    equipment: fromJsonString(permit.equipment),
+    hazards: parseJsonArray(permit.hazards),
+    precautions: parseJsonArray(permit.precautions),
+    equipment: parseJsonArray(permit.equipment),
   };
 };
 
 /**
- * Transform permit data for storage (convert arrays to JSON strings)
+ * Transform permit data for storage - stringify array fields
  */
 const transformPermitForStorage = (data) => {
   const transformed = { ...data };
+  
   if (data.hazards !== undefined) {
-    transformed.hazards = toJsonString(data.hazards);
+    transformed.hazards = stringifyArray(data.hazards);
   }
   if (data.precautions !== undefined) {
-    transformed.precautions = toJsonString(data.precautions);
+    transformed.precautions = stringifyArray(data.precautions);
   }
   if (data.equipment !== undefined) {
-    transformed.equipment = toJsonString(data.equipment);
+    transformed.equipment = stringifyArray(data.equipment);
   }
+  
   return transformed;
 };
 
 module.exports = {
-  toJsonString,
-  fromJsonString,
+  parseJsonArray,
+  stringifyArray,
   transformPermitResponse,
   transformPermitForStorage,
 };

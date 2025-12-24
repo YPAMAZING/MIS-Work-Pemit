@@ -30,10 +30,9 @@ const ApprovalDetail = () => {
   const { user } = useAuth()
   const [approval, setApproval] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [processing, setProcessing] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [decisionModal, setDecisionModal] = useState({ open: false, type: null })
   const [comment, setComment] = useState('')
-  const [showApproveModal, setShowApproveModal] = useState(false)
-  const [showRejectModal, setShowRejectModal] = useState(false)
 
   useEffect(() => {
     fetchApproval()
@@ -51,28 +50,32 @@ const ApprovalDetail = () => {
     }
   }
 
-  const handleDecision = async (decision) => {
-    setProcessing(true)
+  const handleDecision = async () => {
+    if (!decisionModal.type) return
+
+    setSubmitting(true)
     try {
-      await approvalsAPI.updateDecision(id, { decision, comment })
-      toast.success(`Permit ${decision.toLowerCase()} successfully`)
+      await approvalsAPI.updateDecision(id, {
+        decision: decisionModal.type,
+        comment: comment.trim(),
+      })
+      toast.success(`Permit ${decisionModal.type.toLowerCase()} successfully`)
       navigate('/approvals')
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Error processing approval')
+      toast.error(error.response?.data?.message || 'Error processing decision')
     } finally {
-      setProcessing(false)
-      setShowApproveModal(false)
-      setShowRejectModal(false)
+      setSubmitting(false)
+      setDecisionModal({ open: false, type: null })
     }
   }
 
-  const getStatusBadge = (status) => {
+  const getDecisionBadge = (decision) => {
     const badges = {
       PENDING: { bg: 'bg-amber-100', text: 'text-amber-800', icon: <Clock className="w-4 h-4" /> },
       APPROVED: { bg: 'bg-green-100', text: 'text-green-800', icon: <CheckCircle className="w-4 h-4" /> },
       REJECTED: { bg: 'bg-red-100', text: 'text-red-800', icon: <XCircle className="w-4 h-4" /> },
     }
-    return badges[status] || badges.PENDING
+    return badges[decision] || badges.PENDING
   }
 
   const getPriorityBadge = (priority) => {
@@ -121,7 +124,7 @@ const ApprovalDetail = () => {
   }
 
   const permit = approval.permit
-  const statusBadge = getStatusBadge(approval.decision)
+  const decisionBadge = getDecisionBadge(approval.decision)
   const priorityBadge = getPriorityBadge(permit?.priority)
   const workTypeInfo = getWorkTypeInfo(permit?.workType)
   const isPending = approval.decision === 'PENDING'
@@ -140,8 +143,8 @@ const ApprovalDetail = () => {
           </button>
           <h1 className="text-2xl font-bold text-gray-900">{permit?.title}</h1>
           <div className="flex flex-wrap items-center gap-3 mt-2">
-            <span className={`badge ${statusBadge.bg} ${statusBadge.text}`}>
-              {statusBadge.icon}
+            <span className={`badge ${decisionBadge.bg} ${decisionBadge.text}`}>
+              {decisionBadge.icon}
               <span className="ml-1">{approval.decision}</span>
             </span>
             <span className={`badge ${priorityBadge.bg} ${priorityBadge.text}`}>
@@ -153,22 +156,20 @@ const ApprovalDetail = () => {
             </div>
           </div>
         </div>
-
-        {/* Action Buttons */}
         {isPending && (
           <div className="flex gap-2">
             <button
-              onClick={() => setShowRejectModal(true)}
+              onClick={() => setDecisionModal({ open: true, type: 'REJECTED' })}
               className="btn btn-danger"
             >
-              <XCircle className="w-5 h-5 mr-2" />
+              <XCircle className="w-4 h-4 mr-2" />
               Reject
             </button>
             <button
-              onClick={() => setShowApproveModal(true)}
+              onClick={() => setDecisionModal({ open: true, type: 'APPROVED' })}
               className="btn btn-success"
             >
-              <CheckCircle className="w-5 h-5 mr-2" />
+              <CheckCircle className="w-4 h-4 mr-2" />
               Approve
             </button>
           </div>
@@ -250,7 +251,7 @@ const ApprovalDetail = () => {
             </div>
           )}
 
-          {/* Previous Decision Info */}
+          {/* Previous Decision (if already processed) */}
           {!isPending && (
             <div className="card">
               <div className="card-header">
@@ -258,7 +259,9 @@ const ApprovalDetail = () => {
               </div>
               <div className="card-body">
                 <div className="flex items-start gap-4">
-                  <div className={`p-3 rounded-full ${statusBadge.bg}`}>
+                  <div className={`p-3 rounded-full ${
+                    approval.decision === 'APPROVED' ? 'bg-green-100' : 'bg-red-100'
+                  }`}>
                     {approval.decision === 'APPROVED' ? (
                       <CheckCircle className="w-6 h-6 text-green-600" />
                     ) : (
@@ -267,7 +270,7 @@ const ApprovalDetail = () => {
                   </div>
                   <div className="flex-1">
                     <p className="font-semibold text-gray-900">
-                      {approval.decision} by {approval.approverName}
+                      {approval.decision} by {approval.approverName || 'Safety Officer'}
                     </p>
                     {approval.approvedAt && (
                       <p className="text-sm text-gray-500">
@@ -276,10 +279,8 @@ const ApprovalDetail = () => {
                     )}
                     {approval.comment && (
                       <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-start gap-2">
-                          <MessageSquare className="w-4 h-4 text-gray-400 mt-0.5" />
-                          <p className="text-sm text-gray-600">{approval.comment}</p>
-                        </div>
+                        <p className="text-sm font-medium text-gray-700 mb-1">Comment:</p>
+                        <p className="text-sm text-gray-600">{approval.comment}</p>
                       </div>
                     )}
                   </div>
@@ -360,20 +361,20 @@ const ApprovalDetail = () => {
           {isPending && (
             <div className="card bg-gradient-to-br from-primary-50 to-primary-100 border-primary-200">
               <div className="card-body text-center">
-                <h3 className="font-semibold text-primary-900 mb-2">Ready to Process?</h3>
+                <h3 className="font-semibold text-primary-900 mb-2">Action Required</h3>
                 <p className="text-sm text-primary-700 mb-4">
-                  Review the permit details and make your decision
+                  Review the permit details and make a decision
                 </p>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => setShowRejectModal(true)}
-                    className="btn btn-danger flex-1 py-2"
+                    onClick={() => setDecisionModal({ open: true, type: 'REJECTED' })}
+                    className="btn btn-danger flex-1"
                   >
                     Reject
                   </button>
                   <button
-                    onClick={() => setShowApproveModal(true)}
-                    className="btn btn-success flex-1 py-2"
+                    onClick={() => setDecisionModal({ open: true, type: 'APPROVED' })}
+                    className="btn btn-success flex-1"
                   >
                     Approve
                   </button>
@@ -384,90 +385,73 @@ const ApprovalDetail = () => {
         </div>
       </div>
 
-      {/* Approve Modal */}
-      {showApproveModal && (
-        <div className="modal-overlay" onClick={() => setShowApproveModal(false)}>
+      {/* Decision Modal */}
+      {decisionModal.open && (
+        <div className="modal-overlay" onClick={() => setDecisionModal({ open: false, type: null })}>
           <div className="modal-content max-w-md" onClick={(e) => e.stopPropagation()}>
             <div className="p-6">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-8 h-8 text-green-600" />
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
+                decisionModal.type === 'APPROVED' ? 'bg-green-100' : 'bg-red-100'
+              }`}>
+                {decisionModal.type === 'APPROVED' ? (
+                  <CheckCircle className="w-8 h-8 text-green-600" />
+                ) : (
+                  <XCircle className="w-8 h-8 text-red-600" />
+                )}
               </div>
               <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
-                Approve Permit
+                {decisionModal.type === 'APPROVED' ? 'Approve Permit' : 'Reject Permit'}
               </h3>
               <p className="text-gray-500 text-center mb-4">
-                Are you sure you want to approve this permit request?
+                {decisionModal.type === 'APPROVED'
+                  ? 'Are you sure you want to approve this permit request?'
+                  : 'Are you sure you want to reject this permit request?'}
               </p>
+              
               <div className="mb-4">
-                <label className="label">Comment (optional)</label>
+                <label className="label flex items-center gap-1">
+                  <MessageSquare className="w-4 h-4" />
+                  Comment {decisionModal.type === 'REJECTED' && <span className="text-red-500">*</span>}
+                </label>
                 <textarea
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   rows={3}
                   className="input"
-                  placeholder="Add any notes or conditions..."
+                  placeholder={
+                    decisionModal.type === 'APPROVED'
+                      ? 'Add any notes or conditions (optional)'
+                      : 'Please provide a reason for rejection'
+                  }
                 />
               </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowApproveModal(false)}
-                  className="btn btn-secondary flex-1"
-                  disabled={processing}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => handleDecision('APPROVED')}
-                  className="btn btn-success flex-1"
-                  disabled={processing}
-                >
-                  {processing ? 'Processing...' : 'Approve'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* Reject Modal */}
-      {showRejectModal && (
-        <div className="modal-overlay" onClick={() => setShowRejectModal(false)}>
-          <div className="modal-content max-w-md" onClick={(e) => e.stopPropagation()}>
-            <div className="p-6">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <XCircle className="w-8 h-8 text-red-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
-                Reject Permit
-              </h3>
-              <p className="text-gray-500 text-center mb-4">
-                Please provide a reason for rejecting this permit request.
-              </p>
-              <div className="mb-4">
-                <label className="label">Reason for rejection *</label>
-                <textarea
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  rows={3}
-                  className="input"
-                  placeholder="Explain why this permit is being rejected..."
-                  required
-                />
-              </div>
               <div className="flex gap-3">
                 <button
-                  onClick={() => setShowRejectModal(false)}
+                  onClick={() => {
+                    setDecisionModal({ open: false, type: null })
+                    setComment('')
+                  }}
                   className="btn btn-secondary flex-1"
-                  disabled={processing}
+                  disabled={submitting}
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={() => handleDecision('REJECTED')}
-                  className="btn btn-danger flex-1"
-                  disabled={processing || !comment.trim()}
+                  onClick={handleDecision}
+                  disabled={submitting || (decisionModal.type === 'REJECTED' && !comment.trim())}
+                  className={`btn flex-1 ${
+                    decisionModal.type === 'APPROVED' ? 'btn-success' : 'btn-danger'
+                  }`}
                 >
-                  {processing ? 'Processing...' : 'Reject'}
+                  {submitting ? (
+                    <span className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Processing...
+                    </span>
+                  ) : (
+                    `Confirm ${decisionModal.type === 'APPROVED' ? 'Approval' : 'Rejection'}`
+                  )}
                 </button>
               </div>
             </div>

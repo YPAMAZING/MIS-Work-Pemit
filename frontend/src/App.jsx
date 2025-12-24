@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard'
 import Permits from './pages/Permits'
 import PermitDetail from './pages/PermitDetail'
 import CreatePermit from './pages/CreatePermit'
+import SelectPermitType from './pages/SelectPermitType'
 import Approvals from './pages/Approvals'
 import ApprovalDetail from './pages/ApprovalDetail'
 import Users from './pages/Users'
@@ -88,7 +89,8 @@ function App() {
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="permits" element={<Permits />} />
-        <Route path="permits/new" element={<CreatePermit />} />
+        <Route path="permits/new" element={<SelectPermitType />} />
+        <Route path="permits/create" element={<CreatePermit />} />
         <Route path="permits/:id" element={<PermitDetail />} />
         <Route path="permits/:id/edit" element={<CreatePermit />} />
         

@@ -372,18 +372,24 @@ const deletePermit = async (req, res) => {
   }
 };
 
-// Get work types
+// Get work types - Safetymint style
 const getWorkTypes = async (req, res) => {
   const workTypes = [
-    { value: 'HOT_WORK', label: 'Hot Work', icon: 'fire', color: '#ef4444' },
-    { value: 'CONFINED_SPACE', label: 'Confined Space Entry', icon: 'box', color: '#f97316' },
-    { value: 'ELECTRICAL', label: 'Electrical Work', icon: 'bolt', color: '#eab308' },
-    { value: 'WORKING_AT_HEIGHT', label: 'Working at Height', icon: 'arrow-up', color: '#3b82f6' },
-    { value: 'EXCAVATION', label: 'Excavation', icon: 'hard-hat', color: '#8b5cf6' },
-    { value: 'LIFTING', label: 'Lifting Operations', icon: 'crane', color: '#06b6d4' },
-    { value: 'CHEMICAL', label: 'Chemical Handling', icon: 'flask', color: '#10b981' },
-    { value: 'RADIATION', label: 'Radiation Work', icon: 'radiation', color: '#f59e0b' },
-    { value: 'GENERAL', label: 'General Work', icon: 'wrench', color: '#6b7280' },
+    { value: 'HOT_WORK', label: 'Hot Work Permit', abbr: 'HWP', icon: 'flame', color: '#f97316' },
+    { value: 'CONFINED_SPACE', label: 'Confined Space Permit', abbr: 'CSP', icon: 'box', color: '#a855f7' },
+    { value: 'ELECTRICAL', label: 'Electrical Work Permit', abbr: 'EWP', icon: 'zap', color: '#eab308' },
+    { value: 'WORKING_AT_HEIGHT', label: 'Work Height Permit', abbr: 'WHP', icon: 'arrow-up', color: '#3b82f6' },
+    { value: 'EXCAVATION', label: 'Excavation Work Permit', abbr: 'EXP', icon: 'shovel', color: '#f59e0b' },
+    { value: 'LIFTING', label: 'Lifting Permit', abbr: 'LP', icon: 'weight', color: '#14b8a6' },
+    { value: 'CHEMICAL', label: 'Chemical Handling Permit', abbr: 'CHP', icon: 'flask', color: '#ef4444' },
+    { value: 'RADIATION', label: 'Radiation Work Permit', abbr: 'RWP', icon: 'radiation', color: '#84cc16' },
+    { value: 'GENERAL', label: 'General Permit', abbr: 'GP', icon: 'file-text', color: '#6b7280' },
+    { value: 'COLD_WORK', label: 'Cold Work Permit', abbr: 'CWP', icon: 'thermometer', color: '#06b6d4' },
+    { value: 'LOTO', label: 'LOTO Permit', abbr: 'LOTO', icon: 'lock', color: '#6366f1' },
+    { value: 'VEHICLE', label: 'Vehicle Work Permit', abbr: 'VWP', icon: 'truck', color: '#64748b' },
+    { value: 'PRESSURE_TESTING', label: 'Hydro Pressure Testing', abbr: 'HPT', icon: 'droplets', color: '#0ea5e9' },
+    { value: 'ENERGIZE', label: 'Energize Permit', abbr: 'EOMP', icon: 'zap', color: '#10b981' },
+    { value: 'SWMS', label: 'Safe Work Method Statement', abbr: 'SWMS', icon: 'shield', color: '#f43f5e' },
   ];
 
   res.json({ workTypes });

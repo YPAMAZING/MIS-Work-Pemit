@@ -52,7 +52,7 @@ const Layout = () => {
       roles: ['ADMIN', 'SAFETY_OFFICER', 'REQUESTOR'],
     },
     {
-      name: 'Permit Requests',
+      name: 'Permits',
       path: '/permits',
       icon: FileText,
       roles: ['ADMIN', 'SAFETY_OFFICER', 'REQUESTOR'],
@@ -69,6 +69,12 @@ const Layout = () => {
       path: '/users',
       icon: Users,
       roles: ['ADMIN'],
+    },
+    {
+      name: 'Settings',
+      path: '/settings',
+      icon: Settings,
+      roles: ['ADMIN', 'SAFETY_OFFICER', 'REQUESTOR'],
     },
   ]
 
@@ -97,26 +103,26 @@ const Layout = () => {
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar - Safetymint Dark Blue Style */}
       <aside
-        className={`fixed top-0 left-0 z-50 h-full w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 lg:translate-x-0 ${
+        className={`fixed top-0 left-0 z-50 h-full w-64 bg-gradient-to-b from-slate-800 to-slate-900 transform transition-transform duration-300 lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         {/* Logo */}
-        <div className="flex items-center gap-3 px-6 py-5 border-b border-gray-200">
-          <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-700 rounded-xl flex items-center justify-center">
+        <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-700">
+          <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-xl flex items-center justify-center">
             <Shield className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-gray-900">MIS</h1>
-            <p className="text-xs text-gray-500">Management Information System</p>
+            <h1 className="text-lg font-bold text-white">MIS</h1>
+            <p className="text-xs text-slate-400">Permit Management</p>
           </div>
           <button
-            className="lg:hidden ml-auto p-1 rounded-lg hover:bg-gray-100"
+            className="lg:hidden ml-auto p-1 rounded-lg hover:bg-slate-700"
             onClick={() => setSidebarOpen(false)}
           >
-            <X className="w-5 h-5 text-gray-500" />
+            <X className="w-5 h-5 text-slate-400" />
           </button>
         </div>
 
@@ -130,12 +136,14 @@ const Layout = () => {
                 key={item.path}
                 to={item.path}
                 onClick={() => setSidebarOpen(false)}
-                className={`sidebar-link ${
-                  isActive ? 'sidebar-link-active' : 'sidebar-link-inactive'
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+                  isActive 
+                    ? 'bg-emerald-500/20 text-emerald-400 border-l-4 border-emerald-400' 
+                    : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'
                 }`}
               >
                 <Icon className="w-5 h-5" />
-                <span className="flex-1">{item.name}</span>
+                <span className="flex-1 font-medium">{item.name}</span>
                 {item.badge && (
                   <span className="px-2 py-0.5 text-xs font-semibold bg-red-500 text-white rounded-full">
                     {item.badge}
@@ -147,18 +155,22 @@ const Layout = () => {
         </nav>
 
         {/* User section */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 bg-gray-50">
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-700 bg-slate-900/50">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-gray-700 to-gray-900 rounded-full flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center">
               <span className="text-sm font-semibold text-white">
                 {user?.firstName?.[0]}{user?.lastName?.[0]}
               </span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">
+              <p className="text-sm font-medium text-white truncate">
                 {user?.firstName} {user?.lastName}
               </p>
-              <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full ${roleBadge.bg} ${roleBadge.text}`}>
+              <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full ${
+                user?.role === 'ADMIN' ? 'bg-purple-500/20 text-purple-300' :
+                user?.role === 'SAFETY_OFFICER' ? 'bg-emerald-500/20 text-emerald-300' :
+                'bg-blue-500/20 text-blue-300'
+              }`}>
                 {roleBadge.label}
               </span>
             </div>

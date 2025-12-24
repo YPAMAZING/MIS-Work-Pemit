@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { permitsAPI } from '../services/api'
 import LoadingSpinner from '../components/LoadingSpinner'
 import toast from 'react-hot-toast'
@@ -18,10 +18,31 @@ import {
   FileText,
 } from 'lucide-react'
 
+// Work type labels mapping
+const workTypeLabels = {
+  'HOT_WORK': 'Hot Work Permit',
+  'CONFINED_SPACE': 'Confined Space Permit',
+  'ELECTRICAL': 'Electrical Work Permit',
+  'WORKING_AT_HEIGHT': 'Work Height Permit',
+  'EXCAVATION': 'Excavation Work Permit',
+  'LIFTING': 'Lifting Permit',
+  'CHEMICAL': 'Chemical Handling Permit',
+  'RADIATION': 'Radiation Work Permit',
+  'GENERAL': 'General Permit',
+  'COLD_WORK': 'Cold Work Permit',
+  'LOTO': 'LOTO Permit',
+  'VEHICLE': 'Vehicle Work Permit',
+  'PRESSURE_TESTING': 'Hydro Pressure Testing',
+  'ENERGIZE': 'Energize Permit',
+  'SWMS': 'Safe Work Method Statement',
+}
+
 const CreatePermit = () => {
   const { id } = useParams()
+  const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const isEdit = Boolean(id)
+  const preSelectedType = searchParams.get('type')
 
   const [loading, setLoading] = useState(false)
   const [fetchLoading, setFetchLoading] = useState(isEdit)
@@ -30,7 +51,7 @@ const CreatePermit = () => {
     title: '',
     description: '',
     location: '',
-    workType: '',
+    workType: preSelectedType || '',
     startDate: '',
     endDate: '',
     priority: 'MEDIUM',
@@ -174,7 +195,7 @@ const CreatePermit = () => {
           Back to Permits
         </button>
         <h1 className="text-2xl font-bold text-gray-900">
-          {isEdit ? 'Edit Permit Request' : 'New Permit Request'}
+          {isEdit ? 'Edit Permit Request' : preSelectedType ? `New ${workTypeLabels[preSelectedType] || 'Permit'} Request` : 'New Permit Request'}
         </h1>
         <p className="text-gray-500 mt-1">
           {isEdit ? 'Update the permit details below' : 'Fill out the form to submit a new permit request'}

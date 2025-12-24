@@ -245,11 +245,36 @@ server {
 }
 ```
 
-### 4. SSL with Let's Encrypt
+### 4. SSL with Let's Encrypt (Automated)
 
+**Option A: Use the automated SSL setup script**
 ```bash
+cd /opt/permit-system
+
+# Run the SSL setup script
+./scripts/ssl-setup.sh your-domain.com your-email@example.com
+```
+
+This script will:
+- Create required directories
+- Obtain SSL certificate from Let's Encrypt
+- Configure nginx with HTTPS
+- Start all services with SSL enabled
+- Auto-renew certificates
+
+**Option B: Manual SSL setup**
+```bash
+# 1. Start without SSL first
+docker compose up -d
+
+# 2. Install certbot
 sudo apt install certbot python3-certbot-nginx -y
+
+# 3. Obtain certificate
 sudo certbot --nginx -d your-domain.com
+
+# 4. Or use docker-compose.ssl.yml for full containerized SSL
+docker compose -f docker-compose.ssl.yml up -d
 ```
 
 ## 🔧 Environment Variables

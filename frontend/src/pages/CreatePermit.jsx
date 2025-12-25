@@ -16,6 +16,11 @@ import {
   ArrowUp,
   Box,
   FileText,
+  Users,
+  Building,
+  Phone,
+  CheckSquare,
+  ClipboardCheck,
 } from 'lucide-react'
 
 // Work type labels mapping
@@ -58,7 +63,25 @@ const CreatePermit = () => {
     hazards: [],
     precautions: [],
     equipment: [],
+    contractorName: '',
+    contractorPhone: '',
+    companyName: '',
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   })
+  
+  // Default measures checklist
+  const [measures, setMeasures] = useState([
+    { id: 1, question: 'Instruction to Personnel regarding hazards involved and working procedure.', response: null },
+    { id: 2, question: 'Are Other Contractors working nearby notified?', response: null },
+    { id: 3, question: 'Is there any other work permit is obtained?', response: null },
+    { id: 4, question: 'Are escape routes to be provided and kept clear?', response: null },
+    { id: 5, question: 'Is combustible material to be removed / covered from and nearby site (up to 5mtr min.)', response: null },
+    { id: 6, question: 'Has the area immediately below the work spot been cleared / removed of oil, grease & waste cotton etc...?', response: null },
+    { id: 7, question: 'Has gas connection been tested in case there is gas valve / gas line nearby?', response: null },
+    { id: 8, question: 'Is fire extinguisher been kept handy at site?', response: null },
+    { id: 9, question: 'Has tin sheet / fire retardant cloth/ sheet been placed to contain hot spatters of welding / gas cutting?', response: null },
+    { id: 10, question: 'Have all drain inlets been closed?', response: null },
+  ])
   const [newHazard, setNewHazard] = useState('')
   const [newPrecaution, setNewPrecaution] = useState('')
   const [newEquipment, setNewEquipment] = useState('')

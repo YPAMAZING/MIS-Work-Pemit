@@ -395,6 +395,98 @@ const getWorkTypes = async (req, res) => {
   res.json({ workTypes });
 };
 
+// Get public permit info (for QR code scanning)
+const getPublicPermitInfo = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const permit = await prisma.permitRequest.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        permitNumber: true,
+        title: true,
+        workType: true,
+        location: true,
+        startDate: true,
+        endDate: true,
+        status: true,
+        companyName: true,
+      },
+    });
+
+    if (!permit) {
+      return res.status(404).json({ message: 'Permit not found' });
+    }
+
+    res.json({ permit });
+  } catch (error) {
+    console.error('Get public permit error:', error);
+    res.status(500).json({ message: 'Error fetching permit info' });
+  }
+};
+
+// Register workers via QR code
+const registerWorkers = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { contractor, workers } = req.body;
+
+    const permit = await prisma.permitRequest.findUnique({
+      where: { id },
+    });
+
+    if (!permit) {
+      return res.status(404).json({ message: 'Permit not found' });
+    }
+
+    // Update permit with contractor and worker info
+    const existingWorkers = JSON.parse(permit.workers || '[]');
+    const updatedWorkers = [...existingWorkers, ...workers];
+
+    await prisma.permitRequest.update({
+      where: { id },
+      data: {
+        contractorName: contractor.name,
+        contractorPhone: contractor.phone,
+        companyName: contractor.company || permit.companyName,
+        workers: JSON.stringify(updatedWorkers),
+      },
+    });
+
+    // Also save workers to Worker table
+    for (const worker of workers) {
+      if (worker.name) {
+        await prisma.worker.create({
+          data: {
+            name: worker.name,
+            phone: worker.phone || null,
+            company: contractor.company || null,
+            trade: worker.trade || null,
+            badgeNumber: worker.badgeNumber || null,
+          },
+        });
+      }
+    }
+
+    // Create audit log
+    await createAuditLog({
+      action: 'WORKERS_REGISTERED',
+      entity: 'PermitRequest',
+      entityId: id,
+      newValue: JSON.stringify({ contractor, workerCount: workers.length }),
+    });
+
+    res.json({ 
+      message: 'Workers registered successfully',
+      workerCount: workers.length 
+    });
+  } catch (error) {
+    console.error('Register workers error:', error);
+    res.status(500).json({ message: 'Error registering workers' });
+  }
+};
+
 module.exports = {
   getAllPermits,
   getPermitById,
@@ -402,4 +494,6 @@ module.exports = {
   updatePermit,
   deletePermit,
   getWorkTypes,
+  getPublicPermitInfo,
+  registerWorkers,
 };

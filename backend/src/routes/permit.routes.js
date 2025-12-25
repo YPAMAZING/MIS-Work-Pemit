@@ -7,17 +7,39 @@ const {
   updatePermit,
   deletePermit,
   getWorkTypes,
+  getPublicPermitInfo,
+  registerWorkers,
 } = require('../controllers/permit.controller');
 const { authenticate, isRequestor } = require('../middleware/auth.middleware');
 const { validate } = require('../middleware/validate.middleware');
 
 const router = express.Router();
 
-// All routes require authentication
-router.use(authenticate);
-
-// Get work types (public)
+// Public routes (no auth required)
 router.get('/work-types', getWorkTypes);
+
+// Public permit info for QR code scanning
+router.get(
+  '/:id/public',
+  [param('id').isUUID().withMessage('Invalid permit ID')],
+  validate,
+  getPublicPermitInfo
+);
+
+// Register workers via QR code (public)
+router.post(
+  '/:id/workers',
+  [
+    param('id').isUUID().withMessage('Invalid permit ID'),
+    body('contractor').isObject().withMessage('Contractor info required'),
+    body('workers').isArray().withMessage('Workers list required'),
+  ],
+  validate,
+  registerWorkers
+);
+
+// Protected routes
+router.use(authenticate);
 
 // Get all permits
 router.get('/', getAllPermits);

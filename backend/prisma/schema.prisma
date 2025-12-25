@@ -26,6 +26,7 @@ model User {
 
 model PermitRequest {
   id            String          @id @default(uuid())
+  permitNumber  String          @unique @default(uuid())
   title         String
   description   String
   location      String
@@ -37,6 +38,17 @@ model PermitRequest {
   hazards       String          @default("[]")
   precautions   String          @default("[]")
   equipment     String          @default("[]")
+  measures      String          @default("[]")
+  workers       String          @default("[]")
+  contractorName String?
+  contractorPhone String?
+  companyName   String?
+  companyLogo   String?
+  timezone      String          @default("UTC")
+  isExtended    Boolean         @default(false)
+  extendedUntil DateTime?
+  closedAt      DateTime?
+  closureChecklist String       @default("[]")
   createdBy     String
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
@@ -54,6 +66,8 @@ model PermitApproval {
   approverRole  String           @default("SAFETY_OFFICER")
   decision      String           @default("PENDING")
   comment       String?
+  signature     String?
+  signedAt      DateTime?
   approvedAt    DateTime?
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
@@ -61,6 +75,22 @@ model PermitApproval {
   permit        PermitRequest    @relation(fields: [permitId], references: [id], onDelete: Cascade)
   
   @@map("permit_approvals")
+}
+
+model Worker {
+  id            String   @id @default(uuid())
+  name          String
+  phone         String?
+  email         String?
+  company       String?
+  trade         String?
+  badgeNumber   String?
+  photo         String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@map("workers")
 }
 
 model AuditLog {

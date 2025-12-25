@@ -30,7 +30,9 @@ import {
   X,
   Check,
   RefreshCw,
+  Loader2,
 } from 'lucide-react'
+import { extractMeterReading, preprocessImage, setOCRProgressCallback, getDefaultUnit } from '../utils/ocr'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
@@ -540,9 +542,16 @@ const MeterUploadModal = ({ meterTypes, onClose, onSuccess }) => {
   const [imageFile, setImageFile] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
   const [ocrProcessing, setOcrProcessing] = useState(false)
+  const [ocrProgress, setOcrProgress] = useState(0)
   const [ocrResult, setOcrResult] = useState(null)
   const [loading, setLoading] = useState(false)
   const [useCamera, setUseCamera] = useState(false)
+
+  // Set up OCR progress callback
+  useEffect(() => {
+    setOCRProgressCallback(setOcrProgress)
+    return () => setOCRProgressCallback(null)
+  }, [])
 
   const handleImageSelect = async (e) => {
     const file = e.target.files?.[0]
@@ -557,41 +566,54 @@ const MeterUploadModal = ({ meterTypes, onClose, onSuccess }) => {
 
   const processOCR = async (file) => {
     setOcrProcessing(true)
+    setOcrProgress(0)
+    setOcrResult(null)
+
     try {
-      // Convert to base64 for OCR API
-      const reader = new FileReader()
-      reader.onloadend = async () => {
-        const base64Image = reader.result
+      // Preprocess image for better OCR results
+      toast.loading('Processing image with AI OCR...', { id: 'ocr' })
+      
+      const processedImage = await preprocessImage(file)
+      
+      // Run Tesseract.js OCR
+      const result = await extractMeterReading(processedImage)
+      
+      toast.dismiss('ocr')
 
-        // Call OCR endpoint (using external API or built-in)
-        // For now, simulate OCR with pattern matching
-        // In production, integrate with Google Vision, Azure, or Tesseract.js
-        
-        // Simulated OCR - in production, replace with actual API call
-        setTimeout(() => {
-          // Simulate extracted text based on meter type
-          const simulatedOCR = {
-            rawText: '12345.67 kWh',
-            extractedValue: 12345.67,
-            confidence: 0.95,
-            unit: 'kWh',
-          }
+      if (result.extractedValue !== null) {
+        setOcrResult({
+          rawText: result.rawText,
+          extractedValue: result.extractedValue,
+          confidence: result.confidence,
+          unit: result.unit || getDefaultUnit(formData.meterType),
+          allMatches: result.allMatches,
+        })
 
-          setOcrResult(simulatedOCR)
-          setFormData(prev => ({
-            ...prev,
-            readingValue: simulatedOCR.extractedValue.toString(),
-            unit: simulatedOCR.unit || prev.unit,
-          }))
-          setOcrProcessing(false)
-          toast.success('OCR completed! Reading auto-filled.')
-        }, 1500)
+        // Auto-fill the form
+        setFormData(prev => ({
+          ...prev,
+          readingValue: result.extractedValue.toString(),
+          unit: result.unit || getDefaultUnit(formData.meterType) || prev.unit,
+        }))
+
+        toast.success(`OCR completed! Reading: ${result.extractedValue} ${result.unit || ''} (${Math.round(result.confidence * 100)}% confidence)`)
+      } else {
+        toast.error('Could not extract reading from image. Please enter manually.')
+        setOcrResult({
+          rawText: result.rawText,
+          extractedValue: null,
+          confidence: result.confidence,
+          unit: '',
+          allMatches: [],
+        })
       }
-      reader.readAsDataURL(file)
     } catch (error) {
       console.error('OCR Error:', error)
+      toast.dismiss('ocr')
       toast.error('OCR processing failed. Please enter reading manually.')
+    } finally {
       setOcrProcessing(false)
+      setOcrProgress(0)
     }
   }
 
@@ -677,22 +699,45 @@ const MeterUploadModal = ({ meterTypes, onClose, onSuccess }) => {
                   <X className="w-4 h-4" />
                 </button>
                 {ocrProcessing && (
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-lg">
-                    <div className="text-white flex items-center gap-2">
-                      <RefreshCw className="w-5 h-5 animate-spin" />
-                      Processing OCR...
+                  <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center rounded-lg">
+                    <Loader2 className="w-8 h-8 text-white animate-spin mb-2" />
+                    <p className="text-white text-sm font-medium">Processing OCR...</p>
+                    <div className="w-48 h-2 bg-white/30 rounded-full mt-2 overflow-hidden">
+                      <div 
+                        className="h-full bg-white rounded-full transition-all duration-300"
+                        style={{ width: `${ocrProgress}%` }}
+                      />
                     </div>
+                    <p className="text-white/70 text-xs mt-1">{ocrProgress}%</p>
                   </div>
                 )}
-                {ocrResult && (
-                  <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <p className="text-sm text-green-800 flex items-center gap-2">
-                      <Check className="w-4 h-4" />
-                      OCR Detected: <span className="font-mono font-bold">{ocrResult.rawText}</span>
-                      <span className="text-xs text-green-600">
-                        ({Math.round(ocrResult.confidence * 100)}% confidence)
-                      </span>
-                    </p>
+                {ocrResult && !ocrProcessing && (
+                  <div className={`mt-3 p-3 rounded-lg border ${ocrResult.extractedValue !== null ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
+                    {ocrResult.extractedValue !== null ? (
+                      <>
+                        <p className="text-sm text-green-800 flex items-center gap-2">
+                          <Check className="w-4 h-4" />
+                          <span>Extracted Reading:</span>
+                          <span className="font-mono font-bold text-lg">{ocrResult.extractedValue} {ocrResult.unit}</span>
+                          <span className="text-xs text-green-600 ml-auto">
+                            {Math.round(ocrResult.confidence * 100)}% confidence
+                          </span>
+                        </p>
+                        {ocrResult.rawText && (
+                          <p className="text-xs text-green-600 mt-1 truncate">
+                            Raw text: "{ocrResult.rawText.substring(0, 100)}..."
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-sm text-yellow-800 flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4" />
+                        Could not extract numeric reading. Please enter manually.
+                        {ocrResult.rawText && (
+                          <span className="text-xs ml-2">Found: "{ocrResult.rawText.substring(0, 50)}..."</span>
+                        )}
+                      </p>
+                    )}
                   </div>
                 )}
               </div>

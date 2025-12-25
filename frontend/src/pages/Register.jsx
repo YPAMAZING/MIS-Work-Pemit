@@ -206,7 +206,7 @@ const Register = () => {
         </div>
 
         <p className="text-center text-primary-200 text-sm mt-6">
-          © 2024 YP SECURITY SERVICES PVT LTD. All Rights Reserved.
+          © 2025 YP SECURITY SERVICES PVT LTD. All Rights Reserved.
         </p>
       </div>
     </div>

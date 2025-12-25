@@ -194,7 +194,7 @@ const Layout = () => {
           </div>
           {/* Copyright */}
           <div className="px-4 pb-3 text-center">
-            <p className="text-xs text-slate-500">© 2024 YP SECURITY SERVICES PVT LTD</p>
+            <p className="text-xs text-slate-500">© 2025 YP SECURITY SERVICES PVT LTD</p>
           </div>
         </div>
       </aside>

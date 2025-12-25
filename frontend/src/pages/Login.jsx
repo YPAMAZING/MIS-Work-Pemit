@@ -36,8 +36,9 @@ const Login = () => {
   // Demo credentials
   const demoAccounts = [
     { role: 'Admin', email: 'admin@permitmanager.com', password: 'admin123' },
-    { role: 'Safety Officer', email: 'safety@permitmanager.com', password: 'safety123' },
+    { role: 'Safety', email: 'safety@permitmanager.com', password: 'safety123' },
     { role: 'Requestor', email: 'requestor@permitmanager.com', password: 'user123' },
+    { role: 'Engineer', email: 'engineer@permitmanager.com', password: 'engineer123' },
   ]
 
   const fillDemoCredentials = (email, password) => {
@@ -154,7 +155,7 @@ const Login = () => {
         </div>
 
         <p className="text-center text-primary-200 text-sm mt-6">
-          © 2024 YP SECURITY SERVICES PVT LTD. All Rights Reserved.
+          © 2025 YP SECURITY SERVICES PVT LTD. All Rights Reserved.
         </p>
       </div>
     </div>

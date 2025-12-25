@@ -6,7 +6,7 @@ This document provides comprehensive API documentation for integrating the MIS W
 
 **Base URL**: `http://your-domain.com/api`
 
-**Copyright**: © 2024 YP SECURITY SERVICES PVT LTD. All Rights Reserved.
+**Copyright**: © 2025 YP SECURITY SERVICES PVT LTD. All Rights Reserved.
 
 ---
 
@@ -439,4 +439,4 @@ For technical support or integration assistance:
 
 ---
 
-© 2024 YP SECURITY SERVICES PVT LTD. All Rights Reserved.
+© 2025 YP SECURITY SERVICES PVT LTD. All Rights Reserved.

@@ -6,49 +6,155 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Starting database seed...');
 
-  // Create Admin user
+  // First, create roles
+  console.log('Creating roles...');
+  
+  const adminRole = await prisma.role.upsert({
+    where: { name: 'ADMIN' },
+    update: {},
+    create: {
+      name: 'ADMIN',
+      displayName: 'Administrator',
+      description: 'Full system access with all permissions',
+      isSystem: true,
+      permissions: JSON.stringify([
+        'dashboard.view', 'dashboard.stats',
+        'permits.view', 'permits.view_all', 'permits.view_own', 'permits.create', 'permits.edit', 'permits.edit_own', 'permits.delete', 'permits.export', 'permits.extend', 'permits.revoke', 'permits.close', 'permits.transfer',
+        'approvals.view', 'approvals.approve', 'approvals.sign',
+        'workers.view', 'workers.create', 'workers.edit', 'workers.delete', 'workers.qr',
+        'users.view', 'users.create', 'users.edit', 'users.delete', 'users.assign_role',
+        'roles.view', 'roles.create', 'roles.edit', 'roles.delete',
+        'meters.view', 'meters.view_all', 'meters.view_own', 'meters.create', 'meters.edit', 'meters.delete', 'meters.verify', 'meters.export', 'meters.import', 'meters.analytics', 'meters.ocr',
+        'settings.view', 'settings.edit', 'settings.system',
+        'audit.view',
+      ]),
+      uiConfig: JSON.stringify({
+        theme: 'default',
+        sidebarColor: 'slate',
+        accentColor: 'emerald',
+        showAllMenus: true,
+      }),
+    },
+  });
+  console.log('✅ Admin role created');
+
+  const safetyRole = await prisma.role.upsert({
+    where: { name: 'SAFETY_OFFICER' },
+    update: {},
+    create: {
+      name: 'SAFETY_OFFICER',
+      displayName: 'Safety Officer',
+      description: 'Can approve/reject permits and manage workers',
+      isSystem: true,
+      permissions: JSON.stringify([
+        'dashboard.view', 'dashboard.stats',
+        'permits.view', 'permits.view_all', 'permits.export', 'permits.extend', 'permits.revoke', 'permits.close',
+        'approvals.view', 'approvals.approve', 'approvals.sign',
+        'workers.view', 'workers.create', 'workers.edit', 'workers.qr',
+        'meters.view', 'meters.view_all', 'meters.verify', 'meters.analytics',
+        'settings.view',
+      ]),
+      uiConfig: JSON.stringify({
+        theme: 'default',
+        sidebarColor: 'slate',
+        accentColor: 'blue',
+      }),
+    },
+  });
+  console.log('✅ Safety Officer role created');
+
+  const requestorRole = await prisma.role.upsert({
+    where: { name: 'REQUESTOR' },
+    update: {},
+    create: {
+      name: 'REQUESTOR',
+      displayName: 'Requestor',
+      description: 'Can create and view own permits',
+      isSystem: true,
+      permissions: JSON.stringify([
+        'dashboard.view',
+        'permits.view', 'permits.view_own', 'permits.create', 'permits.edit_own', 'permits.export',
+        'workers.view', 'workers.qr',
+        'settings.view',
+      ]),
+      uiConfig: JSON.stringify({
+        theme: 'default',
+        sidebarColor: 'slate',
+        accentColor: 'primary',
+      }),
+    },
+  });
+  console.log('✅ Requestor role created');
+
+  const siteEngineerRole = await prisma.role.upsert({
+    where: { name: 'SITE_ENGINEER' },
+    update: {},
+    create: {
+      name: 'SITE_ENGINEER',
+      displayName: 'Site Engineer',
+      description: 'Can upload meter readings, use OCR, and view analytics dashboard',
+      isSystem: true,
+      permissions: JSON.stringify([
+        'dashboard.view', 'dashboard.stats',
+        'meters.view', 'meters.view_own', 'meters.create', 'meters.edit', 'meters.export', 'meters.ocr', 'meters.analytics',
+        'settings.view',
+      ]),
+      uiConfig: JSON.stringify({
+        theme: 'default',
+        sidebarColor: 'slate',
+        accentColor: 'orange',
+        showMeterModule: true,
+      }),
+    },
+  });
+  console.log('✅ Site Engineer role created');
+
+  // Create users with roles
+  console.log('Creating users...');
+
+  // Admin user
   const adminPassword = await bcrypt.hash('admin123', 10);
   const admin = await prisma.user.upsert({
     where: { email: 'admin@permitmanager.com' },
-    update: {},
+    update: { roleId: adminRole.id },
     create: {
       email: 'admin@permitmanager.com',
       password: adminPassword,
       firstName: 'System',
       lastName: 'Administrator',
-      role: 'ADMIN',
+      roleId: adminRole.id,
       department: 'IT',
     },
   });
   console.log('✅ Admin user created:', admin.email);
 
-  // Create Safety Officer
+  // Safety Officer
   const safetyPassword = await bcrypt.hash('safety123', 10);
   const safetyOfficer = await prisma.user.upsert({
     where: { email: 'safety@permitmanager.com' },
-    update: {},
+    update: { roleId: safetyRole.id },
     create: {
       email: 'safety@permitmanager.com',
       password: safetyPassword,
       firstName: 'John',
       lastName: 'Safety',
-      role: 'SAFETY_OFFICER',
+      roleId: safetyRole.id,
       department: 'HSE',
     },
   });
   console.log('✅ Safety Officer created:', safetyOfficer.email);
 
-  // Create Requestor users
+  // Requestor users
   const requestorPassword = await bcrypt.hash('user123', 10);
   const requestor1 = await prisma.user.upsert({
     where: { email: 'requestor@permitmanager.com' },
-    update: {},
+    update: { roleId: requestorRole.id },
     create: {
       email: 'requestor@permitmanager.com',
       password: requestorPassword,
       firstName: 'Jane',
       lastName: 'Doe',
-      role: 'REQUESTOR',
+      roleId: requestorRole.id,
       department: 'Operations',
     },
   });
@@ -56,27 +162,45 @@ async function main() {
 
   const requestor2 = await prisma.user.upsert({
     where: { email: 'worker@permitmanager.com' },
-    update: {},
+    update: { roleId: requestorRole.id },
     create: {
       email: 'worker@permitmanager.com',
       password: requestorPassword,
       firstName: 'Bob',
       lastName: 'Worker',
-      role: 'REQUESTOR',
+      roleId: requestorRole.id,
       department: 'Maintenance',
     },
   });
   console.log('✅ Requestor created:', requestor2.email);
 
-  // Create sample permit requests (arrays as JSON strings for SQLite)
+  // Site Engineer user
+  const engineerPassword = await bcrypt.hash('engineer123', 10);
+  const siteEngineer = await prisma.user.upsert({
+    where: { email: 'engineer@permitmanager.com' },
+    update: { roleId: siteEngineerRole.id },
+    create: {
+      email: 'engineer@permitmanager.com',
+      password: engineerPassword,
+      firstName: 'Mike',
+      lastName: 'Engineer',
+      roleId: siteEngineerRole.id,
+      department: 'Field Operations',
+    },
+  });
+  console.log('✅ Site Engineer created:', siteEngineer.email);
+
+  // Create sample permit requests
+  console.log('Creating sample permits...');
+
   const permit1 = await prisma.permitRequest.create({
     data: {
       title: 'Hot Work Permit - Welding Operation',
       description: 'Welding work required for pipe repair in boiler room. Need to use arc welding equipment for approximately 4 hours.',
       location: 'Boiler Room B2',
       workType: 'HOT_WORK',
-      startDate: new Date('2024-01-15T08:00:00Z'),
-      endDate: new Date('2024-01-15T17:00:00Z'),
+      startDate: new Date('2025-01-15T08:00:00Z'),
+      endDate: new Date('2025-01-15T17:00:00Z'),
       status: 'PENDING',
       priority: 'HIGH',
       hazards: JSON.stringify(['Fire', 'Burns', 'Toxic fumes', 'Electric shock']),
@@ -86,7 +210,6 @@ async function main() {
     },
   });
 
-  // Create approval record for permit1
   await prisma.permitApproval.create({
     data: {
       permitId: permit1.id,
@@ -102,8 +225,8 @@ async function main() {
       description: 'Entry into storage tank T-101 for annual inspection and cleaning. Gas testing required before entry.',
       location: 'Storage Area - Tank T-101',
       workType: 'CONFINED_SPACE',
-      startDate: new Date('2024-01-16T09:00:00Z'),
-      endDate: new Date('2024-01-16T15:00:00Z'),
+      startDate: new Date('2025-01-16T09:00:00Z'),
+      endDate: new Date('2025-01-16T15:00:00Z'),
       status: 'PENDING',
       priority: 'HIGH',
       hazards: JSON.stringify(['Oxygen deficiency', 'Toxic gases', 'Engulfment', 'Falls']),
@@ -128,8 +251,8 @@ async function main() {
       description: 'Upgrading main electrical panel in building A. Requires power isolation and lockout/tagout procedures.',
       location: 'Building A - Electrical Room',
       workType: 'ELECTRICAL',
-      startDate: new Date('2024-01-17T07:00:00Z'),
-      endDate: new Date('2024-01-17T18:00:00Z'),
+      startDate: new Date('2025-01-17T07:00:00Z'),
+      endDate: new Date('2025-01-17T18:00:00Z'),
       status: 'APPROVED',
       priority: 'MEDIUM',
       hazards: JSON.stringify(['Electric shock', 'Arc flash', 'Burns']),
@@ -146,41 +269,98 @@ async function main() {
       approverRole: 'SAFETY_OFFICER',
       decision: 'APPROVED',
       comment: 'All safety requirements verified. Proceed with caution.',
-      approvedAt: new Date('2024-01-14T10:30:00Z'),
+      approvedAt: new Date('2025-01-14T10:30:00Z'),
     },
   });
   console.log('✅ Permit request created:', permit3.title);
 
-  const permit4 = await prisma.permitRequest.create({
-    data: {
-      title: 'Working at Heights - Roof Maintenance',
-      description: 'Routine maintenance and inspection of rooftop HVAC units. Fall protection required.',
-      location: 'Main Building - Rooftop',
-      workType: 'WORKING_AT_HEIGHT',
-      startDate: new Date('2024-01-18T08:00:00Z'),
-      endDate: new Date('2024-01-18T14:00:00Z'),
-      status: 'REJECTED',
-      priority: 'LOW',
-      hazards: JSON.stringify(['Falls', 'Weather conditions', 'Slippery surfaces']),
-      precautions: JSON.stringify(['Fall arrest system', 'Weather check', 'Buddy system', 'Guardrails']),
-      equipment: JSON.stringify(['Safety harness', 'Lanyard', 'Anchor points', 'Safety helmet']),
-      createdBy: requestor2.id,
-    },
-  });
+  // Create sample meter readings for Site Engineer
+  console.log('Creating sample meter readings...');
 
-  await prisma.permitApproval.create({
-    data: {
-      permitId: permit4.id,
-      approverName: 'John Safety',
-      approverRole: 'SAFETY_OFFICER',
-      decision: 'REJECTED',
-      comment: 'Weather forecast shows high winds. Please reschedule for a safer day.',
-      approvedAt: new Date('2024-01-14T14:15:00Z'),
+  const meterReadings = [
+    {
+      siteEngineerId: siteEngineer.id,
+      meterType: 'electricity',
+      meterName: 'Main Building Meter',
+      meterSerial: 'EM-001',
+      location: 'Building A - Ground Floor',
+      readingValue: 45678.50,
+      unit: 'kWh',
+      previousReading: 45234.00,
+      consumption: 444.50,
+      readingDate: new Date('2025-01-10T09:00:00Z'),
+      isVerified: true,
+      verifiedBy: safetyOfficer.id,
+      verifiedAt: new Date('2025-01-10T14:00:00Z'),
     },
-  });
-  console.log('✅ Permit request created:', permit4.title);
+    {
+      siteEngineerId: siteEngineer.id,
+      meterType: 'water',
+      meterName: 'Water Supply Meter',
+      meterSerial: 'WM-001',
+      location: 'Utility Room',
+      readingValue: 12345.20,
+      unit: 'm³',
+      previousReading: 12100.00,
+      consumption: 245.20,
+      readingDate: new Date('2025-01-10T09:30:00Z'),
+      isVerified: true,
+      verifiedBy: safetyOfficer.id,
+      verifiedAt: new Date('2025-01-10T14:30:00Z'),
+    },
+    {
+      siteEngineerId: siteEngineer.id,
+      meterType: 'gas',
+      meterName: 'Natural Gas Meter',
+      meterSerial: 'GM-001',
+      location: 'Boiler Room',
+      readingValue: 8765.30,
+      unit: 'm³',
+      previousReading: 8500.00,
+      consumption: 265.30,
+      readingDate: new Date('2025-01-11T08:00:00Z'),
+      isVerified: false,
+    },
+    {
+      siteEngineerId: siteEngineer.id,
+      meterType: 'transmitter',
+      meterName: 'Signal Transmitter T1',
+      meterSerial: 'TX-001',
+      location: 'Tower A',
+      readingValue: -45.5,
+      unit: 'dBm',
+      readingDate: new Date('2025-01-12T10:00:00Z'),
+      notes: 'Signal strength within normal range',
+      isVerified: false,
+    },
+    {
+      siteEngineerId: siteEngineer.id,
+      meterType: 'temperature',
+      meterName: 'Cold Room Sensor',
+      meterSerial: 'TS-001',
+      location: 'Cold Storage',
+      readingValue: -18.5,
+      unit: '°C',
+      readingDate: new Date('2025-01-12T11:00:00Z'),
+      notes: 'Temperature within optimal range',
+      isVerified: false,
+    },
+  ];
 
+  for (const reading of meterReadings) {
+    await prisma.meterReading.create({ data: reading });
+  }
+  console.log('✅ Sample meter readings created');
+
+  console.log('');
   console.log('🎉 Database seeding completed!');
+  console.log('');
+  console.log('📋 Demo Credentials:');
+  console.log('   Admin:          admin@permitmanager.com / admin123');
+  console.log('   Safety Officer: safety@permitmanager.com / safety123');
+  console.log('   Requestor:      requestor@permitmanager.com / user123');
+  console.log('   Site Engineer:  engineer@permitmanager.com / engineer123');
+  console.log('');
 }
 
 main()

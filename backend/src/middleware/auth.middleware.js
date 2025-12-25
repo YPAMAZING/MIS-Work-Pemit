@@ -20,14 +20,8 @@ const authenticate = async (req, res, next) => {
       
       const user = await prisma.user.findUnique({
         where: { id: decoded.userId },
-        select: {
-          id: true,
-          email: true,
-          firstName: true,
-          lastName: true,
+        include: {
           role: true,
-          department: true,
-          isActive: true,
         },
       });
 
@@ -39,7 +33,24 @@ const authenticate = async (req, res, next) => {
         return res.status(401).json({ message: 'Account is deactivated' });
       }
 
-      req.user = user;
+      // Parse role permissions and UI config
+      const permissions = user.role ? JSON.parse(user.role.permissions || '[]') : [];
+      const uiConfig = user.role ? JSON.parse(user.role.uiConfig || '{}') : {};
+
+      req.user = {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role?.name || 'REQUESTOR',
+        roleId: user.roleId,
+        roleName: user.role?.displayName || 'Requestor',
+        department: user.department,
+        isActive: user.isActive,
+        permissions,
+        uiConfig,
+      };
+      
       next();
     } catch (error) {
       if (error.name === 'TokenExpiredError') {
@@ -53,17 +64,72 @@ const authenticate = async (req, res, next) => {
   }
 };
 
-// Role-based authorization
+// Check if user has specific permission
+const checkPermission = (requiredPermission) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    // Admin has all permissions
+    if (req.user.role === 'ADMIN') {
+      return next();
+    }
+
+    // Check if user has the required permission
+    if (req.user.permissions && req.user.permissions.includes(requiredPermission)) {
+      return next();
+    }
+
+    return res.status(403).json({ 
+      message: 'Access denied. Insufficient permissions.',
+      required: requiredPermission,
+    });
+  };
+};
+
+// Check if user has any of the specified permissions
+const checkAnyPermission = (permissions) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    // Admin has all permissions
+    if (req.user.role === 'ADMIN') {
+      return next();
+    }
+
+    // Check if user has any of the required permissions
+    const hasPermission = permissions.some(perm => 
+      req.user.permissions && req.user.permissions.includes(perm)
+    );
+
+    if (hasPermission) {
+      return next();
+    }
+
+    return res.status(403).json({ 
+      message: 'Access denied. Insufficient permissions.',
+      required: permissions,
+    });
+  };
+};
+
+// Role-based authorization (legacy support)
 const authorize = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
       return res.status(401).json({ message: 'Authentication required' });
     }
 
-    if (!roles.includes(req.user.role)) {
+    // Flatten roles array (handles both authorize('ADMIN') and authorize(['ADMIN', 'SAFETY']))
+    const flatRoles = roles.flat();
+
+    if (!flatRoles.includes(req.user.role)) {
       return res.status(403).json({ 
         message: 'Access denied. Insufficient permissions.',
-        required: roles,
+        required: flatRoles,
         current: req.user.role,
       });
     }
@@ -84,6 +150,8 @@ const isRequestor = authorize('REQUESTOR', 'SAFETY_OFFICER', 'ADMIN');
 module.exports = {
   authenticate,
   authorize,
+  checkPermission,
+  checkAnyPermission,
   isAdmin,
   isSafetyOfficer,
   isRequestor,

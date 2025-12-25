@@ -227,6 +227,7 @@ const Settings = () => {
             <div>
               <p className="text-gray-500">Application</p>
               <p className="font-medium text-gray-900">MIS - Work Permit System</p>
+              <p className="text-xs text-gray-400 mt-1">© YP SECURITY SERVICES PVT LTD</p>
             </div>
             <div>
               <p className="text-gray-500">Version</p>
@@ -238,8 +239,8 @@ const Settings = () => {
             </div>
             <div>
               <p className="text-gray-500">Support</p>
-              <a href="mailto:support@safetypermit.com" className="font-medium text-primary-600 hover:text-primary-700">
-                support@safetypermit.com
+              <a href="mailto:support@ypsecurity.com" className="font-medium text-primary-600 hover:text-primary-700">
+                support@ypsecurity.com
               </a>
             </div>
           </div>

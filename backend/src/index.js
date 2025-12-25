@@ -7,7 +7,9 @@ const permitRoutes = require('./routes/permit.routes');
 const approvalRoutes = require('./routes/approval.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
 const workerRoutes = require('./routes/worker.routes');
+const roleRoutes = require('./routes/role.routes');
 const { errorHandler } = require('./middleware/error.middleware');
+const { initializeRolesAndPermissions } = require('./controllers/role.controller');
 
 const app = express();
 
@@ -39,6 +41,7 @@ app.use('/api/permits', permitRoutes);
 app.use('/api/approvals', approvalRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/workers', workerRoutes);
+app.use('/api/roles', roleRoutes);
 
 // Error handling
 app.use(errorHandler);
@@ -49,9 +52,12 @@ app.use((req, res) => {
 });
 
 // Start server
-app.listen(config.port, '0.0.0.0', () => {
+app.listen(config.port, '0.0.0.0', async () => {
   console.log(`🚀 Server running on port ${config.port}`);
   console.log(`📝 Environment: ${config.nodeEnv}`);
+  
+  // Initialize roles and permissions
+  await initializeRolesAndPermissions();
 });
 
 module.exports = app;

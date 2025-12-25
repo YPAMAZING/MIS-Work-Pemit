@@ -155,25 +155,31 @@ const Layout = () => {
         </nav>
 
         {/* User section */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-700 bg-slate-900/50">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center">
-              <span className="text-sm font-semibold text-white">
-                {user?.firstName?.[0]}{user?.lastName?.[0]}
-              </span>
+        <div className="absolute bottom-0 left-0 right-0 border-t border-slate-700 bg-slate-900/50">
+          <div className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center">
+                <span className="text-sm font-semibold text-white">
+                  {user?.firstName?.[0]}{user?.lastName?.[0]}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-white truncate">
+                  {user?.firstName} {user?.lastName}
+                </p>
+                <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full ${
+                  user?.role === 'ADMIN' ? 'bg-purple-500/20 text-purple-300' :
+                  user?.role === 'SAFETY_OFFICER' ? 'bg-emerald-500/20 text-emerald-300' :
+                  'bg-blue-500/20 text-blue-300'
+                }`}>
+                  {roleBadge.label}
+                </span>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">
-                {user?.firstName} {user?.lastName}
-              </p>
-              <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full ${
-                user?.role === 'ADMIN' ? 'bg-purple-500/20 text-purple-300' :
-                user?.role === 'SAFETY_OFFICER' ? 'bg-emerald-500/20 text-emerald-300' :
-                'bg-blue-500/20 text-blue-300'
-              }`}>
-                {roleBadge.label}
-              </span>
-            </div>
+          </div>
+          {/* Copyright */}
+          <div className="px-4 pb-3 text-center">
+            <p className="text-xs text-slate-500">© 2024 YP SECURITY SERVICES PVT LTD</p>
           </div>
         </div>
       </aside>

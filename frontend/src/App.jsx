@@ -1,4 +1,5 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useSearchParams } from 'react-router-dom'
+import { useEffect } from 'react'
 import { useAuth } from './context/AuthContext'
 import Layout from './components/Layout'
 import Login from './pages/Login'
@@ -13,6 +14,9 @@ import ApprovalDetail from './pages/ApprovalDetail'
 import Users from './pages/Users'
 import Settings from './pages/Settings'
 import WorkerRegister from './pages/WorkerRegister'
+import MeterReadings from './pages/MeterReadings'
+import RoleManagement from './pages/RoleManagement'
+import SSOCallback from './pages/SSOCallback'
 import LoadingSpinner from './components/LoadingSpinner'
 
 // Protected route wrapper
@@ -80,6 +84,9 @@ function App() {
       
       {/* Public worker registration route (QR code access) */}
       <Route path="/worker-register/:permitId" element={<WorkerRegister />} />
+      
+      {/* SSO Callback route */}
+      <Route path="/auth/sso/callback" element={<SSOCallback />} />
 
       {/* Protected routes */}
       <Route
@@ -122,6 +129,24 @@ function App() {
           element={
             <ProtectedRoute roles={['ADMIN']}>
               <Users />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="roles"
+          element={
+            <ProtectedRoute roles={['ADMIN']}>
+              <RoleManagement />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Site Engineer - Meter Readings */}
+        <Route
+          path="meters"
+          element={
+            <ProtectedRoute roles={['SITE_ENGINEER', 'ADMIN']}>
+              <MeterReadings />
             </ProtectedRoute>
           }
         />

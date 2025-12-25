@@ -99,3 +99,36 @@ export const dashboardAPI = {
   getStats: () => api.get('/dashboard/stats'),
   getActivity: (params) => api.get('/dashboard/activity', { params }),
 }
+
+// Roles API
+export const rolesAPI = {
+  getAll: () => api.get('/roles'),
+  getById: (id) => api.get(`/roles/${id}`),
+  create: (data) => api.post('/roles', data),
+  update: (id, data) => api.put(`/roles/${id}`, data),
+  delete: (id) => api.delete(`/roles/${id}`),
+  getPermissions: () => api.get('/roles/permissions'),
+  assignRole: (data) => api.post('/roles/assign', data),
+}
+
+// Meters API (Site Engineer)
+export const metersAPI = {
+  getAll: (params) => api.get('/meters', { params }),
+  getById: (id) => api.get(`/meters/${id}`),
+  create: (data) => api.post('/meters', data),
+  update: (id, data) => api.put(`/meters/${id}`, data),
+  delete: (id) => api.delete(`/meters/${id}`),
+  verify: (id, data) => api.patch(`/meters/${id}/verify`, data),
+  getTypes: () => api.get('/meters/types'),
+  getAnalytics: (params) => api.get('/meters/analytics', { params }),
+  export: (params) => api.get('/meters/export', { params }),
+  bulkImport: (data) => api.post('/meters/bulk-import', data),
+}
+
+// SSO API
+export const ssoAPI = {
+  getConfig: () => api.get('/sso/config'),
+  generateToken: (data) => api.post('/sso/generate', data),
+  verifyToken: (token) => api.get(`/sso/verify?token=${token}`),
+  validateExternal: (data) => api.post('/sso/validate-external', data),
+}

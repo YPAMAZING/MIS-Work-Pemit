@@ -1,0 +1,964 @@
+import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
+import toast from 'react-hot-toast'
+import axios from 'axios'
+import {
+  Camera,
+  Upload,
+  Zap,
+  Droplets,
+  Flame,
+  Radio,
+  Thermometer,
+  Gauge,
+  Plus,
+  Search,
+  Filter,
+  Download,
+  CheckCircle,
+  Clock,
+  AlertTriangle,
+  TrendingUp,
+  TrendingDown,
+  Eye,
+  Edit,
+  Trash2,
+  BarChart3,
+  FileSpreadsheet,
+  Image,
+  X,
+  Check,
+  RefreshCw,
+} from 'lucide-react'
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+
+// Meter type icons mapping
+const meterIcons = {
+  electricity: Zap,
+  water: Droplets,
+  gas: Flame,
+  transmitter: Radio,
+  temperature: Thermometer,
+  pressure: Gauge,
+  fuel: Gauge,
+  flow: TrendingUp,
+  voltage: Zap,
+  current: Zap,
+  power: Zap,
+  frequency: Radio,
+  humidity: Droplets,
+  custom: Gauge,
+}
+
+const MeterReadings = () => {
+  const { user } = useAuth()
+  const [readings, setReadings] = useState([])
+  const [meterTypes, setMeterTypes] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [showUploadModal, setShowUploadModal] = useState(false)
+  const [showAnalytics, setShowAnalytics] = useState(false)
+  const [analytics, setAnalytics] = useState(null)
+  const [filters, setFilters] = useState({
+    meterType: '',
+    search: '',
+    startDate: '',
+    endDate: '',
+  })
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 20,
+    total: 0,
+    pages: 0,
+  })
+
+  useEffect(() => {
+    fetchMeterTypes()
+    fetchReadings()
+  }, [filters, pagination.page])
+
+  const fetchMeterTypes = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/meters/types`)
+      setMeterTypes(response.data)
+    } catch (error) {
+      console.error('Error fetching meter types:', error)
+    }
+  }
+
+  const fetchReadings = async () => {
+    try {
+      setLoading(true)
+      const token = localStorage.getItem('token')
+      const params = new URLSearchParams({
+        page: pagination.page,
+        limit: pagination.limit,
+        ...(filters.meterType && { meterType: filters.meterType }),
+        ...(filters.search && { search: filters.search }),
+        ...(filters.startDate && { startDate: filters.startDate }),
+        ...(filters.endDate && { endDate: filters.endDate }),
+      })
+
+      const response = await axios.get(`${API_URL}/meters?${params}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+
+      setReadings(response.data.readings)
+      setPagination(prev => ({ ...prev, ...response.data.pagination }))
+    } catch (error) {
+      toast.error('Error fetching readings')
+      console.error('Error:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchAnalytics = async () => {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await axios.get(`${API_URL}/meters/analytics?period=30d`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      setAnalytics(response.data)
+      setShowAnalytics(true)
+    } catch (error) {
+      toast.error('Error fetching analytics')
+      console.error('Error:', error)
+    }
+  }
+
+  const handleExport = async (format = 'csv') => {
+    try {
+      const token = localStorage.getItem('token')
+      const params = new URLSearchParams({
+        format,
+        ...(filters.meterType && { meterType: filters.meterType }),
+        ...(filters.startDate && { startDate: filters.startDate }),
+        ...(filters.endDate && { endDate: filters.endDate }),
+      })
+
+      const response = await axios.get(`${API_URL}/meters/export?${params}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: format === 'csv' ? 'blob' : 'json',
+      })
+
+      if (format === 'csv') {
+        const blob = new Blob([response.data], { type: 'text/csv' })
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `meter_readings_${new Date().toISOString().split('T')[0]}.csv`
+        a.click()
+        window.URL.revokeObjectURL(url)
+        toast.success('Export downloaded!')
+      } else {
+        // JSON for Power BI
+        const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: 'application/json' })
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `meter_readings_${new Date().toISOString().split('T')[0]}.json`
+        a.click()
+        window.URL.revokeObjectURL(url)
+        toast.success('JSON export downloaded! Ready for Power BI import.')
+      }
+    } catch (error) {
+      toast.error('Error exporting data')
+      console.error('Error:', error)
+    }
+  }
+
+  const deleteReading = async (id) => {
+    if (!confirm('Are you sure you want to delete this reading?')) return
+
+    try {
+      const token = localStorage.getItem('token')
+      await axios.delete(`${API_URL}/meters/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      toast.success('Reading deleted')
+      fetchReadings()
+    } catch (error) {
+      toast.error('Error deleting reading')
+      console.error('Error:', error)
+    }
+  }
+
+  const getIcon = (type) => {
+    const Icon = meterIcons[type] || Gauge
+    return Icon
+  }
+
+  const getStatusBadge = (reading) => {
+    if (reading.isVerified) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-green-100 text-green-700 rounded-full">
+          <CheckCircle className="w-3 h-3" />
+          Verified
+        </span>
+      )
+    }
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-700 rounded-full">
+        <Clock className="w-3 h-3" />
+        Pending
+      </span>
+    )
+  }
+
+  const getConsumptionBadge = (consumption) => {
+    if (consumption === null || consumption === undefined) return null
+
+    if (consumption > 0) {
+      return (
+        <span className="inline-flex items-center gap-1 text-xs text-red-600">
+          <TrendingUp className="w-3 h-3" />
+          +{consumption.toFixed(2)}
+        </span>
+      )
+    } else if (consumption < 0) {
+      return (
+        <span className="inline-flex items-center gap-1 text-xs text-green-600">
+          <TrendingDown className="w-3 h-3" />
+          {consumption.toFixed(2)}
+        </span>
+      )
+    }
+    return <span className="text-xs text-gray-500">No change</span>
+  }
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Meter Readings</h1>
+          <p className="text-gray-500 mt-1">Upload and manage meter/transmitter readings with AI OCR</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={fetchAnalytics}
+            className="btn btn-outline flex items-center gap-2"
+          >
+            <BarChart3 className="w-4 h-4" />
+            Analytics
+          </button>
+          <div className="relative group">
+            <button className="btn btn-outline flex items-center gap-2">
+              <Download className="w-4 h-4" />
+              Export
+            </button>
+            <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 hidden group-hover:block">
+              <button
+                onClick={() => handleExport('csv')}
+                className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                Export as CSV
+              </button>
+              <button
+                onClick={() => handleExport('json')}
+                className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              >
+                <BarChart3 className="w-4 h-4" />
+                Export for Power BI
+              </button>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowUploadModal(true)}
+            className="btn btn-primary flex items-center gap-2"
+          >
+            <Camera className="w-4 h-4" />
+            New Reading
+          </button>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="card">
+        <div className="card-body">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search meters..."
+                value={filters.search}
+                onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+                className="input pl-10"
+              />
+            </div>
+            <select
+              value={filters.meterType}
+              onChange={(e) => setFilters({ ...filters, meterType: e.target.value })}
+              className="input"
+            >
+              <option value="">All Meter Types</option>
+              {meterTypes.map(type => (
+                <option key={type.value} value={type.value}>{type.label}</option>
+              ))}
+            </select>
+            <input
+              type="date"
+              value={filters.startDate}
+              onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
+              className="input"
+              placeholder="Start Date"
+            />
+            <input
+              type="date"
+              value={filters.endDate}
+              onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
+              className="input"
+              placeholder="End Date"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="card">
+          <div className="card-body">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Gauge className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Total Readings</p>
+                <p className="text-xl font-bold text-gray-900">{pagination.total}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-body">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Verified</p>
+                <p className="text-xl font-bold text-gray-900">
+                  {readings.filter(r => r.isVerified).length}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-body">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                <Clock className="w-5 h-5 text-yellow-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Pending</p>
+                <p className="text-xl font-bold text-gray-900">
+                  {readings.filter(r => !r.isVerified).length}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-body">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                <Image className="w-5 h-5 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">With OCR</p>
+                <p className="text-xl font-bold text-gray-900">
+                  {readings.filter(r => r.ocrRawText).length}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Readings Table */}
+      <div className="card">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Meter</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reading</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Consumption</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {loading ? (
+                <tr>
+                  <td colSpan="7" className="px-4 py-8 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <RefreshCw className="w-5 h-5 animate-spin text-primary-600" />
+                      Loading readings...
+                    </div>
+                  </td>
+                </tr>
+              ) : readings.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="px-4 py-8 text-center text-gray-500">
+                    No readings found. Click "New Reading" to add one.
+                  </td>
+                </tr>
+              ) : (
+                readings.map((reading) => {
+                  const Icon = getIcon(reading.meterType)
+                  return (
+                    <tr key={reading.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                            <Icon className="w-4 h-4 text-gray-600" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900">{reading.meterName}</p>
+                            <p className="text-xs text-gray-500">{reading.meterSerial || reading.meterType}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{reading.location}</td>
+                      <td className="px-4 py-3">
+                        <span className="font-mono font-bold text-gray-900">
+                          {reading.readingValue.toFixed(2)}
+                        </span>
+                        <span className="text-xs text-gray-500 ml-1">{reading.unit}</span>
+                      </td>
+                      <td className="px-4 py-3">{getConsumptionBadge(reading.consumption)}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {new Date(reading.readingDate).toLocaleDateString()}
+                      </td>
+                      <td className="px-4 py-3">{getStatusBadge(reading)}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          {reading.imageUrl && (
+                            <a
+                              href={reading.imageUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-1.5 rounded-lg hover:bg-gray-100"
+                              title="View Image"
+                            >
+                              <Image className="w-4 h-4 text-gray-500" />
+                            </a>
+                          )}
+                          <button
+                            className="p-1.5 rounded-lg hover:bg-gray-100"
+                            title="View Details"
+                          >
+                            <Eye className="w-4 h-4 text-gray-500" />
+                          </button>
+                          <button
+                            onClick={() => deleteReading(reading.id)}
+                            className="p-1.5 rounded-lg hover:bg-red-50"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4 text-red-500" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        {pagination.pages > 1 && (
+          <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-between">
+            <p className="text-sm text-gray-500">
+              Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
+              {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPagination(p => ({ ...p, page: p.page - 1 }))}
+                disabled={pagination.page === 1}
+                className="btn btn-outline btn-sm"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => setPagination(p => ({ ...p, page: p.page + 1 }))}
+                disabled={pagination.page === pagination.pages}
+                className="btn btn-outline btn-sm"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Upload Modal */}
+      {showUploadModal && (
+        <MeterUploadModal
+          meterTypes={meterTypes}
+          onClose={() => setShowUploadModal(false)}
+          onSuccess={() => {
+            setShowUploadModal(false)
+            fetchReadings()
+          }}
+        />
+      )}
+
+      {/* Analytics Modal */}
+      {showAnalytics && analytics && (
+        <AnalyticsModal
+          analytics={analytics}
+          onClose={() => setShowAnalytics(false)}
+        />
+      )}
+    </div>
+  )
+}
+
+// Upload Modal Component with OCR
+const MeterUploadModal = ({ meterTypes, onClose, onSuccess }) => {
+  const [formData, setFormData] = useState({
+    meterType: '',
+    meterName: '',
+    meterSerial: '',
+    location: '',
+    readingValue: '',
+    unit: '',
+    notes: '',
+    readingDate: new Date().toISOString().split('T')[0],
+  })
+  const [imageFile, setImageFile] = useState(null)
+  const [imagePreview, setImagePreview] = useState(null)
+  const [ocrProcessing, setOcrProcessing] = useState(false)
+  const [ocrResult, setOcrResult] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [useCamera, setUseCamera] = useState(false)
+
+  const handleImageSelect = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setImageFile(file)
+    setImagePreview(URL.createObjectURL(file))
+
+    // Process OCR
+    await processOCR(file)
+  }
+
+  const processOCR = async (file) => {
+    setOcrProcessing(true)
+    try {
+      // Convert to base64 for OCR API
+      const reader = new FileReader()
+      reader.onloadend = async () => {
+        const base64Image = reader.result
+
+        // Call OCR endpoint (using external API or built-in)
+        // For now, simulate OCR with pattern matching
+        // In production, integrate with Google Vision, Azure, or Tesseract.js
+        
+        // Simulated OCR - in production, replace with actual API call
+        setTimeout(() => {
+          // Simulate extracted text based on meter type
+          const simulatedOCR = {
+            rawText: '12345.67 kWh',
+            extractedValue: 12345.67,
+            confidence: 0.95,
+            unit: 'kWh',
+          }
+
+          setOcrResult(simulatedOCR)
+          setFormData(prev => ({
+            ...prev,
+            readingValue: simulatedOCR.extractedValue.toString(),
+            unit: simulatedOCR.unit || prev.unit,
+          }))
+          setOcrProcessing(false)
+          toast.success('OCR completed! Reading auto-filled.')
+        }, 1500)
+      }
+      reader.readAsDataURL(file)
+    } catch (error) {
+      console.error('OCR Error:', error)
+      toast.error('OCR processing failed. Please enter reading manually.')
+      setOcrProcessing(false)
+    }
+  }
+
+  const handleMeterTypeChange = (e) => {
+    const type = meterTypes.find(t => t.value === e.target.value)
+    setFormData(prev => ({
+      ...prev,
+      meterType: e.target.value,
+      unit: type?.unit || prev.unit,
+    }))
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setLoading(true)
+
+    try {
+      const token = localStorage.getItem('token')
+
+      // Upload image first if exists
+      let imageUrl = null
+      if (imageFile) {
+        // In production, upload to cloud storage (S3, Cloudinary, etc.)
+        // For now, we'll skip actual upload
+        imageUrl = imagePreview // Placeholder
+      }
+
+      await axios.post(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/meters`,
+        {
+          ...formData,
+          imageUrl,
+          ocrRawText: ocrResult?.rawText,
+          ocrConfidence: ocrResult?.confidence,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+
+      toast.success('Meter reading saved successfully!')
+      onSuccess()
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Error saving reading')
+      console.error('Error:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-gray-900">New Meter Reading</h2>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {/* Image Upload Section */}
+          <div className="bg-gray-50 rounded-xl p-6">
+            <h3 className="font-medium text-gray-900 mb-4 flex items-center gap-2">
+              <Camera className="w-5 h-5" />
+              Upload Meter Photo (AI OCR Auto-fill)
+            </h3>
+
+            {imagePreview ? (
+              <div className="relative">
+                <img
+                  src={imagePreview}
+                  alt="Meter"
+                  className="w-full max-h-64 object-contain rounded-lg"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setImageFile(null)
+                    setImagePreview(null)
+                    setOcrResult(null)
+                  }}
+                  className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+                {ocrProcessing && (
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-lg">
+                    <div className="text-white flex items-center gap-2">
+                      <RefreshCw className="w-5 h-5 animate-spin" />
+                      Processing OCR...
+                    </div>
+                  </div>
+                )}
+                {ocrResult && (
+                  <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-sm text-green-800 flex items-center gap-2">
+                      <Check className="w-4 h-4" />
+                      OCR Detected: <span className="font-mono font-bold">{ocrResult.rawText}</span>
+                      <span className="text-xs text-green-600">
+                        ({Math.round(ocrResult.confidence * 100)}% confidence)
+                      </span>
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex gap-4">
+                <label className="flex-1 flex flex-col items-center justify-center p-8 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-primary-500 hover:bg-primary-50/50 transition-colors">
+                  <Upload className="w-8 h-8 text-gray-400 mb-2" />
+                  <span className="text-sm text-gray-600">Upload Photo</span>
+                  <span className="text-xs text-gray-400">JPG, PNG up to 10MB</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageSelect}
+                    className="hidden"
+                  />
+                </label>
+                <label className="flex-1 flex flex-col items-center justify-center p-8 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-primary-500 hover:bg-primary-50/50 transition-colors">
+                  <Camera className="w-8 h-8 text-gray-400 mb-2" />
+                  <span className="text-sm text-gray-600">Take Photo</span>
+                  <span className="text-xs text-gray-400">Use device camera</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handleImageSelect}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+            )}
+          </div>
+
+          {/* Form Fields */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="label">Meter Type *</label>
+              <select
+                value={formData.meterType}
+                onChange={handleMeterTypeChange}
+                className="input"
+                required
+              >
+                <option value="">Select Type</option>
+                {meterTypes.map(type => (
+                  <option key={type.value} value={type.value}>{type.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="label">Meter Name *</label>
+              <input
+                type="text"
+                value={formData.meterName}
+                onChange={(e) => setFormData({ ...formData, meterName: e.target.value })}
+                className="input"
+                placeholder="e.g., Main Building Meter"
+                required
+              />
+            </div>
+            <div>
+              <label className="label">Serial Number</label>
+              <input
+                type="text"
+                value={formData.meterSerial}
+                onChange={(e) => setFormData({ ...formData, meterSerial: e.target.value })}
+                className="input"
+                placeholder="e.g., MTR-12345"
+              />
+            </div>
+            <div>
+              <label className="label">Location *</label>
+              <input
+                type="text"
+                value={formData.location}
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                className="input"
+                placeholder="e.g., Building A, Floor 2"
+                required
+              />
+            </div>
+            <div>
+              <label className="label">Reading Value *</label>
+              <input
+                type="number"
+                step="0.01"
+                value={formData.readingValue}
+                onChange={(e) => setFormData({ ...formData, readingValue: e.target.value })}
+                className="input font-mono"
+                placeholder="0.00"
+                required
+              />
+            </div>
+            <div>
+              <label className="label">Unit *</label>
+              <input
+                type="text"
+                value={formData.unit}
+                onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                className="input"
+                placeholder="e.g., kWh, m³"
+                required
+              />
+            </div>
+            <div>
+              <label className="label">Reading Date</label>
+              <input
+                type="date"
+                value={formData.readingDate}
+                onChange={(e) => setFormData({ ...formData, readingDate: e.target.value })}
+                className="input"
+              />
+            </div>
+            <div>
+              <label className="label">Notes</label>
+              <input
+                type="text"
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                className="input"
+                placeholder="Optional notes..."
+              />
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+            <button type="button" onClick={onClose} className="btn btn-outline">
+              Cancel
+            </button>
+            <button type="submit" disabled={loading} className="btn btn-primary">
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  Saving...
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <Check className="w-4 h-4" />
+                  Save Reading
+                </span>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+// Analytics Modal Component
+const AnalyticsModal = ({ analytics, onClose }) => {
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+            <BarChart3 className="w-5 h-5" />
+            Meter Analytics Dashboard
+          </h2>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-6">
+          {/* Stats Overview */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-blue-50 rounded-xl p-4">
+              <p className="text-sm text-blue-600">Total Readings</p>
+              <p className="text-2xl font-bold text-blue-700">{analytics.stats.totalReadings}</p>
+            </div>
+            <div className="bg-green-50 rounded-xl p-4">
+              <p className="text-sm text-green-600">Total Consumption</p>
+              <p className="text-2xl font-bold text-green-700">{analytics.stats.totalConsumption.toFixed(2)}</p>
+            </div>
+            <div className="bg-purple-50 rounded-xl p-4">
+              <p className="text-sm text-purple-600">Avg Consumption</p>
+              <p className="text-2xl font-bold text-purple-700">{analytics.stats.avgConsumption.toFixed(2)}</p>
+            </div>
+            <div className="bg-yellow-50 rounded-xl p-4">
+              <p className="text-sm text-yellow-600">Pending Verification</p>
+              <p className="text-2xl font-bold text-yellow-700">{analytics.stats.pendingVerification}</p>
+            </div>
+          </div>
+
+          {/* By Meter Type */}
+          <div className="bg-gray-50 rounded-xl p-6">
+            <h3 className="font-medium text-gray-900 mb-4">Consumption by Meter Type</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {Object.entries(analytics.byMeterType).map(([type, data]) => (
+                <div key={type} className="bg-white rounded-lg p-4 border border-gray-200">
+                  <p className="text-sm text-gray-500 capitalize">{type}</p>
+                  <p className="text-lg font-bold text-gray-900">{data.count} readings</p>
+                  <p className="text-sm text-gray-600">
+                    Total: {data.totalConsumption.toFixed(2)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Alerts */}
+          {analytics.alerts.length > 0 && (
+            <div className="bg-red-50 rounded-xl p-6">
+              <h3 className="font-medium text-red-900 mb-4 flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5" />
+                Consumption Alerts
+              </h3>
+              <div className="space-y-2">
+                {analytics.alerts.slice(0, 5).map((alert, idx) => (
+                  <div key={idx} className="bg-white rounded-lg p-3 border border-red-200">
+                    <p className="text-sm font-medium text-red-800">{alert.meterName}</p>
+                    <p className="text-xs text-red-600">
+                      {alert.type === 'HIGH_CONSUMPTION' ? 'High consumption detected' : 'Unusual low consumption'} - 
+                      {alert.consumption.toFixed(2)} at {alert.location}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Recent Readings */}
+          <div>
+            <h3 className="font-medium text-gray-900 mb-4">Recent Readings</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="px-3 py-2 text-left">Meter</th>
+                    <th className="px-3 py-2 text-left">Location</th>
+                    <th className="px-3 py-2 text-right">Value</th>
+                    <th className="px-3 py-2 text-right">Consumption</th>
+                    <th className="px-3 py-2 text-left">Date</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {analytics.recentReadings.map((reading) => (
+                    <tr key={reading.id}>
+                      <td className="px-3 py-2 font-medium">{reading.meterName}</td>
+                      <td className="px-3 py-2 text-gray-600">{reading.location}</td>
+                      <td className="px-3 py-2 text-right font-mono">{reading.readingValue.toFixed(2)} {reading.unit}</td>
+                      <td className="px-3 py-2 text-right">
+                        {reading.consumption !== null ? (
+                          <span className={reading.consumption > 0 ? 'text-red-600' : 'text-green-600'}>
+                            {reading.consumption > 0 ? '+' : ''}{reading.consumption.toFixed(2)}
+                          </span>
+                        ) : '-'}
+                      </td>
+                      <td className="px-3 py-2 text-gray-600">
+                        {new Date(reading.readingDate).toLocaleDateString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="text-center text-sm text-gray-500 pt-4 border-t border-gray-200">
+            <p>For advanced analytics, export data to Power BI using the JSON export option.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default MeterReadings

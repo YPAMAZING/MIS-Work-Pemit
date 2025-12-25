@@ -148,3 +148,83 @@ model SystemSettings {
   
   @@map("system_settings")
 }
+
+// SSO Token for external MIS integration
+model SSOToken {
+  id            String   @id @default(uuid())
+  token         String   @unique
+  userId        String
+  externalUserId String?  // User ID from external MIS system
+  externalSystem String   @default("MIS") // Source system name
+  expiresAt     DateTime
+  isUsed        Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  
+  @@map("sso_tokens")
+}
+
+// Meter Readings for Site Engineers
+model MeterReading {
+  id              String   @id @default(uuid())
+  siteEngineerId  String
+  meterType       String   // electricity, water, gas, transmitter, etc.
+  meterName       String
+  meterSerial     String?
+  location        String
+  readingValue    Float
+  unit            String   // kWh, m³, psi, dBm, etc.
+  imageUrl        String?
+  ocrRawText      String?  // Raw text extracted from image
+  ocrConfidence   Float?   // OCR confidence score
+  previousReading Float?
+  consumption     Float?   // Calculated consumption
+  readingDate     DateTime @default(now())
+  notes           String?
+  isVerified      Boolean  @default(false)
+  verifiedBy      String?
+  verifiedAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("meter_readings")
+}
+
+// Transmitter Data for Site Engineers
+model TransmitterData {
+  id              String   @id @default(uuid())
+  siteEngineerId  String
+  transmitterId   String
+  transmitterName String
+  location        String
+  signalStrength  Float?   // dBm
+  frequency       Float?   // MHz/GHz
+  temperature     Float?   // Celsius
+  humidity        Float?   // Percentage
+  pressure        Float?   // PSI/Bar
+  voltage         Float?   // Volts
+  current         Float?   // Amps
+  power           Float?   // Watts
+  status          String   @default("NORMAL") // NORMAL, WARNING, CRITICAL
+  imageUrl        String?
+  ocrRawText      String?
+  readingDate     DateTime @default(now())
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("transmitter_data")
+}
+
+// Dashboard Analytics Cache
+model AnalyticsCache {
+  id            String   @id @default(uuid())
+  reportType    String   // daily, weekly, monthly, custom
+  reportName    String
+  data          String   // JSON data
+  filters       String?  // JSON filters used
+  generatedAt   DateTime @default(now())
+  expiresAt     DateTime
+  createdBy     String?
+  
+  @@map("analytics_cache")
+}

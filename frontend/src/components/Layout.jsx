@@ -14,6 +14,8 @@ import {
   Bell,
   Shield,
   ChevronDown,
+  Gauge,
+  ShieldCheck,
 } from 'lucide-react'
 
 const Layout = () => {
@@ -65,16 +67,28 @@ const Layout = () => {
       badge: pendingCount > 0 ? pendingCount : null,
     },
     {
+      name: 'Meter Readings',
+      path: '/meters',
+      icon: Gauge,
+      roles: ['ADMIN', 'SITE_ENGINEER'],
+    },
+    {
       name: 'Users',
       path: '/users',
       icon: Users,
       roles: ['ADMIN'],
     },
     {
+      name: 'Roles',
+      path: '/roles',
+      icon: ShieldCheck,
+      roles: ['ADMIN'],
+    },
+    {
       name: 'Settings',
       path: '/settings',
       icon: Settings,
-      roles: ['ADMIN', 'SAFETY_OFFICER', 'REQUESTOR'],
+      roles: ['ADMIN', 'SAFETY_OFFICER', 'REQUESTOR', 'SITE_ENGINEER'],
     },
   ]
 
@@ -87,6 +101,7 @@ const Layout = () => {
       ADMIN: { bg: 'bg-purple-100', text: 'text-purple-700', label: 'Admin' },
       SAFETY_OFFICER: { bg: 'bg-green-100', text: 'text-green-700', label: 'Safety Officer' },
       REQUESTOR: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Requestor' },
+      SITE_ENGINEER: { bg: 'bg-orange-100', text: 'text-orange-700', label: 'Site Engineer' },
     }
     return badges[role] || badges.REQUESTOR
   }

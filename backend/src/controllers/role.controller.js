@@ -48,6 +48,19 @@ const defaultPermissions = [
   { key: 'roles.edit', name: 'Edit Roles', module: 'roles', action: 'edit' },
   { key: 'roles.delete', name: 'Delete Roles', module: 'roles', action: 'delete' },
   
+  // Meter Readings (Site Engineer)
+  { key: 'meters.view', name: 'View Meter Readings', module: 'meters', action: 'view' },
+  { key: 'meters.view_all', name: 'View All Meter Readings', module: 'meters', action: 'view' },
+  { key: 'meters.view_own', name: 'View Own Meter Readings', module: 'meters', action: 'view' },
+  { key: 'meters.create', name: 'Create Meter Readings', module: 'meters', action: 'create' },
+  { key: 'meters.edit', name: 'Edit Meter Readings', module: 'meters', action: 'edit' },
+  { key: 'meters.delete', name: 'Delete Meter Readings', module: 'meters', action: 'delete' },
+  { key: 'meters.verify', name: 'Verify Meter Readings', module: 'meters', action: 'approve' },
+  { key: 'meters.export', name: 'Export Meter Data', module: 'meters', action: 'export' },
+  { key: 'meters.import', name: 'Bulk Import Readings', module: 'meters', action: 'create' },
+  { key: 'meters.analytics', name: 'View Meter Analytics', module: 'meters', action: 'view' },
+  { key: 'meters.ocr', name: 'Use OCR Image Upload', module: 'meters', action: 'create' },
+  
   // Settings
   { key: 'settings.view', name: 'View Settings', module: 'settings', action: 'view' },
   { key: 'settings.edit', name: 'Edit Settings', module: 'settings', action: 'edit' },
@@ -110,6 +123,25 @@ const defaultRoles = [
       accentColor: 'primary',
       showAllMenus: false,
       dashboardWidgets: ['stats', 'activity'],
+    },
+  },
+  {
+    name: 'SITE_ENGINEER',
+    displayName: 'Site Engineer',
+    description: 'Can upload meter readings, use OCR, and view analytics dashboard',
+    isSystem: true,
+    permissions: [
+      'dashboard.view', 'dashboard.stats',
+      'meters.view', 'meters.view_own', 'meters.create', 'meters.edit', 'meters.export', 'meters.ocr', 'meters.analytics',
+      'settings.view',
+    ],
+    uiConfig: {
+      theme: 'default',
+      sidebarColor: 'slate',
+      accentColor: 'orange',
+      showAllMenus: false,
+      dashboardWidgets: ['stats', 'charts', 'meters'],
+      showMeterModule: true,
     },
   },
 ];

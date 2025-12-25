@@ -6,6 +6,7 @@ const userRoutes = require('./routes/user.routes');
 const permitRoutes = require('./routes/permit.routes');
 const approvalRoutes = require('./routes/approval.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
+const workerRoutes = require('./routes/worker.routes');
 const { errorHandler } = require('./middleware/error.middleware');
 
 const app = express();
@@ -37,6 +38,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/permits', permitRoutes);
 app.use('/api/approvals', approvalRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/workers', workerRoutes);
 
 // Error handling
 app.use(errorHandler);

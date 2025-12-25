@@ -9,8 +9,15 @@ const {
   getWorkTypes,
   getPublicPermitInfo,
   registerWorkers,
+  extendPermit,
+  revokePermit,
+  transferPermit,
+  closePermit,
+  updateMeasures,
+  addWorkers,
 } = require('../controllers/permit.controller');
-const { authenticate, isRequestor } = require('../middleware/auth.middleware');
+const { generatePermitPDF } = require('../controllers/pdf.controller');
+const { authenticate, isRequestor, authorize } = require('../middleware/auth.middleware');
 const { validate } = require('../middleware/validate.middleware');
 
 const router = express.Router();
@@ -101,6 +108,82 @@ router.delete(
   [param('id').isUUID().withMessage('Invalid permit ID')],
   validate,
   deletePermit
+);
+
+// Workflow actions (Safety Officer and Admin only)
+// Extend permit
+router.post(
+  '/:id/extend',
+  authorize(['SAFETY_OFFICER', 'ADMIN']),
+  [
+    param('id').isUUID().withMessage('Invalid permit ID'),
+    body('extendedUntil').isISO8601().withMessage('Valid extension date required'),
+  ],
+  validate,
+  extendPermit
+);
+
+// Revoke permit
+router.post(
+  '/:id/revoke',
+  authorize(['SAFETY_OFFICER', 'ADMIN']),
+  [
+    param('id').isUUID().withMessage('Invalid permit ID'),
+    body('reason').notEmpty().withMessage('Reason is required'),
+  ],
+  validate,
+  revokePermit
+);
+
+// Transfer permit
+router.post(
+  '/:id/transfer',
+  authorize(['ADMIN']),
+  [
+    param('id').isUUID().withMessage('Invalid permit ID'),
+    body('newOwnerId').isUUID().withMessage('Valid new owner ID required'),
+  ],
+  validate,
+  transferPermit
+);
+
+// Close permit with checklist
+router.post(
+  '/:id/close',
+  authorize(['SAFETY_OFFICER', 'ADMIN']),
+  [param('id').isUUID().withMessage('Invalid permit ID')],
+  validate,
+  closePermit
+);
+
+// Update measures
+router.put(
+  '/:id/measures',
+  [
+    param('id').isUUID().withMessage('Invalid permit ID'),
+    body('measures').isArray().withMessage('Measures must be an array'),
+  ],
+  validate,
+  updateMeasures
+);
+
+// Add workers (authenticated)
+router.post(
+  '/:id/add-workers',
+  [
+    param('id').isUUID().withMessage('Invalid permit ID'),
+    body('workers').isArray().withMessage('Workers must be an array'),
+  ],
+  validate,
+  addWorkers
+);
+
+// Generate PDF
+router.get(
+  '/:id/pdf',
+  [param('id').isUUID().withMessage('Invalid permit ID')],
+  validate,
+  generatePermitPDF
 );
 
 module.exports = router;

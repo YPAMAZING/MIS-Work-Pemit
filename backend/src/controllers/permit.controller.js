@@ -487,6 +487,253 @@ const registerWorkers = async (req, res) => {
   }
 };
 
+// Extend permit
+const extendPermit = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { extendedUntil, reason } = req.body;
+    const user = req.user;
+
+    const permit = await prisma.permitRequest.findUnique({ where: { id } });
+
+    if (!permit) {
+      return res.status(404).json({ message: 'Permit not found' });
+    }
+
+    if (permit.status !== 'APPROVED') {
+      return res.status(400).json({ message: 'Only approved permits can be extended' });
+    }
+
+    const updatedPermit = await prisma.permitRequest.update({
+      where: { id },
+      data: {
+        isExtended: true,
+        extendedUntil: new Date(extendedUntil),
+        status: 'EXTENDED',
+      },
+    });
+
+    await createAuditLog({
+      userId: user.id,
+      action: 'PERMIT_EXTENDED',
+      entity: 'PermitRequest',
+      entityId: id,
+      oldValue: { endDate: permit.endDate },
+      newValue: { extendedUntil, reason },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+
+    res.json({ message: 'Permit extended successfully', permit: updatedPermit });
+  } catch (error) {
+    console.error('Extend permit error:', error);
+    res.status(500).json({ message: 'Error extending permit' });
+  }
+};
+
+// Revoke permit
+const revokePermit = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    const user = req.user;
+
+    const permit = await prisma.permitRequest.findUnique({ where: { id } });
+
+    if (!permit) {
+      return res.status(404).json({ message: 'Permit not found' });
+    }
+
+    if (!['APPROVED', 'EXTENDED'].includes(permit.status)) {
+      return res.status(400).json({ message: 'Only approved/extended permits can be revoked' });
+    }
+
+    const updatedPermit = await prisma.permitRequest.update({
+      where: { id },
+      data: { status: 'REVOKED' },
+    });
+
+    await createAuditLog({
+      userId: user.id,
+      action: 'PERMIT_REVOKED',
+      entity: 'PermitRequest',
+      entityId: id,
+      oldValue: { status: permit.status },
+      newValue: { status: 'REVOKED', reason },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+
+    res.json({ message: 'Permit revoked successfully', permit: updatedPermit });
+  } catch (error) {
+    console.error('Revoke permit error:', error);
+    res.status(500).json({ message: 'Error revoking permit' });
+  }
+};
+
+// Transfer permit
+const transferPermit = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { newOwnerId, reason } = req.body;
+    const user = req.user;
+
+    const permit = await prisma.permitRequest.findUnique({ where: { id } });
+
+    if (!permit) {
+      return res.status(404).json({ message: 'Permit not found' });
+    }
+
+    const newOwner = await prisma.user.findUnique({ where: { id: newOwnerId } });
+
+    if (!newOwner) {
+      return res.status(404).json({ message: 'New owner not found' });
+    }
+
+    const updatedPermit = await prisma.permitRequest.update({
+      where: { id },
+      data: { createdBy: newOwnerId },
+    });
+
+    await createAuditLog({
+      userId: user.id,
+      action: 'PERMIT_TRANSFERRED',
+      entity: 'PermitRequest',
+      entityId: id,
+      oldValue: { createdBy: permit.createdBy },
+      newValue: { createdBy: newOwnerId, reason },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+
+    res.json({ message: 'Permit transferred successfully', permit: updatedPermit });
+  } catch (error) {
+    console.error('Transfer permit error:', error);
+    res.status(500).json({ message: 'Error transferring permit' });
+  }
+};
+
+// Close permit with checklist
+const closePermit = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { closureChecklist, comments } = req.body;
+    const user = req.user;
+
+    const permit = await prisma.permitRequest.findUnique({ where: { id } });
+
+    if (!permit) {
+      return res.status(404).json({ message: 'Permit not found' });
+    }
+
+    if (!['APPROVED', 'EXTENDED'].includes(permit.status)) {
+      return res.status(400).json({ message: 'Only approved/extended permits can be closed' });
+    }
+
+    const updatedPermit = await prisma.permitRequest.update({
+      where: { id },
+      data: {
+        status: 'CLOSED',
+        closedAt: new Date(),
+        closureChecklist: JSON.stringify(closureChecklist || []),
+      },
+    });
+
+    await createAuditLog({
+      userId: user.id,
+      action: 'PERMIT_CLOSED',
+      entity: 'PermitRequest',
+      entityId: id,
+      oldValue: { status: permit.status },
+      newValue: { status: 'CLOSED', closureChecklist, comments },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+
+    res.json({ message: 'Permit closed successfully', permit: updatedPermit });
+  } catch (error) {
+    console.error('Close permit error:', error);
+    res.status(500).json({ message: 'Error closing permit' });
+  }
+};
+
+// Update permit measures
+const updateMeasures = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { measures } = req.body;
+    const user = req.user;
+
+    const permit = await prisma.permitRequest.findUnique({ where: { id } });
+
+    if (!permit) {
+      return res.status(404).json({ message: 'Permit not found' });
+    }
+
+    const updatedPermit = await prisma.permitRequest.update({
+      where: { id },
+      data: { measures: JSON.stringify(measures) },
+    });
+
+    await createAuditLog({
+      userId: user.id,
+      action: 'MEASURES_UPDATED',
+      entity: 'PermitRequest',
+      entityId: id,
+      newValue: { measuresCount: measures.length },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+
+    res.json({ message: 'Measures updated successfully', permit: updatedPermit });
+  } catch (error) {
+    console.error('Update measures error:', error);
+    res.status(500).json({ message: 'Error updating measures' });
+  }
+};
+
+// Add workers to permit
+const addWorkers = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { workers: newWorkers } = req.body;
+    const user = req.user;
+
+    const permit = await prisma.permitRequest.findUnique({ where: { id } });
+
+    if (!permit) {
+      return res.status(404).json({ message: 'Permit not found' });
+    }
+
+    const existingWorkers = JSON.parse(permit.workers || '[]');
+    const updatedWorkers = [...existingWorkers, ...newWorkers.map(w => ({
+      ...w,
+      addedAt: new Date().toISOString(),
+      addedBy: user.id,
+    }))];
+
+    const updatedPermit = await prisma.permitRequest.update({
+      where: { id },
+      data: { workers: JSON.stringify(updatedWorkers) },
+    });
+
+    await createAuditLog({
+      userId: user.id,
+      action: 'WORKERS_ADDED',
+      entity: 'PermitRequest',
+      entityId: id,
+      newValue: { addedCount: newWorkers.length, totalCount: updatedWorkers.length },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+
+    res.json({ message: 'Workers added successfully', permit: updatedPermit });
+  } catch (error) {
+    console.error('Add workers error:', error);
+    res.status(500).json({ message: 'Error adding workers' });
+  }
+};
+
 module.exports = {
   getAllPermits,
   getPermitById,
@@ -496,4 +743,10 @@ module.exports = {
   getWorkTypes,
   getPublicPermitInfo,
   registerWorkers,
+  extendPermit,
+  revokePermit,
+  transferPermit,
+  closePermit,
+  updateMeasures,
+  addWorkers,
 };

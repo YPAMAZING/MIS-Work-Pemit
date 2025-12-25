@@ -53,6 +53,27 @@ export const permitsAPI = {
   update: (id, data) => api.put(`/permits/${id}`, data),
   delete: (id) => api.delete(`/permits/${id}`),
   getWorkTypes: () => api.get('/permits/work-types'),
+  // Workflow actions
+  extendPermit: (id, data) => api.post(`/permits/${id}/extend`, data),
+  revokePermit: (id, data) => api.post(`/permits/${id}/revoke`, data),
+  closePermit: (id, data) => api.post(`/permits/${id}/close`, data),
+  transferPermit: (id, data) => api.post(`/permits/${id}/transfer`, data),
+  // Workers & Measures
+  updateMeasures: (id, measures) => api.put(`/permits/${id}/measures`, { measures }),
+  addWorkers: (id, workers) => api.post(`/permits/${id}/add-workers`, { workers }),
+  getWorkerQR: (id) => api.get(`/workers/qr/${id}`),
+  // PDF
+  downloadPDF: (id) => api.get(`/permits/${id}/pdf`, { responseType: 'blob' }),
+}
+
+// Workers API
+export const workersAPI = {
+  getAll: (params) => api.get('/workers', { params }),
+  getById: (id) => api.get(`/workers/${id}`),
+  create: (data) => api.post('/workers', data),
+  update: (id, data) => api.put(`/workers/${id}`, data),
+  delete: (id) => api.delete(`/workers/${id}`),
+  generateQR: (permitId) => api.get(`/workers/qr/${permitId}`),
 }
 
 // Approvals API

@@ -1,80 +1,92 @@
-import { useState, useEffect, useRef } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
-import { QRCodeSVG } from 'qrcode.react'
-import html2canvas from 'html2canvas'
-import jsPDF from 'jspdf'
+import { useState, useEffect } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import { permitsAPI } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import LoadingSpinner from '../components/LoadingSpinner'
-import SignatureCanvas from '../components/SignatureCanvas'
 import toast from 'react-hot-toast'
 import {
   ArrowLeft,
   Download,
-  Printer,
-  Edit,
-  CheckCircle,
-  XCircle,
+  QrCode,
   Clock,
   MapPin,
-  Calendar,
   Users,
   AlertTriangle,
   Shield,
-  FileText,
-  QrCode,
+  Wrench,
+  CheckCircle2,
+  XCircle,
+  MinusCircle,
+  Calendar,
   Building,
   Phone,
-  Flame,
-  Box,
-  Zap,
-  ArrowUpFromLine,
+  Printer,
   Share2,
-  RefreshCw,
-  XSquare,
-  CheckSquare,
+  Edit,
+  Play,
+  Pause,
+  RotateCcw,
+  X,
+  Plus,
+  FileText,
 } from 'lucide-react'
 
-// Work type config
+// Work type configurations
 const workTypeConfig = {
-  HOT_WORK: { label: 'HOT WORK PERMIT', abbr: 'HWP', icon: Flame, color: 'orange' },
-  CONFINED_SPACE: { label: 'CONFINED SPACE PERMIT', abbr: 'CSP', icon: Box, color: 'purple' },
-  ELECTRICAL: { label: 'ELECTRICAL WORK PERMIT', abbr: 'EWP', icon: Zap, color: 'yellow' },
-  WORKING_AT_HEIGHT: { label: 'WORK AT HEIGHT PERMIT', abbr: 'WHP', icon: ArrowUpFromLine, color: 'blue' },
-  EXCAVATION: { label: 'EXCAVATION PERMIT', abbr: 'EXP', color: 'amber' },
-  LIFTING: { label: 'LIFTING PERMIT', abbr: 'LP', color: 'teal' },
-  CHEMICAL: { label: 'CHEMICAL HANDLING PERMIT', abbr: 'CHP', color: 'red' },
-  RADIATION: { label: 'RADIATION WORK PERMIT', abbr: 'RWP', color: 'lime' },
-  GENERAL: { label: 'GENERAL PERMIT', abbr: 'GP', icon: FileText, color: 'gray' },
-  COLD_WORK: { label: 'COLD WORK PERMIT', abbr: 'CWP', color: 'cyan' },
-  LOTO: { label: 'LOTO PERMIT', abbr: 'LOTO', color: 'indigo' },
+  'HOT_WORK': { label: 'HOT WORK PERMIT', color: 'orange', abbr: 'HWP' },
+  'CONFINED_SPACE': { label: 'CONFINED SPACE PERMIT', color: 'purple', abbr: 'CSP' },
+  'ELECTRICAL': { label: 'ELECTRICAL WORK PERMIT', color: 'yellow', abbr: 'EWP' },
+  'WORKING_AT_HEIGHT': { label: 'WORK AT HEIGHT PERMIT', color: 'blue', abbr: 'WHP' },
+  'EXCAVATION': { label: 'EXCAVATION PERMIT', color: 'amber', abbr: 'EXP' },
+  'LIFTING': { label: 'LIFTING PERMIT', color: 'teal', abbr: 'LP' },
+  'CHEMICAL': { label: 'CHEMICAL HANDLING PERMIT', color: 'red', abbr: 'CHP' },
+  'RADIATION': { label: 'RADIATION WORK PERMIT', color: 'lime', abbr: 'RWP' },
+  'GENERAL': { label: 'GENERAL PERMIT', color: 'gray', abbr: 'GP' },
+  'COLD_WORK': { label: 'COLD WORK PERMIT', color: 'cyan', abbr: 'CWP' },
+  'LOTO': { label: 'LOTO PERMIT', color: 'indigo', abbr: 'LOTO' },
+  'VEHICLE': { label: 'VEHICLE WORK PERMIT', color: 'slate', abbr: 'VWP' },
+  'PRESSURE_TESTING': { label: 'HYDRO PRESSURE TESTING', color: 'sky', abbr: 'HPT' },
+  'ENERGIZE': { label: 'ENERGIZE PERMIT', color: 'emerald', abbr: 'EOMP' },
+  'SWMS': { label: 'SAFE WORK METHOD STATEMENT', color: 'rose', abbr: 'SWMS' },
 }
 
-// Default safety measures checklist
+// Default measures for checklist
 const defaultMeasures = [
-  { id: 1, question: 'Instruction to Personnel regarding hazards involved and working procedure.', response: null },
-  { id: 2, question: 'Are Other Contractors working nearby notified?', response: null },
-  { id: 3, question: 'Is there any other work permit is obtained?', response: null },
-  { id: 4, question: 'Are escape routes to be provided and kept clear?', response: null },
-  { id: 5, question: 'Is combustible material to be removed / covered from and nearby site (up to 5mtr min.)', response: null },
-  { id: 6, question: 'Has the area immediately below the work spot been cleared / removed of oil, grease & waste cotton etc...?', response: null },
-  { id: 7, question: 'Has gas connection been tested in case there is gas valve / gas line nearby?', response: null },
-  { id: 8, question: 'Is fire extinguisher been kept handy at site?', response: null },
-  { id: 9, question: 'Has tin sheet / fire retardant cloth/ sheet been placed to contain hot spatters of welding / gas cutting?', response: null },
-  { id: 10, question: 'Have all drain inlets been closed?', response: null },
+  { id: 1, question: 'Instruction to Personnel regarding hazards involved and working procedure.', answer: null },
+  { id: 2, question: 'Are Other Contractors working nearby notified?', answer: null },
+  { id: 3, question: 'Is there any other work permit obtained?', answer: null },
+  { id: 4, question: 'Are escape routes to be provided and kept clear?', answer: null },
+  { id: 5, question: 'Is combustible material to be removed / covered from and nearby site (up to 5mtr min.)', answer: null },
+  { id: 6, question: 'Is the area immediately below the work spot been cleared / removed of oil, grease & waste cotton etc...?', answer: null },
+  { id: 7, question: 'Has gas connection been tested in case there is gas valve / gas line nearby?', answer: null },
+  { id: 8, question: 'Is fire extinguisher been kept handy at site?', answer: null },
+  { id: 9, question: 'Has tin sheet / fire retardant cloth/ sheet been placed to contain hot spatters of welding / gas cutting?', answer: null },
+  { id: 10, question: 'Have all drain inlets been closed?', answer: null },
 ]
+
+const statusConfig = {
+  'PENDING': { bg: 'bg-amber-100', text: 'text-amber-700', border: 'border-amber-200' },
+  'APPROVED': { bg: 'bg-emerald-100', text: 'text-emerald-700', border: 'border-emerald-200' },
+  'REJECTED': { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-200' },
+  'CLOSED': { bg: 'bg-gray-100', text: 'text-gray-700', border: 'border-gray-200' },
+  'EXTENDED': { bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-200' },
+  'REVOKED': { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-200' },
+}
 
 const PermitDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const { user, isAdmin, isSafetyOfficer } = useAuth()
-  const permitRef = useRef(null)
   
   const [permit, setPermit] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [generating, setGenerating] = useState(false)
-  const [showSignature, setShowSignature] = useState(false)
-  const [measures, setMeasures] = useState(defaultMeasures)
+  const [qrCode, setQrCode] = useState(null)
+  const [showQrModal, setShowQrModal] = useState(false)
+  const [measures, setMeasures] = useState([])
+  const [showWorkflowModal, setShowWorkflowModal] = useState(false)
+  const [workflowAction, setWorkflowAction] = useState(null)
+  const [workflowData, setWorkflowData] = useState({})
+  const [actionLoading, setActionLoading] = useState(false)
 
   useEffect(() => {
     fetchPermit()
@@ -86,10 +98,9 @@ const PermitDetail = () => {
       const permitData = response.data.permit
       setPermit(permitData)
       
-      // Load measures if available
-      if (permitData.measures && permitData.measures.length > 0) {
-        setMeasures(permitData.measures)
-      }
+      // Parse measures or use defaults
+      const savedMeasures = permitData.measures ? JSON.parse(permitData.measures) : []
+      setMeasures(savedMeasures.length > 0 ? savedMeasures : defaultMeasures)
     } catch (error) {
       toast.error('Error fetching permit details')
       navigate('/permits')
@@ -98,100 +109,82 @@ const PermitDetail = () => {
     }
   }
 
-  const generatePermitNumber = () => {
-    if (!permit) return ''
-    const typeConfig = workTypeConfig[permit.workType] || { abbr: 'GP' }
-    const date = new Date(permit.createdAt)
-    const dateStr = `${String(date.getMonth() + 1).padStart(2, '0')}${date.getFullYear().toString().slice(-2)}`
-    return `${typeConfig.abbr}${dateStr}${permit.id.slice(0, 4).toUpperCase()}`
-  }
-
-  const getStatusBadge = (status) => {
-    const badges = {
-      PENDING: { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'Pending' },
-      APPROVED: { bg: 'bg-green-100', text: 'text-green-700', label: 'Approved' },
-      REJECTED: { bg: 'bg-red-100', text: 'text-red-700', label: 'Rejected' },
-      CLOSED: { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Closed' },
-      EXTENDED: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Extended' },
-    }
-    return badges[status] || badges.PENDING
-  }
-
-  const formatDate = (date) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    })
-  }
-
-  const formatTime = (date) => {
-    return new Date(date).toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true,
-    })
-  }
-
-  const formatDateTime = (date) => {
-    return `${formatDate(date)}, ${formatTime(date)}`
-  }
-
-  const handleMeasureResponse = (measureId, response) => {
-    setMeasures(prev => prev.map(m => 
-      m.id === measureId ? { ...m, response } : m
-    ))
-  }
-
-  const generatePDF = async () => {
-    if (!permitRef.current) return
-    
-    setGenerating(true)
+  const fetchQrCode = async () => {
     try {
-      const element = permitRef.current
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff'
-      })
-      
-      const imgData = canvas.toDataURL('image/png')
-      const pdf = new jsPDF('p', 'mm', 'a4')
-      const imgWidth = 210
-      const pageHeight = 295
-      const imgHeight = (canvas.height * imgWidth) / canvas.width
-      let heightLeft = imgHeight
-      let position = 0
-
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
-      heightLeft -= pageHeight
-
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight
-        pdf.addPage()
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
-        heightLeft -= pageHeight
-      }
-
-      pdf.save(`${generatePermitNumber()}_permit.pdf`)
-      toast.success('PDF generated successfully')
+      const response = await permitsAPI.getWorkerQR(id)
+      setQrCode(response.data)
+      setShowQrModal(true)
     } catch (error) {
-      console.error('PDF generation error:', error)
-      toast.error('Error generating PDF')
-    } finally {
-      setGenerating(false)
+      toast.error('Error generating QR code')
     }
   }
 
-  const getQRData = () => {
-    const baseUrl = window.location.origin
-    return `${baseUrl}/worker-registration/${id}`
+  const handleDownloadPDF = async () => {
+    try {
+      const response = await permitsAPI.downloadPDF(id)
+      const blob = new Blob([response.data], { type: 'application/pdf' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${permit.permitNumber}.pdf`
+      a.click()
+      window.URL.revokeObjectURL(url)
+      toast.success('PDF downloaded successfully')
+    } catch (error) {
+      toast.error('Error downloading PDF')
+    }
+  }
+
+  const handleMeasureChange = async (measureId, answer) => {
+    const updatedMeasures = measures.map(m => 
+      m.id === measureId ? { ...m, answer } : m
+    )
+    setMeasures(updatedMeasures)
+
+    try {
+      await permitsAPI.updateMeasures(id, updatedMeasures)
+    } catch (error) {
+      toast.error('Error saving measure')
+    }
+  }
+
+  const handleWorkflowAction = (action) => {
+    setWorkflowAction(action)
+    setWorkflowData({})
+    setShowWorkflowModal(true)
+  }
+
+  const executeWorkflowAction = async () => {
+    setActionLoading(true)
+    try {
+      switch (workflowAction) {
+        case 'extend':
+          await permitsAPI.extendPermit(id, workflowData)
+          toast.success('Permit extended successfully')
+          break
+        case 'revoke':
+          await permitsAPI.revokePermit(id, workflowData)
+          toast.success('Permit revoked successfully')
+          break
+        case 'close':
+          await permitsAPI.closePermit(id, workflowData)
+          toast.success('Permit closed successfully')
+          break
+        default:
+          break
+      }
+      setShowWorkflowModal(false)
+      fetchPermit()
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Action failed')
+    } finally {
+      setActionLoading(false)
+    }
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex items-center justify-center h-96">
         <LoadingSpinner size="lg" />
       </div>
     )
@@ -205,136 +198,126 @@ const PermitDetail = () => {
     )
   }
 
-  const typeConfig = workTypeConfig[permit.workType] || { label: 'WORK PERMIT', abbr: 'GP', color: 'gray' }
-  const statusBadge = getStatusBadge(permit.status)
-  const permitNumber = generatePermitNumber()
-  const approval = permit.approvals?.[0]
+  const config = workTypeConfig[permit.workType] || workTypeConfig['GENERAL']
+  const status = statusConfig[permit.status] || statusConfig['PENDING']
+  const workers = permit.workers ? JSON.parse(permit.workers) : []
+  const hazards = permit.hazards || []
+  const precautions = permit.precautions || []
+  const equipment = permit.equipment || []
 
   return (
-    <div className="animate-fade-in">
-      {/* Header Actions */}
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+    <div className="animate-fade-in max-w-5xl mx-auto">
+      {/* Top Actions Bar */}
+      <div className="flex items-center justify-between mb-6">
         <button
           onClick={() => navigate('/permits')}
-          className="flex items-center gap-2 text-primary-600 hover:text-primary-700 font-medium"
+          className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Permits
         </button>
-
+        
         <div className="flex items-center gap-2">
-          {(isAdmin || isSafetyOfficer || permit.createdBy === user?.id) && permit.status === 'PENDING' && (
-            <Link
-              to={`/permits/${id}/edit`}
-              className="btn btn-secondary flex items-center gap-2"
-            >
-              <Edit className="w-4 h-4" />
-              Edit
-            </Link>
-          )}
           <button
-            onClick={() => window.print()}
+            onClick={fetchQrCode}
             className="btn btn-secondary flex items-center gap-2"
           >
-            <Printer className="w-4 h-4" />
-            Print
+            <QrCode className="w-4 h-4" />
+            QR Code
           </button>
           <button
-            onClick={generatePDF}
-            disabled={generating}
+            onClick={handleDownloadPDF}
             className="btn btn-primary flex items-center gap-2"
           >
-            {generating ? (
-              <LoadingSpinner size="sm" />
-            ) : (
-              <Download className="w-4 h-4" />
-            )}
+            <Download className="w-4 h-4" />
             Download PDF
           </button>
         </div>
       </div>
 
-      {/* Permit Document */}
-      <div ref={permitRef} className="bg-white rounded-xl shadow-lg overflow-hidden">
-        {/* Document Header */}
-        <div className="bg-white p-6 border-b-2 border-gray-200">
+      {/* Professional Permit Document */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+        {/* Header */}
+        <div className="p-6 border-b border-gray-200">
           <div className="flex items-start justify-between">
-            {/* Company Logo & Name */}
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center">
-                <Building className="w-10 h-10 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">{permit.companyName || 'ACME'}</h1>
-                <p className="text-sm text-gray-500">Industrial Safety Management</p>
-              </div>
-            </div>
-
-            {/* Permit Title */}
-            <div className="text-center flex-1 px-4">
-              <h2 className="text-xl font-bold text-gray-900">{typeConfig.label}</h2>
-              <p className="text-sm text-gray-500">
-                Requested by {permit.user?.firstName} {permit.user?.lastName} on {formatDate(permit.createdAt)}
+            {/* Company & Title */}
+            <div>
+              <h1 className="text-2xl font-bold text-slate-800">
+                {permit.companyName || 'COMPANY'}
+              </h1>
+              <h2 className="text-xl font-semibold text-slate-700 mt-1">
+                {config.label}
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Requested by {permit.user?.firstName} {permit.user?.lastName} on {new Date(permit.createdAt).toLocaleDateString()}
               </p>
             </div>
-
-            {/* QR Code */}
-            <div className="flex flex-col items-center">
-              <QRCodeSVG 
-                value={getQRData()} 
-                size={80}
-                level="M"
-                includeMargin={false}
-              />
-              <p className="text-xs text-gray-400 mt-1">Scan to add workers</p>
+            
+            {/* QR Code & Status */}
+            <div className="text-right">
+              <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center mb-2 cursor-pointer hover:bg-gray-200"
+                   onClick={fetchQrCode}>
+                <QrCode className="w-12 h-12 text-gray-400" />
+              </div>
+              <span className={`inline-flex px-3 py-1 rounded-full text-sm font-semibold ${status.bg} ${status.text}`}>
+                {permit.status}
+              </span>
             </div>
           </div>
-
-          {/* Permit Number & Status */}
-          <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
-            <div className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-gray-400" />
-              <span className="font-mono font-bold text-gray-900">{permitNumber}</span>
-            </div>
-            <div className={`px-4 py-1.5 rounded-full text-sm font-semibold ${statusBadge.bg} ${statusBadge.text}`}>
-              Status: {statusBadge.label}
-            </div>
+          
+          {/* Permit Number */}
+          <div className="mt-4">
+            <span className="text-sm font-mono bg-slate-100 px-3 py-1 rounded text-slate-700">
+              {permit.permitNumber}
+            </span>
           </div>
         </div>
 
         {/* Workers Section */}
         <div className="border-b border-gray-200">
-          <div className="bg-slate-700 text-white text-center py-2 font-semibold">
+          <div className="bg-slate-700 text-white px-4 py-2 font-semibold flex items-center gap-2">
+            <Users className="w-4 h-4" />
             WORKERS
           </div>
           <div className="p-4">
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-                    <Users className="w-5 h-5 text-gray-600" />
-                  </div>
-                  <span className="font-medium text-gray-900">
-                    {permit.contractorName || 'Contractor A'}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 text-gray-500">
-                  <Phone className="w-4 h-4" />
-                  <span>{permit.contractorPhone || '0123456789'}</span>
-                </div>
+            {workers.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-gray-500 border-b">
+                      <th className="pb-2 font-medium">Name</th>
+                      <th className="pb-2 font-medium">Company</th>
+                      <th className="pb-2 font-medium">Phone</th>
+                      <th className="pb-2 font-medium">Badge No.</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {workers.map((worker, idx) => (
+                      <tr key={idx} className="border-b border-gray-100">
+                        <td className="py-2 font-medium text-gray-900">{worker.name}</td>
+                        <td className="py-2 text-gray-600">{worker.company || '-'}</td>
+                        <td className="py-2 text-gray-600">{worker.phone || '-'}</td>
+                        <td className="py-2 text-gray-600">{worker.badgeNumber || '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-              {permit.workers && JSON.parse(permit.workers || '[]').map((worker, idx) => (
-                <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                      <span className="text-blue-600 font-semibold">{worker.name?.[0] || 'W'}</span>
-                    </div>
-                    <span className="font-medium text-gray-900">{worker.name}</span>
-                  </div>
-                  <span className="text-gray-500">{worker.trade || 'Worker'}</span>
-                </div>
-              ))}
-            </div>
+            ) : (
+              <p className="text-gray-500 text-center py-4">No workers assigned yet</p>
+            )}
+            {permit.contractorName && (
+              <div className="mt-3 pt-3 border-t border-gray-100 flex items-center gap-4">
+                <span className="text-sm text-gray-500">Contractor:</span>
+                <span className="font-medium">{permit.contractorName}</span>
+                {permit.contractorPhone && (
+                  <span className="text-gray-600 flex items-center gap-1">
+                    <Phone className="w-3 h-3" />
+                    {permit.contractorPhone}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -342,38 +325,35 @@ const PermitDetail = () => {
         <div className="grid md:grid-cols-2 border-b border-gray-200">
           {/* Location */}
           <div className="border-r border-gray-200">
-            <div className="bg-slate-600 text-white text-center py-2 font-semibold">
+            <div className="bg-slate-700 text-white px-4 py-2 font-semibold flex items-center gap-2">
+              <MapPin className="w-4 h-4" />
               LOCATION OF WORK
             </div>
             <div className="p-4">
-              <div className="flex items-start gap-3">
-                <MapPin className="w-5 h-5 text-gray-400 mt-0.5" />
-                <div>
-                  <p className="font-medium text-gray-900">{permit.location}</p>
-                  <p className="text-sm text-gray-500">{permit.timezone || 'UTC'}</p>
-                </div>
-              </div>
+              <p className="font-medium text-gray-900">{permit.location}</p>
+              <p className="text-sm text-gray-500 mt-1">{permit.timezone || 'UTC'}</p>
             </div>
           </div>
-
+          
           {/* Duration */}
           <div>
-            <div className="bg-slate-600 text-white text-center py-2 font-semibold">
+            <div className="bg-slate-700 text-white px-4 py-2 font-semibold flex items-center gap-2">
+              <Clock className="w-4 h-4" />
               DURATION OF WORK
             </div>
             <div className="p-4">
-              <div className="grid grid-cols-3 gap-4 text-center">
+              <div className="grid grid-cols-3 gap-4 text-sm">
                 <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wide">Start Time</p>
-                  <p className="font-medium text-gray-900 text-sm">{formatDateTime(permit.startDate)}</p>
+                  <p className="text-gray-500 font-medium">Start Time</p>
+                  <p className="text-gray-900">{new Date(permit.startDate).toLocaleString()}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wide">End Time</p>
-                  <p className="font-medium text-gray-900 text-sm">{formatDateTime(permit.endDate)}</p>
+                  <p className="text-gray-500 font-medium">End Time</p>
+                  <p className="text-gray-900">{new Date(permit.endDate).toLocaleString()}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wide">Extended</p>
-                  <p className={`font-semibold text-sm ${permit.isExtended ? 'text-blue-600' : 'text-gray-900'}`}>
+                  <p className="text-gray-500 font-medium">Extended</p>
+                  <p className={permit.isExtended ? 'text-blue-600 font-semibold' : 'text-gray-900'}>
                     {permit.isExtended ? 'YES' : 'NO'}
                   </p>
                 </div>
@@ -382,226 +362,257 @@ const PermitDetail = () => {
           </div>
         </div>
 
-        {/* Safety Measures Checklist */}
+        {/* Measures Checklist */}
         <div className="border-b border-gray-200">
-          <div className="bg-slate-700 text-white text-center py-2 font-semibold">
+          <div className="bg-slate-700 text-white px-4 py-2 font-semibold flex items-center gap-2">
+            <FileText className="w-4 h-4" />
             MEASURES
           </div>
-          <div className="divide-y divide-gray-100">
-            {measures.map((measure, idx) => (
-              <div key={measure.id} className="flex items-center justify-between p-3 hover:bg-gray-50">
+          <div className="p-4 space-y-3">
+            {measures.map((measure) => (
+              <div key={measure.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
                 <p className="text-sm text-gray-700 flex-1 pr-4">{measure.question}</p>
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleMeasureResponse(measure.id, 'YES')}
-                    className={`px-3 py-1 rounded text-xs font-semibold transition-colors ${
-                      measure.response === 'YES' 
-                        ? 'bg-green-500 text-white' 
-                        : 'bg-green-100 text-green-700 hover:bg-green-200'
-                    }`}
-                  >
-                    YES
-                  </button>
-                  <button
-                    onClick={() => handleMeasureResponse(measure.id, 'NO')}
-                    className={`px-3 py-1 rounded text-xs font-semibold transition-colors ${
-                      measure.response === 'NO' 
-                        ? 'bg-red-500 text-white' 
-                        : 'bg-red-100 text-red-700 hover:bg-red-200'
-                    }`}
-                  >
-                    NO
-                  </button>
-                  <button
-                    onClick={() => handleMeasureResponse(measure.id, 'N/A')}
-                    className={`px-3 py-1 rounded text-xs font-semibold transition-colors ${
-                      measure.response === 'N/A' 
-                        ? 'bg-gray-500 text-white' 
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    N/A
-                  </button>
+                  {['YES', 'NO', 'N/A'].map((option) => (
+                    <button
+                      key={option}
+                      onClick={() => handleMeasureChange(measure.id, option)}
+                      disabled={permit.status === 'CLOSED'}
+                      className={`px-3 py-1 text-xs font-semibold rounded transition-colors ${
+                        measure.answer === option
+                          ? option === 'YES'
+                            ? 'bg-emerald-500 text-white'
+                            : option === 'NO'
+                            ? 'bg-red-500 text-white'
+                            : 'bg-gray-500 text-white'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      {option}
+                    </button>
+                  ))}
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Hazards & Precautions */}
-        {(permit.hazards?.length > 0 || permit.precautions?.length > 0) && (
-          <div className="grid md:grid-cols-2 border-b border-gray-200">
-            {/* Hazards */}
-            <div className="border-r border-gray-200">
-              <div className="bg-red-600 text-white text-center py-2 font-semibold flex items-center justify-center gap-2">
-                <AlertTriangle className="w-4 h-4" />
-                HAZARDS IDENTIFIED
-              </div>
-              <div className="p-4">
-                <ul className="space-y-2">
-                  {(permit.hazards || []).map((hazard, idx) => (
-                    <li key={idx} className="flex items-center gap-2 text-sm text-gray-700">
-                      <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                      {hazard}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+        {/* Hazards */}
+        {hazards.length > 0 && (
+          <div className="border-b border-gray-200">
+            <div className="bg-red-600 text-white px-4 py-2 font-semibold flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4" />
+              HAZARDS IDENTIFIED
             </div>
-
-            {/* Precautions */}
-            <div>
-              <div className="bg-green-600 text-white text-center py-2 font-semibold flex items-center justify-center gap-2">
-                <Shield className="w-4 h-4" />
-                SAFETY PRECAUTIONS
-              </div>
-              <div className="p-4">
-                <ul className="space-y-2">
-                  {(permit.precautions || []).map((precaution, idx) => (
-                    <li key={idx} className="flex items-center gap-2 text-sm text-gray-700">
-                      <CheckCircle className="w-4 h-4 text-green-500" />
-                      {precaution}
-                    </li>
-                  ))}
-                </ul>
+            <div className="p-4">
+              <div className="flex flex-wrap gap-2">
+                {hazards.map((hazard, idx) => (
+                  <span key={idx} className="px-3 py-1 bg-red-50 text-red-700 rounded-full text-sm">
+                    {hazard}
+                  </span>
+                ))}
               </div>
             </div>
           </div>
         )}
 
-        {/* Approval Section with Signature */}
-        <div className="border-b border-gray-200">
-          <div className="bg-slate-700 text-white text-center py-2 font-semibold">
-            APPROVAL
-          </div>
-          <div className="p-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Requestor Signature */}
-              <div className="border rounded-xl p-4">
-                <p className="text-sm text-gray-500 mb-2">Requested By</p>
-                <p className="font-semibold text-gray-900">{permit.user?.firstName} {permit.user?.lastName}</p>
-                <p className="text-sm text-gray-500">{permit.user?.department || 'Operations'}</p>
-                <div className="mt-4 h-20 border-b-2 border-gray-300 border-dashed flex items-end justify-center">
-                  <p className="text-xs text-gray-400 mb-1">Requestor Signature</p>
-                </div>
-                <p className="text-xs text-gray-500 text-center mt-2">{formatDate(permit.createdAt)}</p>
-              </div>
-
-              {/* Approver Signature */}
-              <div className="border rounded-xl p-4">
-                <p className="text-sm text-gray-500 mb-2">Approved By</p>
-                {approval?.decision === 'APPROVED' ? (
-                  <>
-                    <p className="font-semibold text-gray-900">{approval.approverName || 'Safety Officer'}</p>
-                    <p className="text-sm text-gray-500">{approval.approverRole}</p>
-                    <div className="mt-4 h-20 border-b-2 border-gray-300 border-dashed flex items-end justify-center">
-                      {approval.signature ? (
-                        <img src={approval.signature} alt="Signature" className="h-16 object-contain" />
-                      ) : (
-                        <p className="text-xs text-gray-400 mb-1">Approver Signature</p>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-500 text-center mt-2">
-                      {approval.approvedAt ? formatDate(approval.approvedAt) : 'Pending'}
-                    </p>
-                  </>
-                ) : (
-                  <div className="flex items-center justify-center h-32 text-gray-400">
-                    <p className="text-sm">Awaiting Approval</p>
-                  </div>
-                )}
+        {/* Precautions */}
+        {precautions.length > 0 && (
+          <div className="border-b border-gray-200">
+            <div className="bg-emerald-600 text-white px-4 py-2 font-semibold flex items-center gap-2">
+              <Shield className="w-4 h-4" />
+              SAFETY PRECAUTIONS
+            </div>
+            <div className="p-4">
+              <div className="flex flex-wrap gap-2">
+                {precautions.map((precaution, idx) => (
+                  <span key={idx} className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-sm">
+                    {precaution}
+                  </span>
+                ))}
               </div>
             </div>
+          </div>
+        )}
 
-            {/* Approval Comment */}
-            {approval?.comment && (
-              <div className="mt-4 p-4 bg-gray-50 rounded-xl">
-                <p className="text-sm text-gray-500 mb-1">Approval Comments</p>
-                <p className="text-gray-700">{approval.comment}</p>
+        {/* Equipment */}
+        {equipment.length > 0 && (
+          <div className="border-b border-gray-200">
+            <div className="bg-blue-600 text-white px-4 py-2 font-semibold flex items-center gap-2">
+              <Wrench className="w-4 h-4" />
+              REQUIRED EQUIPMENT
+            </div>
+            <div className="p-4">
+              <div className="flex flex-wrap gap-2">
+                {equipment.map((item, idx) => (
+                  <span key={idx} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm">
+                    {item}
+                  </span>
+                ))}
               </div>
-            )}
+            </div>
+          </div>
+        )}
+
+        {/* Approvals & Signatures */}
+        <div>
+          <div className="bg-slate-700 text-white px-4 py-2 font-semibold">
+            APPROVALS & SIGNATURES
+          </div>
+          <div className="p-4 grid md:grid-cols-3 gap-4">
+            {permit.approvals?.map((approval, idx) => (
+              <div key={idx} className="border rounded-lg p-4">
+                <p className="text-xs text-gray-500 font-medium uppercase">
+                  {approval.approverRole?.replace('_', ' ')}
+                </p>
+                <p className="font-medium text-gray-900 mt-1">
+                  {approval.approverName || 'Pending'}
+                </p>
+                <span className={`inline-flex mt-2 px-2 py-0.5 rounded text-xs font-semibold ${
+                  approval.decision === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' :
+                  approval.decision === 'REJECTED' ? 'bg-red-100 text-red-700' :
+                  'bg-amber-100 text-amber-700'
+                }`}>
+                  {approval.decision}
+                </span>
+                {approval.signature && (
+                  <p className="mt-2 italic text-gray-600 font-serif">{approval.signature}</p>
+                )}
+                {approval.signedAt && (
+                  <p className="text-xs text-gray-400 mt-1">
+                    {new Date(approval.signedAt).toLocaleString()}
+                  </p>
+                )}
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="bg-gray-50 p-4 text-center text-xs text-gray-500">
-          <p>This permit is valid only for the specified duration and location. Any extension requires re-approval.</p>
-          <p className="mt-1">Generated by MIS - Work Permit Management System</p>
-        </div>
+        {/* Workflow Actions */}
+        {(isAdmin || isSafetyOfficer) && ['APPROVED', 'EXTENDED'].includes(permit.status) && (
+          <div className="p-4 bg-gray-50 border-t flex items-center gap-3">
+            <span className="text-sm font-medium text-gray-500">Actions:</span>
+            <button
+              onClick={() => handleWorkflowAction('extend')}
+              className="btn btn-secondary text-sm flex items-center gap-1"
+            >
+              <Play className="w-3 h-3" />
+              Extend
+            </button>
+            <button
+              onClick={() => handleWorkflowAction('revoke')}
+              className="btn bg-red-100 text-red-700 hover:bg-red-200 text-sm flex items-center gap-1"
+            >
+              <RotateCcw className="w-3 h-3" />
+              Revoke
+            </button>
+            <button
+              onClick={() => handleWorkflowAction('close')}
+              className="btn bg-gray-700 text-white hover:bg-gray-800 text-sm flex items-center gap-1"
+            >
+              <XCircle className="w-3 h-3" />
+              Close PTW
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* PTW Actions (for approved permits) */}
-      {permit.status === 'APPROVED' && (isAdmin || isSafetyOfficer) && (
-        <div className="mt-6 card">
-          <div className="card-header">
-            <h3 className="text-lg font-semibold text-gray-900">Permit Actions</h3>
-          </div>
-          <div className="card-body">
-            <div className="flex flex-wrap gap-3">
-              <button className="btn btn-secondary flex items-center gap-2">
-                <RefreshCw className="w-4 h-4" />
-                Extend PTW
+      {/* QR Code Modal */}
+      {showQrModal && qrCode && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-sm w-full mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Worker Registration QR</h3>
+              <button onClick={() => setShowQrModal(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
               </button>
-              <button className="btn btn-secondary flex items-center gap-2">
-                <Share2 className="w-4 h-4" />
-                Transfer PTW
-              </button>
-              <button className="btn btn-secondary flex items-center gap-2 text-red-600 hover:bg-red-50">
-                <XSquare className="w-4 h-4" />
-                Revoke PTW
-              </button>
-              <button className="btn btn-primary flex items-center gap-2">
-                <CheckSquare className="w-4 h-4" />
-                Close PTW
-              </button>
+            </div>
+            <div className="text-center">
+              <img src={qrCode.qrCode} alt="QR Code" className="mx-auto mb-4" />
+              <p className="text-sm text-gray-500 mb-2">Scan to register workers</p>
+              <p className="text-xs font-mono bg-gray-100 p-2 rounded break-all">
+                {qrCode.registrationUrl}
+              </p>
             </div>
           </div>
         </div>
       )}
 
-      {/* QR Code for Vendor */}
-      <div className="mt-6 card">
-        <div className="card-header flex items-center gap-2">
-          <QrCode className="w-5 h-5 text-gray-500" />
-          <h3 className="text-lg font-semibold text-gray-900">Vendor/Contractor QR Code</h3>
-        </div>
-        <div className="card-body">
-          <div className="flex flex-col md:flex-row items-center gap-6">
-            <div className="p-4 bg-white border-2 border-dashed border-gray-300 rounded-xl">
-              <QRCodeSVG 
-                value={getQRData()} 
-                size={150}
-                level="H"
-                includeMargin={true}
-              />
+      {/* Workflow Action Modal */}
+      {showWorkflowModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold capitalize">{workflowAction} Permit</h3>
+              <button onClick={() => setShowWorkflowModal(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
             </div>
-            <div className="flex-1">
-              <h4 className="font-semibold text-gray-900 mb-2">Share with Contractor</h4>
-              <p className="text-gray-600 text-sm mb-4">
-                Contractors can scan this QR code to register their workers for this permit.
-                They'll be able to add worker details including name, phone, trade, and badge number.
-              </p>
-              <div className="flex items-center gap-2">
-                <input 
-                  type="text" 
-                  readOnly 
-                  value={getQRData()}
-                  className="input flex-1 text-sm bg-gray-50"
-                />
-                <button 
-                  onClick={() => {
-                    navigator.clipboard.writeText(getQRData())
-                    toast.success('Link copied!')
-                  }}
-                  className="btn btn-secondary"
-                >
-                  Copy Link
-                </button>
+            
+            {workflowAction === 'extend' && (
+              <div className="space-y-4">
+                <div>
+                  <label className="label">Extend Until</label>
+                  <input
+                    type="datetime-local"
+                    className="input"
+                    onChange={(e) => setWorkflowData({ ...workflowData, extendedUntil: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="label">Reason</label>
+                  <textarea
+                    className="input"
+                    rows={3}
+                    placeholder="Reason for extension..."
+                    onChange={(e) => setWorkflowData({ ...workflowData, reason: e.target.value })}
+                  />
+                </div>
               </div>
+            )}
+
+            {workflowAction === 'revoke' && (
+              <div>
+                <label className="label">Reason for Revocation *</label>
+                <textarea
+                  className="input"
+                  rows={3}
+                  placeholder="Reason for revoking this permit..."
+                  onChange={(e) => setWorkflowData({ ...workflowData, reason: e.target.value })}
+                />
+              </div>
+            )}
+
+            {workflowAction === 'close' && (
+              <div>
+                <label className="label">Closure Comments</label>
+                <textarea
+                  className="input"
+                  rows={3}
+                  placeholder="Any comments for closure..."
+                  onChange={(e) => setWorkflowData({ ...workflowData, comments: e.target.value })}
+                />
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setShowWorkflowModal(false)}
+                className="btn btn-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={executeWorkflowAction}
+                disabled={actionLoading}
+                className="btn btn-primary"
+              >
+                {actionLoading ? 'Processing...' : 'Confirm'}
+              </button>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

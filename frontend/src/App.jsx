@@ -12,7 +12,7 @@ import Approvals from './pages/Approvals'
 import ApprovalDetail from './pages/ApprovalDetail'
 import Users from './pages/Users'
 import Settings from './pages/Settings'
-import WorkerRegistration from './pages/WorkerRegistration'
+import WorkerRegister from './pages/WorkerRegister'
 import LoadingSpinner from './components/LoadingSpinner'
 
 // Protected route wrapper
@@ -79,7 +79,7 @@ function App() {
       />
       
       {/* Public worker registration route (QR code access) */}
-      <Route path="/worker-registration/:permitId" element={<WorkerRegistration />} />
+      <Route path="/worker-register/:permitId" element={<WorkerRegister />} />
 
       {/* Protected routes */}
       <Route

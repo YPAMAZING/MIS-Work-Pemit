@@ -125,16 +125,20 @@ const Layout = () => {
         }`}
       >
         {/* Logo */}
-        <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-700">
-          <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-xl flex items-center justify-center">
-            <Shield className="w-6 h-6 text-white" />
+        <div className="flex items-center gap-3 px-4 py-4 border-b border-slate-700">
+          <div className="bg-white rounded-lg p-1.5">
+            <img 
+              src="https://www.genspark.ai/api/files/s/A7LiItwb" 
+              alt="Reliable Group" 
+              className="h-10 w-auto"
+            />
           </div>
-          <div>
-            <h1 className="text-lg font-bold text-white">MIS</h1>
-            <p className="text-xs text-slate-400">Permit Management</p>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-sm font-bold text-white leading-tight">Reliable Group</h1>
+            <p className="text-xs text-slate-400">MEP - Work Permit</p>
           </div>
           <button
-            className="lg:hidden ml-auto p-1 rounded-lg hover:bg-slate-700"
+            className="lg:hidden p-1 rounded-lg hover:bg-slate-700"
             onClick={() => setSidebarOpen(false)}
           >
             <X className="w-5 h-5 text-slate-400" />

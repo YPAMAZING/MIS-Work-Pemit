@@ -116,7 +116,7 @@ async function main() {
   const adminPassword = await bcrypt.hash('admin123', 10);
   const admin = await prisma.user.upsert({
     where: { email: 'admin@permitmanager.com' },
-    update: { roleId: adminRole.id },
+    update: { roleId: adminRole.id, isApproved: true, approvedAt: new Date() },
     create: {
       email: 'admin@permitmanager.com',
       password: adminPassword,
@@ -124,6 +124,8 @@ async function main() {
       lastName: 'Administrator',
       roleId: adminRole.id,
       department: 'IT',
+      isApproved: true,
+      approvedAt: new Date(),
     },
   });
   console.log('✅ Admin user created:', admin.email);
@@ -132,7 +134,7 @@ async function main() {
   const safetyPassword = await bcrypt.hash('safety123', 10);
   const safetyOfficer = await prisma.user.upsert({
     where: { email: 'safety@permitmanager.com' },
-    update: { roleId: safetyRole.id },
+    update: { roleId: safetyRole.id, isApproved: true, approvedAt: new Date() },
     create: {
       email: 'safety@permitmanager.com',
       password: safetyPassword,
@@ -140,6 +142,8 @@ async function main() {
       lastName: 'Safety',
       roleId: safetyRole.id,
       department: 'HSE',
+      isApproved: true,
+      approvedAt: new Date(),
     },
   });
   console.log('✅ Safety Officer created:', safetyOfficer.email);
@@ -148,7 +152,7 @@ async function main() {
   const requestorPassword = await bcrypt.hash('user123', 10);
   const requestor1 = await prisma.user.upsert({
     where: { email: 'requestor@permitmanager.com' },
-    update: { roleId: requestorRole.id },
+    update: { roleId: requestorRole.id, isApproved: true, approvedAt: new Date() },
     create: {
       email: 'requestor@permitmanager.com',
       password: requestorPassword,
@@ -156,13 +160,15 @@ async function main() {
       lastName: 'Doe',
       roleId: requestorRole.id,
       department: 'Operations',
+      isApproved: true,
+      approvedAt: new Date(),
     },
   });
   console.log('✅ Requestor created:', requestor1.email);
 
   const requestor2 = await prisma.user.upsert({
     where: { email: 'worker@permitmanager.com' },
-    update: { roleId: requestorRole.id },
+    update: { roleId: requestorRole.id, isApproved: true, approvedAt: new Date() },
     create: {
       email: 'worker@permitmanager.com',
       password: requestorPassword,
@@ -170,6 +176,8 @@ async function main() {
       lastName: 'Worker',
       roleId: requestorRole.id,
       department: 'Maintenance',
+      isApproved: true,
+      approvedAt: new Date(),
     },
   });
   console.log('✅ Requestor created:', requestor2.email);
@@ -178,7 +186,7 @@ async function main() {
   const engineerPassword = await bcrypt.hash('engineer123', 10);
   const siteEngineer = await prisma.user.upsert({
     where: { email: 'engineer@permitmanager.com' },
-    update: { roleId: siteEngineerRole.id },
+    update: { roleId: siteEngineerRole.id, isApproved: true, approvedAt: new Date() },
     create: {
       email: 'engineer@permitmanager.com',
       password: engineerPassword,
@@ -186,6 +194,8 @@ async function main() {
       lastName: 'Engineer',
       roleId: siteEngineerRole.id,
       department: 'Field Operations',
+      isApproved: true,
+      approvedAt: new Date(),
     },
   });
   console.log('✅ Site Engineer created:', siteEngineer.email);

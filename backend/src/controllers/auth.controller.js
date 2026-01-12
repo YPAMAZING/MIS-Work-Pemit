@@ -7,7 +7,7 @@ const { createAuditLog } = require('../services/audit.service');
 const prisma = new PrismaClient();
 
 // Roles that require admin approval
-const ROLES_REQUIRING_APPROVAL = ['SAFETY_OFFICER', 'SITE_ENGINEER'];
+const ROLES_REQUIRING_APPROVAL = ['SAFETY_OFFICER', 'SITE_ENGINEER', 'ADMIN'];
 
 // Register new user
 const register = async (req, res) => {

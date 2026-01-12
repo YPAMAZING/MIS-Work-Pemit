@@ -71,15 +71,6 @@ const Login = () => {
       textColor: 'text-blue-600'
     },
     { 
-      role: 'Requestor', 
-      email: 'requestor@permitmanager.com', 
-      password: 'user123',
-      icon: ClipboardCheck,
-      color: 'from-emerald-500 to-teal-600',
-      bgColor: 'bg-emerald-50 hover:bg-emerald-100',
-      textColor: 'text-emerald-600'
-    },
-    { 
       role: 'Engineer', 
       email: 'engineer@permitmanager.com', 
       password: 'engineer123',
@@ -235,7 +226,7 @@ const Login = () => {
             {/* Demo credentials - Compact */}
             <div className="mt-5 pt-5 border-t border-gray-100">
               <p className="text-xs text-gray-500 text-center mb-3">Demo Accounts (click to fill)</p>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 {demoAccounts.map((account) => {
                   const Icon = account.icon
                   const isSelected = selectedDemo === account.email

@@ -68,6 +68,14 @@ const Register = () => {
       color: 'orange',
       requiresApproval: true,
     },
+    {
+      id: 'ADMIN',
+      name: 'Admin',
+      description: 'Full system access',
+      icon: Shield,
+      color: 'purple',
+      requiresApproval: true,
+    },
   ]
 
   const handleSubmit = async (e) => {
@@ -233,10 +241,17 @@ const Register = () => {
             {/* Role Selection */}
             <div className="mb-4">
               <label className="block text-xs font-medium text-gray-700 mb-2">Select Your Role</label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {roles.map((role) => {
                   const Icon = role.icon
                   const isSelected = formData.requestedRole === role.id
+                  const colorStyles = {
+                    emerald: { border: '#10b981', bg: '#ecfdf5', text: 'text-emerald-600' },
+                    blue: { border: '#3b82f6', bg: '#eff6ff', text: 'text-blue-600' },
+                    orange: { border: '#f97316', bg: '#fff7ed', text: 'text-orange-600' },
+                    purple: { border: '#a855f7', bg: '#faf5ff', text: 'text-purple-600' },
+                  }
+                  const colors = colorStyles[role.color] || colorStyles.emerald
                   return (
                     <button
                       key={role.id}
@@ -244,18 +259,17 @@ const Register = () => {
                       onClick={() => setFormData({ ...formData, requestedRole: role.id })}
                       className={`relative p-3 rounded-xl border-2 transition-all duration-200 text-center ${
                         isSelected 
-                          ? `border-${role.color}-500 bg-${role.color}-50 ring-2 ring-${role.color}-500/20` 
+                          ? 'ring-2 ring-opacity-20' 
                           : 'border-gray-200 hover:border-gray-300 bg-white'
                       }`}
                       style={{
-                        borderColor: isSelected ? (role.color === 'emerald' ? '#10b981' : role.color === 'blue' ? '#3b82f6' : '#f97316') : undefined,
-                        backgroundColor: isSelected ? (role.color === 'emerald' ? '#ecfdf5' : role.color === 'blue' ? '#eff6ff' : '#fff7ed') : undefined,
+                        borderColor: isSelected ? colors.border : undefined,
+                        backgroundColor: isSelected ? colors.bg : undefined,
+                        '--tw-ring-color': isSelected ? colors.border : undefined,
                       }}
                     >
                       <Icon className={`w-5 h-5 mx-auto mb-1 ${
-                        isSelected 
-                          ? (role.color === 'emerald' ? 'text-emerald-600' : role.color === 'blue' ? 'text-blue-600' : 'text-orange-600')
-                          : 'text-gray-400'
+                        isSelected ? colors.text : 'text-gray-400'
                       }`} />
                       <p className={`text-xs font-semibold ${isSelected ? 'text-gray-900' : 'text-gray-600'}`}>
                         {role.name}

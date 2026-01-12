@@ -165,10 +165,14 @@ const Register = () => {
         
         {/* Content */}
         <div className={`relative z-10 flex flex-col justify-center items-center w-full px-8 transition-all duration-700 ${mounted ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-10'}`}>
-          {/* Icon */}
+          {/* Logo */}
           <div className="mb-6">
             <div className="bg-white rounded-2xl p-5 inline-block shadow-2xl">
-              <Shield className="h-16 w-16 text-[#1e3a6e]" />
+              <img 
+                src="https://www.genspark.ai/api/files/s/A7LiItwb" 
+                alt="Reliable Group Logo" 
+                className="h-24 w-auto"
+              />
             </div>
           </div>
 
@@ -212,10 +216,14 @@ const Register = () => {
       {/* Right Panel - Register Form */}
       <div className="w-full lg:w-[60%] flex items-center justify-center p-4 bg-gray-50 overflow-y-auto">
         <div className={`w-full max-w-lg transition-all duration-500 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
-          {/* Mobile header */}
+          {/* Mobile logo */}
           <div className="lg:hidden text-center mb-4">
             <div className="inline-block bg-white rounded-xl p-2 shadow-lg mb-2">
-              <Shield className="h-10 w-10 text-[#1e3a6e]" />
+              <img 
+                src="https://www.genspark.ai/api/files/s/A7LiItwb" 
+                alt="Reliable Group Logo" 
+                className="h-12 w-auto"
+              />
             </div>
             <h2 className="text-base font-bold text-gray-900">Reliable Group <span className="text-red-500">|</span> MEP</h2>
           </div>

@@ -16,6 +16,7 @@ model User {
   roleId        String?
   department    String?
   phone         String?
+  profilePicture String?                         // URL or base64 of profile picture
   isActive      Boolean         @default(true)
   isApproved    Boolean         @default(false)  // Requires admin approval for certain roles
   requestedRole String?                          // Role requested during registration

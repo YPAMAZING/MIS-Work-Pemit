@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { authAPI } from '../services/api'
 import toast from 'react-hot-toast'
@@ -11,12 +11,30 @@ import {
   Eye,
   EyeOff,
   Save,
+  Camera,
+  Phone,
+  Edit3,
+  X,
+  Check,
+  Loader2,
 } from 'lucide-react'
 
 const Settings = () => {
   const { user, updateUser } = useAuth()
   const [loading, setLoading] = useState(false)
   const [passwordLoading, setPasswordLoading] = useState(false)
+  const [editMode, setEditMode] = useState(false)
+  const [uploadingPicture, setUploadingPicture] = useState(false)
+  const fileInputRef = useRef(null)
+  
+  const [profileData, setProfileData] = useState({
+    firstName: user?.firstName || '',
+    lastName: user?.lastName || '',
+    phone: user?.phone || '',
+    department: user?.department || '',
+    profilePicture: user?.profilePicture || '',
+  })
+  
   const [showPasswords, setShowPasswords] = useState({
     current: false,
     new: false,
@@ -33,8 +51,67 @@ const Settings = () => {
       ADMIN: { bg: 'bg-purple-100', text: 'text-purple-700', label: 'Administrator' },
       SAFETY_OFFICER: { bg: 'bg-green-100', text: 'text-green-700', label: 'Safety Officer' },
       REQUESTOR: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Requestor' },
+      SITE_ENGINEER: { bg: 'bg-orange-100', text: 'text-orange-700', label: 'Site Engineer' },
     }
     return badges[role] || badges.REQUESTOR
+  }
+
+  const handleProfileUpdate = async (e) => {
+    e.preventDefault()
+    setLoading(true)
+    
+    try {
+      const response = await authAPI.updateProfile(profileData)
+      toast.success('Profile updated successfully')
+      updateUser(response.data.user)
+      setEditMode(false)
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Error updating profile')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handlePictureChange = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file')
+      return
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Image size should be less than 2MB')
+      return
+    }
+
+    setUploadingPicture(true)
+
+    try {
+      // Convert to base64
+      const reader = new FileReader()
+      reader.onloadend = async () => {
+        const base64 = reader.result
+        setProfileData(prev => ({ ...prev, profilePicture: base64 }))
+        
+        // Auto-save profile picture
+        try {
+          const response = await authAPI.updateProfile({ profilePicture: base64 })
+          toast.success('Profile picture updated')
+          updateUser(response.data.user)
+        } catch (error) {
+          toast.error('Error uploading picture')
+        }
+        setUploadingPicture(false)
+      }
+      reader.readAsDataURL(file)
+    } catch (error) {
+      toast.error('Error processing image')
+      setUploadingPicture(false)
+    }
   }
 
   const handlePasswordChange = async (e) => {
@@ -69,6 +146,17 @@ const Settings = () => {
     }
   }
 
+  const cancelEdit = () => {
+    setProfileData({
+      firstName: user?.firstName || '',
+      lastName: user?.lastName || '',
+      phone: user?.phone || '',
+      department: user?.department || '',
+      profilePicture: user?.profilePicture || '',
+    })
+    setEditMode(false)
+  }
+
   const roleBadge = getRoleBadge(user?.role)
 
   return (
@@ -81,55 +169,189 @@ const Settings = () => {
 
       {/* Profile Information */}
       <div className="card">
-        <div className="card-header">
+        <div className="card-header flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900">Profile Information</h2>
+          {!editMode ? (
+            <button
+              onClick={() => setEditMode(true)}
+              className="flex items-center gap-2 text-sm text-[#1e3a6e] hover:text-[#162d57] font-medium"
+            >
+              <Edit3 className="w-4 h-4" />
+              Edit Profile
+            </button>
+          ) : (
+            <button
+              onClick={cancelEdit}
+              className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700"
+            >
+              <X className="w-4 h-4" />
+              Cancel
+            </button>
+          )}
         </div>
         <div className="card-body">
-          <div className="flex items-start gap-6">
-            <div className="w-24 h-24 bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl flex items-center justify-center">
-              <span className="text-3xl font-bold text-white">
-                {user?.firstName?.[0]}{user?.lastName?.[0]}
-              </span>
-            </div>
-            <div className="flex-1 space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="flex items-center gap-3">
-                  <User className="w-5 h-5 text-gray-400" />
-                  <div>
-                    <p className="text-sm text-gray-500">Full Name</p>
-                    <p className="font-medium text-gray-900">
-                      {user?.firstName} {user?.lastName}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Mail className="w-5 h-5 text-gray-400" />
-                  <div>
-                    <p className="text-sm text-gray-500">Email Address</p>
-                    <p className="font-medium text-gray-900">{user?.email}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Shield className="w-5 h-5 text-gray-400" />
-                  <div>
-                    <p className="text-sm text-gray-500">Role</p>
-                    <span className={`inline-flex items-center px-2.5 py-1 text-sm font-medium rounded-full ${roleBadge.bg} ${roleBadge.text}`}>
-                      {roleBadge.label}
+          <form onSubmit={handleProfileUpdate}>
+            <div className="flex items-start gap-6">
+              {/* Profile Picture */}
+              <div className="relative group">
+                <div className="w-24 h-24 rounded-2xl overflow-hidden bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
+                  {profileData.profilePicture ? (
+                    <img 
+                      src={profileData.profilePicture} 
+                      alt="Profile" 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-3xl font-bold text-white">
+                      {user?.firstName?.[0]}{user?.lastName?.[0]}
                     </span>
-                  </div>
+                  )}
                 </div>
-                <div className="flex items-center gap-3">
-                  <Building className="w-5 h-5 text-gray-400" />
-                  <div>
-                    <p className="text-sm text-gray-500">Department</p>
-                    <p className="font-medium text-gray-900">
-                      {user?.department || '—'}
-                    </p>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handlePictureChange}
+                  accept="image/*"
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingPicture}
+                  className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl cursor-pointer"
+                >
+                  {uploadingPicture ? (
+                    <Loader2 className="w-6 h-6 text-white animate-spin" />
+                  ) : (
+                    <Camera className="w-6 h-6 text-white" />
+                  )}
+                </button>
+              </div>
+
+              {/* Profile Fields */}
+              <div className="flex-1 space-y-4">
+                {editMode ? (
+                  <>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          First Name
+                        </label>
+                        <input
+                          type="text"
+                          value={profileData.firstName}
+                          onChange={(e) => setProfileData({ ...profileData, firstName: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1e3a6e]/20 focus:border-[#1e3a6e] outline-none"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Last Name
+                        </label>
+                        <input
+                          type="text"
+                          value={profileData.lastName}
+                          onChange={(e) => setProfileData({ ...profileData, lastName: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1e3a6e]/20 focus:border-[#1e3a6e] outline-none"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Phone Number
+                        </label>
+                        <input
+                          type="tel"
+                          value={profileData.phone}
+                          onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1e3a6e]/20 focus:border-[#1e3a6e] outline-none"
+                          placeholder="+91 XXXXX XXXXX"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Department
+                        </label>
+                        <input
+                          type="text"
+                          value={profileData.department}
+                          onChange={(e) => setProfileData({ ...profileData, department: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1e3a6e]/20 focus:border-[#1e3a6e] outline-none"
+                          placeholder="e.g., Engineering"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 pt-2">
+                      <button
+                        type="submit"
+                        disabled={loading}
+                        className="flex items-center gap-2 px-4 py-2 bg-[#1e3a6e] text-white rounded-lg hover:bg-[#162d57] transition-colors disabled:opacity-50"
+                      >
+                        {loading ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <Check className="w-4 h-4" />
+                            Save Changes
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="flex items-center gap-3">
+                      <User className="w-5 h-5 text-gray-400" />
+                      <div>
+                        <p className="text-sm text-gray-500">Full Name</p>
+                        <p className="font-medium text-gray-900">
+                          {user?.firstName} {user?.lastName}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Mail className="w-5 h-5 text-gray-400" />
+                      <div>
+                        <p className="text-sm text-gray-500">Email Address</p>
+                        <p className="font-medium text-gray-900">{user?.email}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Phone className="w-5 h-5 text-gray-400" />
+                      <div>
+                        <p className="text-sm text-gray-500">Phone Number</p>
+                        <p className="font-medium text-gray-900">
+                          {user?.phone || '—'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Shield className="w-5 h-5 text-gray-400" />
+                      <div>
+                        <p className="text-sm text-gray-500">Role</p>
+                        <span className={`inline-flex items-center px-2.5 py-1 text-sm font-medium rounded-full ${roleBadge.bg} ${roleBadge.text}`}>
+                          {roleBadge.label}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Building className="w-5 h-5 text-gray-400" />
+                      <div>
+                        <p className="text-sm text-gray-500">Department</p>
+                        <p className="font-medium text-gray-900">
+                          {user?.department || '—'}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
-          </div>
+          </form>
         </div>
       </div>
 
@@ -226,7 +448,7 @@ const Settings = () => {
           <div className="grid md:grid-cols-2 gap-4 text-sm">
             <div>
               <p className="text-gray-500">Application</p>
-              <p className="font-medium text-gray-900">MIS - Work Permit System</p>
+              <p className="font-medium text-gray-900">Reliable Group MEP - Work Permit System</p>
               <p className="text-xs text-gray-400 mt-1">© YP SECURITY SERVICES PVT LTD</p>
             </div>
             <div>

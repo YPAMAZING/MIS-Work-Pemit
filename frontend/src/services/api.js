@@ -41,8 +41,11 @@ export default api
 export const authAPI = {
   login: (data) => api.post('/auth/login', data),
   register: (data) => api.post('/auth/register', data),
+  sendOTP: (data) => api.post('/auth/send-otp', data),
+  verifyOTP: (data) => api.post('/auth/verify-otp', data),
   me: () => api.get('/auth/me'),
   changePassword: (data) => api.post('/auth/change-password', data),
+  updateProfile: (data) => api.put('/auth/profile', data),
 }
 
 // Permits API

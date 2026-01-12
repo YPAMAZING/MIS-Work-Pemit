@@ -11,8 +11,7 @@ import {
   UserCog, 
   HardHat, 
   ClipboardCheck,
-  Wrench,
-  CheckCircle2
+  Wrench
 } from 'lucide-react'
 
 const Login = () => {
@@ -110,46 +109,30 @@ const Login = () => {
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px]" />
         
         {/* Content */}
-        <div className={`relative z-10 flex flex-col justify-center px-10 xl:px-16 transition-all duration-700 ${mounted ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-10'}`}>
+        <div className={`relative z-10 flex flex-col justify-center items-center w-full px-10 xl:px-16 transition-all duration-700 ${mounted ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-10'}`}>
           {/* Logo */}
           <div className="mb-8">
-            <div className="bg-white rounded-xl p-4 inline-block shadow-xl">
+            <div className="bg-white rounded-2xl p-6 inline-block shadow-2xl">
               <img 
                 src="https://www.genspark.ai/api/files/s/A7LiItwb" 
                 alt="Reliable Group Logo" 
-                className="h-20 w-auto"
+                className="h-32 w-auto"
               />
             </div>
           </div>
 
-          {/* Tagline */}
-          <div className="mb-8">
-            <h2 className="text-2xl xl:text-3xl font-bold text-white leading-tight mb-3">
-              Work Permit
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-red-400">
-                Management System
-              </span>
+          {/* Title */}
+          <div className="text-center">
+            <h2 className="text-3xl xl:text-4xl font-bold text-white leading-tight mb-4">
+              Reliable Group <span className="text-red-400">|</span> MEP
             </h2>
-            <p className="text-blue-200 text-sm max-w-sm">
-              Comprehensive permit management with digital approvals and real-time tracking.
+            <p className="text-blue-200 text-lg">
+              Work Permit Management System
             </p>
           </div>
 
-          {/* Features - Compact */}
-          <div className="grid grid-cols-2 gap-3 mb-8">
-            {['Permit Management', 'Digital Approvals', 'OCR Processing', 'Analytics'].map((feature, index) => (
-              <div 
-                key={feature}
-                className="flex items-center gap-2 text-blue-100 text-sm"
-              >
-                <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" />
-                <span>{feature}</span>
-              </div>
-            ))}
-          </div>
-
           {/* Company badge */}
-          <div className="pt-6 border-t border-blue-400/30">
+          <div className="absolute bottom-8 left-0 right-0 text-center">
             <p className="text-blue-300 text-xs">Powered by</p>
             <p className="text-white font-semibold text-sm mt-1">
               YP SECURITY SERVICES PVT LTD
@@ -163,13 +146,14 @@ const Login = () => {
         <div className={`w-full max-w-md transition-all duration-500 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
           {/* Mobile logo */}
           <div className="lg:hidden text-center mb-6">
-            <div className="inline-block bg-white rounded-xl p-3 shadow-lg mb-2">
+            <div className="inline-block bg-white rounded-xl p-3 shadow-lg mb-3">
               <img 
                 src="https://www.genspark.ai/api/files/s/A7LiItwb" 
                 alt="Reliable Group Logo" 
-                className="h-14 w-auto"
+                className="h-16 w-auto"
               />
             </div>
+            <h2 className="text-lg font-bold text-gray-900">Reliable Group <span className="text-red-500">|</span> MEP</h2>
             <p className="text-gray-500 text-xs">Work Permit Management System</p>
           </div>
 

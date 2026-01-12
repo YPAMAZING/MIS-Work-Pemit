@@ -105,11 +105,10 @@ const Login = () => {
           {/* Logo */}
           <div className="mb-8">
             <div className="bg-white rounded-2xl p-6 inline-block shadow-2xl">
-              <img 
-                src="https://www.genspark.ai/api/files/s/A7LiItwb" 
-                alt="Reliable Group Logo" 
-                className="h-32 w-auto"
-              />
+              <div className="text-center">
+                <div className="text-4xl font-bold text-[#1e3a6e]">RG</div>
+                <div className="text-xs text-gray-500 mt-1">MEP</div>
+              </div>
             </div>
           </div>
 
@@ -139,11 +138,7 @@ const Login = () => {
           {/* Mobile logo */}
           <div className="lg:hidden text-center mb-6">
             <div className="inline-block bg-white rounded-xl p-3 shadow-lg mb-3">
-              <img 
-                src="https://www.genspark.ai/api/files/s/A7LiItwb" 
-                alt="Reliable Group Logo" 
-                className="h-16 w-auto"
-              />
+              <div className="text-2xl font-bold text-[#1e3a6e]">RG</div>
             </div>
             <h2 className="text-lg font-bold text-gray-900">Reliable Group <span className="text-red-500">|</span> MEP</h2>
             <p className="text-gray-500 text-xs">Work Permit Management System</p>

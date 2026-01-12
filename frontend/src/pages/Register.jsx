@@ -168,11 +168,10 @@ const Register = () => {
           {/* Logo */}
           <div className="mb-6">
             <div className="bg-white rounded-2xl p-5 inline-block shadow-2xl">
-              <img 
-                src="https://www.genspark.ai/api/files/s/A7LiItwb" 
-                alt="Reliable Group Logo" 
-                className="h-24 w-auto"
-              />
+              <div className="text-center">
+                <div className="text-3xl font-bold text-[#1e3a6e]">RG</div>
+                <div className="text-xs text-gray-500 mt-1">MEP</div>
+              </div>
             </div>
           </div>
 
@@ -219,11 +218,7 @@ const Register = () => {
           {/* Mobile logo */}
           <div className="lg:hidden text-center mb-4">
             <div className="inline-block bg-white rounded-xl p-2 shadow-lg mb-2">
-              <img 
-                src="https://www.genspark.ai/api/files/s/A7LiItwb" 
-                alt="Reliable Group Logo" 
-                className="h-12 w-auto"
-              />
+              <div className="text-xl font-bold text-[#1e3a6e]">RG</div>
             </div>
             <h2 className="text-base font-bold text-gray-900">Reliable Group <span className="text-red-500">|</span> MEP</h2>
           </div>

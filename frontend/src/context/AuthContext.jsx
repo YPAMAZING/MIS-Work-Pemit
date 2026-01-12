@@ -47,6 +47,17 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (data) => {
     const response = await api.post('/auth/register', data)
+    
+    // Check if registration requires approval
+    if (response.data.requiresApproval) {
+      // Don't set user or token - they need to wait for approval
+      return {
+        requiresApproval: true,
+        message: response.data.message,
+      }
+    }
+    
+    // Requestor role - auto-approved, login immediately
     const { user, token } = response.data
     localStorage.setItem('token', token)
     setUser(user)
@@ -72,6 +83,7 @@ export const AuthProvider = ({ children }) => {
     isAdmin: user?.role === 'ADMIN',
     isSafetyOfficer: user?.role === 'SAFETY_OFFICER',
     isRequestor: user?.role === 'REQUESTOR',
+    isSiteEngineer: user?.role === 'SITE_ENGINEER',
   }
 
   return (

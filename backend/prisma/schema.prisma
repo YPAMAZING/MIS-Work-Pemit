@@ -15,7 +15,13 @@ model User {
   lastName      String
   roleId        String?
   department    String?
+  phone         String?
   isActive      Boolean         @default(true)
+  isApproved    Boolean         @default(false)  // Requires admin approval for certain roles
+  requestedRole String?                          // Role requested during registration
+  approvedBy    String?                          // Admin who approved
+  approvedAt    DateTime?                        // When approved
+  rejectionReason String?                        // If rejected, reason
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   

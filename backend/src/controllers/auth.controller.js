@@ -6,10 +6,13 @@ const { createAuditLog } = require('../services/audit.service');
 
 const prisma = new PrismaClient();
 
+// Roles that require admin approval
+const ROLES_REQUIRING_APPROVAL = ['SAFETY_OFFICER', 'SITE_ENGINEER'];
+
 // Register new user
 const register = async (req, res) => {
   try {
-    const { email, password, firstName, lastName, department } = req.body;
+    const { email, password, firstName, lastName, department, phone, requestedRole } = req.body;
 
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
@@ -23,6 +26,22 @@ const register = async (req, res) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Determine if approval is needed
+    const role = requestedRole || 'REQUESTOR';
+    const needsApproval = ROLES_REQUIRING_APPROVAL.includes(role);
+
+    // Find the role ID
+    let roleRecord = await prisma.role.findUnique({
+      where: { name: needsApproval ? 'REQUESTOR' : role }, // Temporarily assign REQUESTOR if needs approval
+    });
+
+    // If role doesn't exist, find REQUESTOR
+    if (!roleRecord) {
+      roleRecord = await prisma.role.findUnique({
+        where: { name: 'REQUESTOR' },
+      });
+    }
+
     // Create user
     const user = await prisma.user.create({
       data: {
@@ -31,40 +50,59 @@ const register = async (req, res) => {
         firstName,
         lastName,
         department,
-        role: 'REQUESTOR', // Default role
+        phone,
+        roleId: roleRecord?.id,
+        isApproved: !needsApproval, // Auto-approve requestors
+        requestedRole: needsApproval ? role : null,
       },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
+      include: {
         role: true,
-        department: true,
-        createdAt: true,
       },
     });
 
     // Create audit log
     await createAuditLog({
       userId: user.id,
-      action: 'USER_REGISTERED',
+      action: needsApproval ? 'USER_REGISTRATION_PENDING' : 'USER_REGISTERED',
       entity: 'User',
       entityId: user.id,
-      newValue: { email: user.email, role: user.role },
+      newValue: { email: user.email, requestedRole: role, needsApproval },
       ipAddress: req.ip,
       userAgent: req.headers['user-agent'],
     });
 
-    // Generate token
+    // If needs approval, don't generate token
+    if (needsApproval) {
+      return res.status(201).json({
+        message: 'Registration submitted for approval',
+        requiresApproval: true,
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          requestedRole: role,
+        },
+      });
+    }
+
+    // Generate token for auto-approved users (Requestors)
     const token = jwt.sign(
-      { userId: user.id, role: user.role },
+      { userId: user.id, role: user.role?.name || 'REQUESTOR' },
       config.jwtSecret,
       { expiresIn: config.jwtExpiresIn }
     );
 
     res.status(201).json({
       message: 'Registration successful',
-      user,
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role?.name || 'REQUESTOR',
+        department: user.department,
+      },
       token,
     });
   } catch (error) {
@@ -78,9 +116,12 @@ const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Find user
+    // Find user with role
     const user = await prisma.user.findUnique({
       where: { email },
+      include: {
+        role: true,
+      },
     });
 
     if (!user) {
@@ -91,6 +132,15 @@ const login = async (req, res) => {
       return res.status(401).json({ message: 'Account is deactivated' });
     }
 
+    // Check if user is approved
+    if (!user.isApproved) {
+      return res.status(403).json({ 
+        message: 'Your account is pending approval. Please wait for admin approval.',
+        pendingApproval: true,
+        requestedRole: user.requestedRole,
+      });
+    }
+
     // Check password
     const isValidPassword = await bcrypt.compare(password, user.password);
 
@@ -98,9 +148,11 @@ const login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
+    const userRole = user.role?.name || 'REQUESTOR';
+
     // Generate token
     const token = jwt.sign(
-      { userId: user.id, role: user.role },
+      { userId: user.id, role: userRole },
       config.jwtSecret,
       { expiresIn: config.jwtExpiresIn }
     );
@@ -122,7 +174,7 @@ const login = async (req, res) => {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        role: user.role,
+        role: userRole,
         department: user.department,
       },
       token,

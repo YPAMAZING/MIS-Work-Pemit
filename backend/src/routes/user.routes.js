@@ -2,10 +2,14 @@ const express = require('express');
 const { body, param } = require('express-validator');
 const {
   getAllUsers,
+  getPendingUsers,
+  approveUser,
+  rejectUser,
   getUserById,
   createUser,
   updateUser,
   deleteUser,
+  getUserStats,
 } = require('../controllers/user.controller');
 const { authenticate, isAdmin } = require('../middleware/auth.middleware');
 const { validate } = require('../middleware/validate.middleware');
@@ -14,6 +18,33 @@ const router = express.Router();
 
 // All routes require authentication
 router.use(authenticate);
+
+// Get user stats (Admin only)
+router.get('/stats', isAdmin, getUserStats);
+
+// Get pending approval users (Admin only)
+router.get('/pending', isAdmin, getPendingUsers);
+
+// Approve user registration (Admin only)
+router.post(
+  '/:id/approve',
+  isAdmin,
+  [param('id').isUUID().withMessage('Invalid user ID')],
+  validate,
+  approveUser
+);
+
+// Reject user registration (Admin only)
+router.post(
+  '/:id/reject',
+  isAdmin,
+  [
+    param('id').isUUID().withMessage('Invalid user ID'),
+    body('reason').optional().trim(),
+  ],
+  validate,
+  rejectUser
+);
 
 // Get all users (Admin only)
 router.get('/', isAdmin, getAllUsers);
@@ -40,7 +71,7 @@ router.post(
     body('lastName').notEmpty().trim().withMessage('Last name is required'),
     body('role')
       .optional()
-      .isIn(['ADMIN', 'REQUESTOR', 'SAFETY_OFFICER'])
+      .isIn(['ADMIN', 'REQUESTOR', 'SAFETY_OFFICER', 'SITE_ENGINEER'])
       .withMessage('Invalid role'),
   ],
   validate,
@@ -56,7 +87,7 @@ router.put(
     body('lastName').optional().trim(),
     body('role')
       .optional()
-      .isIn(['ADMIN', 'REQUESTOR', 'SAFETY_OFFICER'])
+      .isIn(['ADMIN', 'REQUESTOR', 'SAFETY_OFFICER', 'SITE_ENGINEER'])
       .withMessage('Invalid role'),
   ],
   validate,

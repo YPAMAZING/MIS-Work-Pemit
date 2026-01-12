@@ -92,6 +92,11 @@ export const usersAPI = {
   create: (data) => api.post('/users', data),
   update: (id, data) => api.put(`/users/${id}`, data),
   delete: (id) => api.delete(`/users/${id}`),
+  // Approval endpoints
+  getPending: () => api.get('/users/pending'),
+  approve: (id) => api.post(`/users/${id}/approve`),
+  reject: (id, reason) => api.post(`/users/${id}/reject`, { reason }),
+  getStats: () => api.get('/users/stats'),
 }
 
 // Dashboard API

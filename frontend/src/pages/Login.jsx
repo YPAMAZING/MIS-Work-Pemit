@@ -11,7 +11,8 @@ import {
   UserCog, 
   HardHat, 
   ClipboardCheck,
-  Wrench
+  Wrench,
+  Shield
 } from 'lucide-react'
 
 const Login = () => {
@@ -101,14 +102,10 @@ const Login = () => {
         
         {/* Content */}
         <div className={`relative z-10 flex flex-col justify-center items-center w-full px-10 xl:px-16 transition-all duration-700 ${mounted ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-10'}`}>
-          {/* Logo */}
+          {/* Icon */}
           <div className="mb-8">
             <div className="bg-white rounded-2xl p-6 inline-block shadow-2xl">
-              <img 
-                src="https://www.genspark.ai/api/files/s/A7LiItwb" 
-                alt="Reliable Group Logo" 
-                className="h-32 w-auto"
-              />
+              <Shield className="h-20 w-20 text-[#1e3a6e]" />
             </div>
           </div>
 
@@ -135,14 +132,10 @@ const Login = () => {
       {/* Right Panel - Login Form */}
       <div className="w-full lg:w-[55%] flex items-center justify-center p-4 sm:p-6 bg-gray-50">
         <div className={`w-full max-w-md transition-all duration-500 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
-          {/* Mobile logo */}
+          {/* Mobile header */}
           <div className="lg:hidden text-center mb-6">
             <div className="inline-block bg-white rounded-xl p-3 shadow-lg mb-3">
-              <img 
-                src="https://www.genspark.ai/api/files/s/A7LiItwb" 
-                alt="Reliable Group Logo" 
-                className="h-16 w-auto"
-              />
+              <Shield className="h-12 w-12 text-[#1e3a6e]" />
             </div>
             <h2 className="text-lg font-bold text-gray-900">Reliable Group <span className="text-red-500">|</span> MEP</h2>
             <p className="text-gray-500 text-xs">Work Permit Management System</p>

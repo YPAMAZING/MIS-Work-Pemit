@@ -6,6 +6,7 @@ const {
   verifyOTPAndRegister, 
   login, 
   me, 
+  sendPasswordOTP,
   changePassword,
   updateProfile 
 } = require('../controllers/auth.controller');
@@ -71,12 +72,19 @@ router.post(
 // Get current user
 router.get('/me', authenticate, me);
 
-// Change password
+// Send OTP for password change
+router.post(
+  '/send-password-otp',
+  authenticate,
+  sendPasswordOTP
+);
+
+// Change password with OTP verification
 router.post(
   '/change-password',
   authenticate,
   [
-    body('currentPassword').notEmpty().withMessage('Current password is required'),
+    body('otp').isLength({ min: 6, max: 6 }).withMessage('OTP must be 6 digits'),
     body('newPassword')
       .isLength({ min: 6 })
       .withMessage('New password must be at least 6 characters'),

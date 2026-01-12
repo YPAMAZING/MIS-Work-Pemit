@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { authAPI } from '../services/api'
 import toast from 'react-hot-toast'
 import { 
   Mail, 
@@ -18,10 +17,7 @@ import {
   ClipboardCheck,
   Wrench,
   Clock,
-  Shield,
-  ArrowLeft,
-  KeyRound,
-  RefreshCw,
+  Shield
 } from 'lucide-react'
 
 const Register = () => {
@@ -40,29 +36,12 @@ const Register = () => {
   const [mounted, setMounted] = useState(false)
   const [registrationSuccess, setRegistrationSuccess] = useState(false)
   const [pendingApproval, setPendingApproval] = useState(false)
-  
-  // OTP States
-  const [step, setStep] = useState('form') // 'form', 'otp', 'success'
-  const [otp, setOtp] = useState(['', '', '', '', '', ''])
-  const [otpSent, setOtpSent] = useState(false)
-  const [otpLoading, setOtpLoading] = useState(false)
-  const [resendTimer, setResendTimer] = useState(0)
-  const [devOtp, setDevOtp] = useState('') // For development only
-  
   const { register } = useAuth()
   const navigate = useNavigate()
 
   useEffect(() => {
     setMounted(true)
   }, [])
-
-  // Resend timer countdown
-  useEffect(() => {
-    if (resendTimer > 0) {
-      const timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000)
-      return () => clearTimeout(timer)
-    }
-  }, [resendTimer])
 
   const roles = [
     {
@@ -99,7 +78,7 @@ const Register = () => {
     },
   ]
 
-  const handleSendOTP = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
 
     if (formData.password !== formData.confirmPassword) {
@@ -112,126 +91,24 @@ const Register = () => {
       return
     }
 
-    if (!formData.phone) {
-      toast.error('Phone number is required for OTP verification')
-      return
-    }
-
-    setOtpLoading(true)
-
-    try {
-      const { confirmPassword, ...sendData } = formData
-      const response = await authAPI.sendOTP(sendData)
-      
-      setOtpSent(true)
-      setStep('otp')
-      setResendTimer(60) // 60 seconds cooldown
-      
-      // For development - show OTP in toast
-      if (response.data.otp) {
-        setDevOtp(response.data.otp)
-        toast.success(`OTP sent! (Dev mode: ${response.data.otp})`)
-      } else {
-        toast.success('OTP sent to your email and phone!')
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Error sending OTP')
-    } finally {
-      setOtpLoading(false)
-    }
-  }
-
-  const handleVerifyOTP = async () => {
-    const otpValue = otp.join('')
-    
-    if (otpValue.length !== 6) {
-      toast.error('Please enter the 6-digit OTP')
-      return
-    }
-
     setLoading(true)
 
     try {
-      const response = await authAPI.verifyOTP({
-        email: formData.email,
-        phone: formData.phone,
-        otp: otpValue,
-      })
+      const { confirmPassword, ...registerData } = formData
+      const response = await register(registerData)
       
-      if (response.data.requiresApproval) {
+      if (response?.requiresApproval) {
         setPendingApproval(true)
-        setStep('success')
+        setRegistrationSuccess(true)
         toast.success('Registration submitted for approval!')
       } else {
-        // Store token and redirect
-        if (response.data.token) {
-          localStorage.setItem('token', response.data.token)
-        }
         toast.success('Account created successfully!')
         navigate('/dashboard')
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Invalid OTP')
+      toast.error(error.response?.data?.message || 'Registration failed')
     } finally {
       setLoading(false)
-    }
-  }
-
-  const handleResendOTP = async () => {
-    if (resendTimer > 0) return
-    
-    setOtpLoading(true)
-    try {
-      const { confirmPassword, ...sendData } = formData
-      const response = await authAPI.sendOTP(sendData)
-      setResendTimer(60)
-      setOtp(['', '', '', '', '', ''])
-      
-      if (response.data.otp) {
-        setDevOtp(response.data.otp)
-        toast.success(`OTP resent! (Dev mode: ${response.data.otp})`)
-      } else {
-        toast.success('OTP resent successfully!')
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Error resending OTP')
-    } finally {
-      setOtpLoading(false)
-    }
-  }
-
-  const handleOtpChange = (index, value) => {
-    if (value.length > 1) {
-      // Handle paste
-      const pastedValue = value.slice(0, 6).split('')
-      const newOtp = [...otp]
-      pastedValue.forEach((char, i) => {
-        if (index + i < 6 && /^\d$/.test(char)) {
-          newOtp[index + i] = char
-        }
-      })
-      setOtp(newOtp)
-      // Focus last filled input or next empty
-      const nextIndex = Math.min(index + pastedValue.length, 5)
-      document.getElementById(`otp-${nextIndex}`)?.focus()
-      return
-    }
-    
-    if (!/^\d*$/.test(value)) return
-    
-    const newOtp = [...otp]
-    newOtp[index] = value
-    setOtp(newOtp)
-    
-    // Auto-focus next input
-    if (value && index < 5) {
-      document.getElementById(`otp-${index + 1}`)?.focus()
-    }
-  }
-
-  const handleOtpKeyDown = (index, e) => {
-    if (e.key === 'Backspace' && !otp[index] && index > 0) {
-      document.getElementById(`otp-${index - 1}`)?.focus()
     }
   }
 
@@ -242,7 +119,7 @@ const Register = () => {
   const selectedRole = roles.find(r => r.id === formData.requestedRole)
 
   // Success screen for pending approval
-  if (step === 'success' && pendingApproval) {
+  if (registrationSuccess && pendingApproval) {
     return (
       <div className="h-screen flex items-center justify-center bg-gray-50 p-4">
         <div className={`max-w-md w-full transition-all duration-500 ${mounted ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
@@ -267,101 +144,6 @@ const Register = () => {
               Back to Login
               <ArrowRight className="w-4 h-4" />
             </Link>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // OTP Verification Step
-  if (step === 'otp') {
-    return (
-      <div className="h-screen flex items-center justify-center bg-gray-50 p-4">
-        <div className={`max-w-md w-full transition-all duration-500 ${mounted ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
-          <div className="bg-white rounded-2xl shadow-xl p-8">
-            <button
-              onClick={() => setStep('form')}
-              className="flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-6"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back
-            </button>
-            
-            <div className="text-center mb-8">
-              <div className="w-16 h-16 bg-[#1e3a6e]/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <KeyRound className="w-8 h-8 text-[#1e3a6e]" />
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Verify OTP</h2>
-              <p className="text-gray-500 text-sm">
-                We've sent a 6-digit code to<br />
-                <span className="font-medium text-gray-700">{formData.email}</span> and <span className="font-medium text-gray-700">{formData.phone}</span>
-              </p>
-            </div>
-
-            {/* Dev mode OTP display */}
-            {devOtp && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-6 text-center">
-                <p className="text-xs text-yellow-600">Development Mode - OTP:</p>
-                <p className="text-lg font-bold text-yellow-800 tracking-widest">{devOtp}</p>
-              </div>
-            )}
-
-            {/* OTP Input */}
-            <div className="flex justify-center gap-2 mb-6">
-              {otp.map((digit, index) => (
-                <input
-                  key={index}
-                  id={`otp-${index}`}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={6}
-                  value={digit}
-                  onChange={(e) => handleOtpChange(index, e.target.value)}
-                  onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                  className="w-12 h-14 text-center text-xl font-bold border-2 border-gray-200 rounded-xl focus:border-[#1e3a6e] focus:ring-2 focus:ring-[#1e3a6e]/20 outline-none transition-all"
-                />
-              ))}
-            </div>
-
-            <button
-              onClick={handleVerifyOTP}
-              disabled={loading || otp.join('').length !== 6}
-              className="w-full py-3 bg-gradient-to-r from-[#1e3a6e] to-[#2a4a80] hover:from-[#162d57] hover:to-[#1e3a6e] text-white font-semibold rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Verifying...
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="w-5 h-5" />
-                  Verify & Create Account
-                </>
-              )}
-            </button>
-
-            <div className="mt-6 text-center">
-              <p className="text-gray-500 text-sm">
-                Didn't receive the code?{' '}
-                {resendTimer > 0 ? (
-                  <span className="text-gray-400">Resend in {resendTimer}s</span>
-                ) : (
-                  <button
-                    onClick={handleResendOTP}
-                    disabled={otpLoading}
-                    className="text-[#1e3a6e] font-semibold hover:text-[#162d57] inline-flex items-center gap-1"
-                  >
-                    {otpLoading ? (
-                      <RefreshCw className="w-3 h-3 animate-spin" />
-                    ) : (
-                      <RefreshCw className="w-3 h-3" />
-                    )}
-                    Resend OTP
-                  </button>
-                )}
-              </p>
-            </div>
           </div>
         </div>
       </div>
@@ -509,10 +291,10 @@ const Register = () => {
               )}
             </div>
 
-            <form onSubmit={handleSendOTP} className="space-y-3">
+            <form onSubmit={handleSubmit} className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">First Name *</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">First Name</label>
                   <div className="relative group">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-[#1e3a6e] transition-colors" />
                     <input
@@ -527,7 +309,7 @@ const Register = () => {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Last Name *</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Last Name</label>
                   <div className="relative group">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-[#1e3a6e] transition-colors" />
                     <input
@@ -545,7 +327,7 @@ const Register = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Email Address *</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Email Address</label>
                   <div className="relative group">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-[#1e3a6e] transition-colors" />
                     <input
@@ -560,7 +342,7 @@ const Register = () => {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Phone Number *</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Phone Number</label>
                   <div className="relative group">
                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-[#1e3a6e] transition-colors" />
                     <input
@@ -570,7 +352,6 @@ const Register = () => {
                       onChange={handleChange}
                       className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:bg-white focus:border-[#1e3a6e] focus:ring-2 focus:ring-[#1e3a6e]/20 transition-all duration-200 outline-none text-sm"
                       placeholder="+91 98765 43210"
-                      required
                     />
                   </div>
                 </div>
@@ -593,7 +374,7 @@ const Register = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Password *</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Password</label>
                   <div className="relative group">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-[#1e3a6e] transition-colors" />
                     <input
@@ -615,7 +396,7 @@ const Register = () => {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Confirm Password *</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Confirm Password</label>
                   <div className="relative group">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-[#1e3a6e] transition-colors" />
                     <input
@@ -631,26 +412,19 @@ const Register = () => {
                 </div>
               </div>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <p className="text-xs text-blue-700 flex items-center gap-2">
-                  <KeyRound className="w-4 h-4" />
-                  OTP will be sent to your email and phone for verification
-                </p>
-              </div>
-
               <button
                 type="submit"
-                disabled={otpLoading}
+                disabled={loading}
                 className="w-full py-3 bg-gradient-to-r from-[#1e3a6e] to-[#2a4a80] hover:from-[#162d57] hover:to-[#1e3a6e] text-white font-semibold rounded-xl shadow-lg shadow-[#1e3a6e]/25 hover:shadow-xl hover:shadow-[#1e3a6e]/30 transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 group text-sm mt-2"
               >
-                {otpLoading ? (
+                {loading ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    <span>Sending OTP...</span>
+                    <span>Creating account...</span>
                   </>
                 ) : (
                   <>
-                    <span>Send OTP & Continue</span>
+                    <span>{selectedRole?.requiresApproval ? 'Submit for Approval' : 'Create Account'}</span>
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </>
                 )}

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { authAPI } from '../services/api'
 import toast from 'react-hot-toast'
@@ -17,15 +17,27 @@ import {
   X,
   Check,
   Loader2,
+  KeyRound,
+  Send,
+  RefreshCw,
 } from 'lucide-react'
 
 const Settings = () => {
   const { user, updateUser } = useAuth()
   const [loading, setLoading] = useState(false)
-  const [passwordLoading, setPasswordLoading] = useState(false)
-  const [editMode, setEditMode] = useState(false)
   const [uploadingPicture, setUploadingPicture] = useState(false)
+  const [editMode, setEditMode] = useState(false)
   const fileInputRef = useRef(null)
+  
+  // Password change states
+  const [passwordStep, setPasswordStep] = useState('request') // 'request', 'verify'
+  const [passwordLoading, setPasswordLoading] = useState(false)
+  const [otpSending, setOtpSending] = useState(false)
+  const [resendTimer, setResendTimer] = useState(0)
+  const [otp, setOtp] = useState(['', '', '', '', '', ''])
+  const [maskedInfo, setMaskedInfo] = useState({ email: '', phone: '' })
+  const [devOtp, setDevOtp] = useState('')
+  const otpInputRefs = useRef([])
   
   const [profileData, setProfileData] = useState({
     firstName: user?.firstName || '',
@@ -36,15 +48,21 @@ const Settings = () => {
   })
   
   const [showPasswords, setShowPasswords] = useState({
-    current: false,
     new: false,
     confirm: false,
   })
   const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
     newPassword: '',
     confirmPassword: '',
   })
+
+  // Countdown timer for resend
+  useEffect(() => {
+    if (resendTimer > 0) {
+      const timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000)
+      return () => clearTimeout(timer)
+    }
+  }, [resendTimer])
 
   const getRoleBadge = (role) => {
     const badges = {
@@ -114,8 +132,75 @@ const Settings = () => {
     }
   }
 
+  // Send OTP for password change
+  const handleSendOTP = async () => {
+    setOtpSending(true)
+    
+    try {
+      const response = await authAPI.sendPasswordOTP()
+      setMaskedInfo({
+        email: response.data.email || '',
+        phone: response.data.phone || '',
+      })
+      setPasswordStep('verify')
+      setResendTimer(60) // 60 seconds cooldown
+      toast.success('OTP sent to your email and phone')
+      
+      // Show OTP in development mode
+      if (response.data.otp) {
+        setDevOtp(response.data.otp)
+        toast.success(`DEV MODE - OTP: ${response.data.otp}`, { duration: 10000 })
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Error sending OTP')
+    } finally {
+      setOtpSending(false)
+    }
+  }
+
+  // Handle OTP input
+  const handleOtpChange = (index, value) => {
+    if (value.length > 1) {
+      // Handle paste
+      const pastedValue = value.slice(0, 6).split('')
+      const newOtp = [...otp]
+      pastedValue.forEach((char, i) => {
+        if (index + i < 6) {
+          newOtp[index + i] = char
+        }
+      })
+      setOtp(newOtp)
+      
+      // Focus last filled input or last input
+      const focusIndex = Math.min(index + pastedValue.length, 5)
+      otpInputRefs.current[focusIndex]?.focus()
+    } else {
+      const newOtp = [...otp]
+      newOtp[index] = value
+      setOtp(newOtp)
+      
+      // Auto-focus next input
+      if (value && index < 5) {
+        otpInputRefs.current[index + 1]?.focus()
+      }
+    }
+  }
+
+  const handleOtpKeyDown = (index, e) => {
+    if (e.key === 'Backspace' && !otp[index] && index > 0) {
+      otpInputRefs.current[index - 1]?.focus()
+    }
+  }
+
+  // Change password with OTP
   const handlePasswordChange = async (e) => {
     e.preventDefault()
+
+    const otpValue = otp.join('')
+    if (otpValue.length !== 6) {
+      toast.error('Please enter the 6-digit OTP')
+      return
+    }
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       toast.error('New passwords do not match')
@@ -130,20 +215,28 @@ const Settings = () => {
     setPasswordLoading(true)
     try {
       await authAPI.changePassword({
-        currentPassword: passwordData.currentPassword,
+        otp: otpValue,
         newPassword: passwordData.newPassword,
       })
       toast.success('Password changed successfully')
-      setPasswordData({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: '',
-      })
+      
+      // Reset all states
+      setPasswordStep('request')
+      setPasswordData({ newPassword: '', confirmPassword: '' })
+      setOtp(['', '', '', '', '', ''])
+      setDevOtp('')
     } catch (error) {
       toast.error(error.response?.data?.message || 'Error changing password')
     } finally {
       setPasswordLoading(false)
     }
+  }
+
+  const cancelPasswordChange = () => {
+    setPasswordStep('request')
+    setPasswordData({ newPassword: '', confirmPassword: '' })
+    setOtp(['', '', '', '', '', ''])
+    setDevOtp('')
   }
 
   const cancelEdit = () => {
@@ -355,87 +448,197 @@ const Settings = () => {
         </div>
       </div>
 
-      {/* Change Password */}
+      {/* Change Password with OTP */}
       <div className="card">
-        <div className="card-header flex items-center gap-2">
-          <Lock className="w-5 h-5 text-gray-400" />
-          <h2 className="text-lg font-semibold text-gray-900">Change Password</h2>
+        <div className="card-header flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Lock className="w-5 h-5 text-gray-400" />
+            <h2 className="text-lg font-semibold text-gray-900">Change Password</h2>
+          </div>
+          {passwordStep === 'verify' && (
+            <button
+              onClick={cancelPasswordChange}
+              className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700"
+            >
+              <X className="w-4 h-4" />
+              Cancel
+            </button>
+          )}
         </div>
         <div className="card-body">
-          <form onSubmit={handlePasswordChange} className="space-y-4 max-w-md">
-            <div>
-              <label className="label">Current Password</label>
-              <div className="relative">
-                <input
-                  type={showPasswords.current ? 'text' : 'password'}
-                  value={passwordData.currentPassword}
-                  onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                  className="input pr-11"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPasswords({ ...showPasswords, current: !showPasswords.current })}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showPasswords.current ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
+          {passwordStep === 'request' ? (
+            // Step 1: Request OTP
+            <div className="max-w-md">
+              <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6">
+                <div className="flex items-start gap-3">
+                  <KeyRound className="w-5 h-5 text-blue-600 mt-0.5" />
+                  <div>
+                    <h4 className="text-sm font-medium text-blue-900">OTP Verification Required</h4>
+                    <p className="text-sm text-blue-700 mt-1">
+                      For security, we'll send a one-time password to your registered email and phone number before you can change your password.
+                    </p>
+                  </div>
+                </div>
               </div>
-            </div>
-            <div>
-              <label className="label">New Password</label>
-              <div className="relative">
-                <input
-                  type={showPasswords.new ? 'text' : 'password'}
-                  value={passwordData.newPassword}
-                  onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                  className="input pr-11"
-                  required
-                  minLength={6}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showPasswords.new ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
+              
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 text-sm text-gray-600">
+                  <Mail className="w-4 h-4" />
+                  <span>OTP will be sent to your email: <strong>{user?.email}</strong></span>
+                </div>
+                {user?.phone && (
+                  <div className="flex items-center gap-3 text-sm text-gray-600">
+                    <Phone className="w-4 h-4" />
+                    <span>OTP will also be sent to your phone: <strong>{user?.phone}</strong></span>
+                  </div>
+                )}
               </div>
-              <p className="text-xs text-gray-500 mt-1">Minimum 6 characters</p>
+              
+              <button
+                onClick={handleSendOTP}
+                disabled={otpSending}
+                className="mt-6 flex items-center gap-2 px-6 py-3 bg-[#1e3a6e] text-white rounded-lg hover:bg-[#162d57] transition-colors disabled:opacity-50"
+              >
+                {otpSending ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Sending OTP...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-5 h-5" />
+                    Send OTP
+                  </>
+                )}
+              </button>
             </div>
-            <div>
-              <label className="label">Confirm New Password</label>
-              <div className="relative">
-                <input
-                  type={showPasswords.confirm ? 'text' : 'password'}
-                  value={passwordData.confirmPassword}
-                  onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                  className="input pr-11"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showPasswords.confirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
+          ) : (
+            // Step 2: Verify OTP and change password
+            <form onSubmit={handlePasswordChange} className="space-y-6 max-w-md">
+              {/* OTP Info */}
+              <div className="bg-green-50 border border-green-100 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <Check className="w-5 h-5 text-green-600 mt-0.5" />
+                  <div>
+                    <h4 className="text-sm font-medium text-green-900">OTP Sent Successfully</h4>
+                    <p className="text-sm text-green-700 mt-1">
+                      Check your email {maskedInfo.email && `(${maskedInfo.email})`}
+                      {maskedInfo.phone && ` and phone (${maskedInfo.phone})`} for the 6-digit OTP.
+                    </p>
+                  </div>
+                </div>
               </div>
-            </div>
-            <button type="submit" disabled={passwordLoading} className="btn btn-primary">
-              {passwordLoading ? (
-                <span className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Changing...
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  <Save className="w-4 h-4" />
-                  Change Password
-                </span>
+              
+              {/* Dev OTP display */}
+              {devOtp && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                  <p className="text-sm text-yellow-800">
+                    <strong>DEV MODE:</strong> Your OTP is <span className="font-mono text-lg">{devOtp}</span>
+                  </p>
+                </div>
               )}
-            </button>
-          </form>
+              
+              {/* OTP Input */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Enter 6-digit OTP
+                </label>
+                <div className="flex gap-2">
+                  {otp.map((digit, index) => (
+                    <input
+                      key={index}
+                      ref={(el) => (otpInputRefs.current[index] = el)}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
+                      value={digit}
+                      onChange={(e) => handleOtpChange(index, e.target.value.replace(/\D/g, ''))}
+                      onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                      className="w-12 h-14 text-center text-xl font-bold border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1e3a6e]/20 focus:border-[#1e3a6e] outline-none"
+                    />
+                  ))}
+                </div>
+                
+                {/* Resend OTP */}
+                <div className="mt-3 flex items-center gap-2">
+                  {resendTimer > 0 ? (
+                    <span className="text-sm text-gray-500">
+                      Resend OTP in {resendTimer}s
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleSendOTP}
+                      disabled={otpSending}
+                      className="text-sm text-[#1e3a6e] hover:text-[#162d57] font-medium flex items-center gap-1"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                      Resend OTP
+                    </button>
+                  )}
+                </div>
+              </div>
+              
+              {/* New Password */}
+              <div>
+                <label className="label">New Password</label>
+                <div className="relative">
+                  <input
+                    type={showPasswords.new ? 'text' : 'password'}
+                    value={passwordData.newPassword}
+                    onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                    className="input pr-11"
+                    required
+                    minLength={6}
+                    placeholder="Minimum 6 characters"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPasswords.new ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+              </div>
+              
+              {/* Confirm Password */}
+              <div>
+                <label className="label">Confirm New Password</label>
+                <div className="relative">
+                  <input
+                    type={showPasswords.confirm ? 'text' : 'password'}
+                    value={passwordData.confirmPassword}
+                    onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                    className="input pr-11"
+                    required
+                    placeholder="Re-enter new password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPasswords.confirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+              </div>
+              
+              <button type="submit" disabled={passwordLoading} className="btn btn-primary w-full">
+                {passwordLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Changing Password...
+                  </span>
+                ) : (
+                  <span className="flex items-center justify-center gap-2">
+                    <Save className="w-4 h-4" />
+                    Change Password
+                  </span>
+                )}
+              </button>
+            </form>
+          )}
         </div>
       </div>
 

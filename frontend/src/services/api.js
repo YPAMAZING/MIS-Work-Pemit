@@ -44,6 +44,8 @@ export const authAPI = {
   sendOTP: (data) => api.post('/auth/send-otp', data),
   verifyOTP: (data) => api.post('/auth/verify-otp', data),
   me: () => api.get('/auth/me'),
+  // Password change with OTP
+  sendPasswordOTP: () => api.post('/auth/send-password-otp'),
   changePassword: (data) => api.post('/auth/change-password', data),
   updateProfile: (data) => api.put('/auth/profile', data),
 }

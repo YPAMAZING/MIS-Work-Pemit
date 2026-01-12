@@ -167,9 +167,78 @@ const verifyRegistrationOTP = (email, phone, otp) => {
   return { valid: false, message: 'Invalid or expired OTP' };
 };
 
+// Send OTP for password change to both email and phone (if available)
+const sendPasswordChangeOTP = async (email, phone) => {
+  const otp = generateOTP();
+  
+  // Store OTP with password change prefix
+  const passwordChangeKey = `pwd_${email}`;
+  storeOTP(passwordChangeKey, otp);
+  
+  // Also store with phone if available
+  if (phone) {
+    storeOTP(`pwd_${phone}`, otp);
+  }
+  
+  const results = {
+    email: false,
+    phone: false,
+    otp: otp, // For development only - remove in production
+  };
+  
+  try {
+    if (email) {
+      await sendEmailOTP(email, otp);
+      results.email = true;
+    }
+  } catch (error) {
+    console.error('Email OTP failed:', error);
+  }
+  
+  try {
+    if (phone) {
+      await sendSMSOTP(phone, otp);
+      results.phone = true;
+    }
+  } catch (error) {
+    console.error('SMS OTP failed:', error);
+  }
+  
+  return results;
+};
+
+// Verify OTP for password change
+const verifyPasswordChangeOTP = (email, phone, otp) => {
+  // Try email key first
+  const emailKey = `pwd_${email}`;
+  let result = verifyOTP(emailKey, otp);
+  
+  if (result.valid) {
+    // Clean up phone key if exists
+    if (phone) {
+      otpStore.delete(`pwd_${phone}`);
+    }
+    return result;
+  }
+  
+  // Try phone key
+  if (phone) {
+    const phoneKey = `pwd_${phone}`;
+    result = verifyOTP(phoneKey, otp);
+    if (result.valid) {
+      otpStore.delete(emailKey);
+      return result;
+    }
+  }
+  
+  return { valid: false, message: 'Invalid or expired OTP' };
+};
+
 module.exports = {
   generateOTP,
   sendOTP,
   verifyOTP,
   verifyRegistrationOTP,
+  sendPasswordChangeOTP,
+  verifyPasswordChangeOTP,
 };

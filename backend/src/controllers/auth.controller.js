@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const config = require('../config');
 const { createAuditLog } = require('../services/audit.service');
-const { sendOTP, verifyRegistrationOTP } = require('../services/otp.service');
+const { sendOTP, verifyRegistrationOTP, sendPasswordChangeOTP, verifyPasswordChangeOTP } = require('../services/otp.service');
 
 const prisma = new PrismaClient();
 
@@ -375,22 +375,65 @@ const me = async (req, res) => {
   }
 };
 
-// Change password
+// Send OTP for password change
+const sendPasswordOTP = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Send OTP to email and phone
+    const result = await sendPasswordChangeOTP(user.email, user.phone);
+
+    res.json({
+      message: 'OTP sent successfully',
+      email: user.email ? `${user.email.substring(0, 3)}***${user.email.substring(user.email.indexOf('@'))}` : null,
+      phone: user.phone ? `***${user.phone.slice(-4)}` : null,
+      // Include OTP in response for development - REMOVE IN PRODUCTION
+      otp: process.env.NODE_ENV === 'development' ? result.otp : undefined,
+    });
+  } catch (error) {
+    console.error('Send password OTP error:', error);
+    res.status(500).json({ message: 'Error sending OTP' });
+  }
+};
+
+// Change password with OTP verification
 const changePassword = async (req, res) => {
   try {
-    const { currentPassword, newPassword } = req.body;
+    const { otp, newPassword } = req.body;
     const userId = req.user.id;
+
+    if (!otp || !newPassword) {
+      return res.status(400).json({ message: 'OTP and new password are required' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    }
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
     });
 
-    const isValidPassword = await bcrypt.compare(currentPassword, user.password);
-
-    if (!isValidPassword) {
-      return res.status(400).json({ message: 'Current password is incorrect' });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
 
+    // Verify OTP
+    const otpResult = verifyPasswordChangeOTP(user.email, user.phone, otp);
+    
+    if (!otpResult.valid) {
+      return res.status(400).json({ message: otpResult.message || 'Invalid OTP' });
+    }
+
+    // Hash and update password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     await prisma.user.update({
@@ -403,6 +446,7 @@ const changePassword = async (req, res) => {
       action: 'PASSWORD_CHANGED',
       entity: 'User',
       entityId: userId,
+      newValue: { method: 'OTP_VERIFIED' },
       ipAddress: req.ip,
       userAgent: req.headers['user-agent'],
     });
@@ -470,6 +514,7 @@ module.exports = {
   verifyOTPAndRegister,
   login,
   me,
+  sendPasswordOTP,
   changePassword,
   updateProfile,
 };

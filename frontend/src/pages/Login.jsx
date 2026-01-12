@@ -7,12 +7,7 @@ import {
   Lock, 
   Eye, 
   EyeOff, 
-  ArrowRight, 
-  UserCog, 
-  HardHat, 
-  ClipboardCheck,
-  Wrench,
-  Shield
+  ArrowRight
 } from 'lucide-react'
 
 const Login = () => {
@@ -22,7 +17,6 @@ const Login = () => {
   })
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [selectedDemo, setSelectedDemo] = useState(null)
   const [mounted, setMounted] = useState(false)
   const { login } = useAuth()
   const navigate = useNavigate()
@@ -48,43 +42,6 @@ const Login = () => {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
-    setSelectedDemo(null)
-  }
-
-  // Demo credentials with icons and colors
-  const demoAccounts = [
-    { 
-      role: 'Admin', 
-      email: 'admin@permitmanager.com', 
-      password: 'admin123',
-      icon: UserCog,
-      color: 'from-violet-500 to-purple-600',
-      bgColor: 'bg-violet-50 hover:bg-violet-100',
-      textColor: 'text-violet-600'
-    },
-    { 
-      role: 'Safety', 
-      email: 'safety@permitmanager.com', 
-      password: 'safety123',
-      icon: HardHat,
-      color: 'from-blue-500 to-cyan-600',
-      bgColor: 'bg-blue-50 hover:bg-blue-100',
-      textColor: 'text-blue-600'
-    },
-    { 
-      role: 'Engineer', 
-      email: 'engineer@permitmanager.com', 
-      password: 'engineer123',
-      icon: Wrench,
-      color: 'from-orange-500 to-amber-600',
-      bgColor: 'bg-orange-50 hover:bg-orange-100',
-      textColor: 'text-orange-600'
-    },
-  ]
-
-  const fillDemoCredentials = (account) => {
-    setFormData({ email: account.email, password: account.password })
-    setSelectedDemo(account.email)
   }
 
   return (
@@ -222,36 +179,6 @@ const Login = () => {
                   Sign up
                 </Link>
               </p>
-            </div>
-
-            {/* Demo credentials - Compact */}
-            <div className="mt-5 pt-5 border-t border-gray-100">
-              <p className="text-xs text-gray-500 text-center mb-3">Demo Accounts (click to fill)</p>
-              <div className="grid grid-cols-3 gap-2">
-                {demoAccounts.map((account) => {
-                  const Icon = account.icon
-                  const isSelected = selectedDemo === account.email
-                  return (
-                    <button
-                      key={account.email}
-                      type="button"
-                      onClick={() => fillDemoCredentials(account)}
-                      className={`relative p-2 rounded-lg border transition-all duration-200 ${
-                        isSelected 
-                          ? `border-transparent bg-gradient-to-r ${account.color} shadow-md` 
-                          : `border-gray-100 ${account.bgColor}`
-                      }`}
-                    >
-                      <div className="flex flex-col items-center gap-1">
-                        <Icon className={`w-4 h-4 ${isSelected ? 'text-white' : account.textColor}`} />
-                        <span className={`text-xs font-medium ${isSelected ? 'text-white' : 'text-gray-700'}`}>
-                          {account.role}
-                        </span>
-                      </div>
-                    </button>
-                  )
-                })}
-              </div>
             </div>
           </div>
 

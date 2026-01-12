@@ -237,9 +237,12 @@ const Users = () => {
 
     setSubmitting(true)
     try {
-      await usersAPI.delete(modal.user.id)
+      const deletedUserId = modal.user.id
+      await usersAPI.delete(deletedUserId)
       toast.success('User deleted successfully')
-      fetchUsers()
+      // Immediately remove from local state for instant UI update
+      setUsers(prevUsers => prevUsers.filter(user => user.id !== deletedUserId))
+      setPendingUsers(prevPending => prevPending.filter(user => user.id !== deletedUserId))
       fetchUserStats()
       closeModal()
     } catch (error) {

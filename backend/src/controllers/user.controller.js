@@ -12,6 +12,7 @@ const getAllUsers = async (req, res) => {
 
     const where = {
       isApproved: true, // Only show approved users by default
+      isActive: true,   // Only show active users (not deleted)
     };
     
     if (search) {
@@ -437,7 +438,7 @@ const deleteUser = async (req, res) => {
       userAgent: req.headers['user-agent'],
     });
 
-    res.json({ message: 'User deactivated successfully' });
+    res.json({ message: 'User deleted successfully', deleted: true });
   } catch (error) {
     console.error('Delete user error:', error);
     res.status(500).json({ message: 'Error deleting user' });

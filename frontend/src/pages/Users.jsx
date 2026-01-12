@@ -1,10 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { usersAPI } from '../services/api'
-import LoadingSpinner from '../components/LoadingSpinner'
 import toast from 'react-hot-toast'
 import {
   Search,
-  Filter,
   Plus,
   Edit,
   Trash2,
@@ -30,6 +28,8 @@ import {
   Calendar,
   UserCheck,
   Bell,
+  ShieldPlus,
+  Loader2,
 } from 'lucide-react'
 import { format, formatDistanceToNow } from 'date-fns'
 
@@ -44,7 +44,6 @@ const Users = () => {
     role: '',
     page: 1,
   })
-  const [showFilters, setShowFilters] = useState(false)
   const [modal, setModal] = useState({ open: false, type: null, user: null })
   const [formData, setFormData] = useState({
     email: '',
@@ -60,6 +59,16 @@ const Users = () => {
   const [activeTab, setActiveTab] = useState('approved')
   const [rejectReason, setRejectReason] = useState('')
   const [userStats, setUserStats] = useState(null)
+  const [searchTimeout, setSearchTimeout] = useState(null)
+
+  // Debounced search
+  const handleSearchChange = useCallback((value) => {
+    if (searchTimeout) clearTimeout(searchTimeout)
+    const timeout = setTimeout(() => {
+      setFilters(prev => ({ ...prev, search: value, page: 1 }))
+    }, 300)
+    setSearchTimeout(timeout)
+  }, [searchTimeout])
 
   useEffect(() => {
     fetchPendingUsers()
@@ -70,7 +79,7 @@ const Users = () => {
     fetchUsers()
   }, [filters])
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true)
     try {
       const response = await usersAPI.getAll({
@@ -87,9 +96,9 @@ const Users = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [filters])
 
-  const fetchPendingUsers = async () => {
+  const fetchPendingUsers = useCallback(async () => {
     setPendingLoading(true)
     try {
       const response = await usersAPI.getPending()
@@ -99,16 +108,16 @@ const Users = () => {
     } finally {
       setPendingLoading(false)
     }
-  }
+  }, [])
 
-  const fetchUserStats = async () => {
+  const fetchUserStats = useCallback(async () => {
     try {
       const response = await usersAPI.getStats()
       setUserStats(response.data)
     } catch (error) {
       console.error('Error fetching user stats:', error)
     }
-  }
+  }, [])
 
   const handleApproveUser = async (userId) => {
     try {
@@ -135,17 +144,30 @@ const Users = () => {
     }
   }
 
-  const openCreateModal = () => {
+  const openCreateModal = (role = 'REQUESTOR') => {
     setFormData({
       email: '',
       password: '',
       firstName: '',
       lastName: '',
-      role: 'REQUESTOR',
+      role: role,
       department: '',
       phone: '',
     })
     setModal({ open: true, type: 'create', user: null })
+  }
+
+  const openCreateAdminModal = () => {
+    setFormData({
+      email: '',
+      password: '',
+      firstName: '',
+      lastName: '',
+      role: 'ADMIN',
+      department: 'Administration',
+      phone: '',
+    })
+    setModal({ open: true, type: 'create-admin', user: null })
   }
 
   const openEditModal = (user) => {
@@ -191,9 +213,9 @@ const Users = () => {
     setSubmitting(true)
 
     try {
-      if (modal.type === 'create') {
+      if (modal.type === 'create' || modal.type === 'create-admin') {
         await usersAPI.create(formData)
-        toast.success('User created successfully')
+        toast.success(modal.type === 'create-admin' ? 'Admin created successfully! They can login now.' : 'User created successfully')
       } else if (modal.type === 'edit') {
         const updateData = { ...formData }
         if (!updateData.password) delete updateData.password
@@ -216,18 +238,18 @@ const Users = () => {
     setSubmitting(true)
     try {
       await usersAPI.delete(modal.user.id)
-      toast.success('User deactivated successfully')
+      toast.success('User deleted successfully')
       fetchUsers()
       fetchUserStats()
       closeModal()
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Error deactivating user')
+      toast.error(error.response?.data?.message || 'Error deleting user')
     } finally {
       setSubmitting(false)
     }
   }
 
-  const getRoleBadge = (roleName) => {
+  const getRoleBadge = useMemo(() => (roleName) => {
     const role = typeof roleName === 'object' ? roleName?.name : roleName
     const badges = {
       ADMIN: { bg: 'bg-purple-100', text: 'text-purple-700', label: 'Admin', icon: Shield },
@@ -236,191 +258,180 @@ const Users = () => {
       SITE_ENGINEER: { bg: 'bg-orange-100', text: 'text-orange-700', label: 'Site Engineer', icon: Wrench },
     }
     return badges[role] || badges.REQUESTOR
-  }
+  }, [])
+
+  // Loading skeleton component
+  const TableSkeleton = () => (
+    <div className="animate-pulse">
+      {[...Array(5)].map((_, i) => (
+        <div key={i} className="flex items-center gap-4 p-4 border-b border-gray-100">
+          <div className="w-10 h-10 bg-gray-200 rounded-full" />
+          <div className="flex-1 space-y-2">
+            <div className="h-4 bg-gray-200 rounded w-1/4" />
+            <div className="h-3 bg-gray-200 rounded w-1/3" />
+          </div>
+          <div className="h-6 bg-gray-200 rounded w-20" />
+        </div>
+      ))}
+    </div>
+  )
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header with Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="col-span-1 md:col-span-2">
-          <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
-          <p className="text-gray-500 mt-1">Manage users, roles, and registration approvals</p>
+    <div className="space-y-4 animate-fade-in">
+      {/* Header with Stats - Compact */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-bold text-gray-900">User Management</h1>
+          <p className="text-gray-500 text-sm">Manage users and approvals</p>
         </div>
         
-        {/* Stats Cards */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
-              <UserCheck className="w-5 h-5 text-emerald-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{userStats?.activeUsers || 0}</p>
-              <p className="text-sm text-gray-500">Active Users</p>
-            </div>
+        {/* Quick Stats */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50 rounded-lg">
+            <UserCheck className="w-4 h-4 text-emerald-600" />
+            <span className="text-sm font-semibold text-emerald-700">{userStats?.activeUsers || 0} Active</span>
           </div>
-        </div>
-        
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-          <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${pendingUsers.length > 0 ? 'bg-amber-100' : 'bg-gray-100'}`}>
-              <Clock className={`w-5 h-5 ${pendingUsers.length > 0 ? 'text-amber-600' : 'text-gray-400'}`} />
+          {pendingUsers.length > 0 && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 rounded-lg">
+              <Clock className="w-4 h-4 text-amber-600" />
+              <span className="text-sm font-semibold text-amber-700">{pendingUsers.length} Pending</span>
             </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{pendingUsers.length}</p>
-              <p className="text-sm text-gray-500">Pending Approval</p>
-            </div>
-          </div>
+          )}
         </div>
       </div>
 
-      {/* Pending Approvals Alert */}
-      {pendingUsers.length > 0 && (
-        <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
-              <Bell className="w-5 h-5 text-amber-600" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-amber-900">
-                {pendingUsers.length} Registration{pendingUsers.length !== 1 ? 's' : ''} Awaiting Approval
-              </h3>
-              <p className="text-sm text-amber-700 mt-0.5">
-                New users have registered and are waiting for admin approval to access the system.
-              </p>
-            </div>
-            <button 
-              onClick={() => setActiveTab('pending')}
-              className="px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 transition-colors flex items-center gap-2"
-            >
-              Review Now
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Quick Actions Bar */}
+      <div className="flex flex-wrap items-center gap-2 p-3 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100">
+        <button 
+          onClick={openCreateAdminModal} 
+          className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-all shadow-sm hover:shadow-md"
+        >
+          <ShieldPlus className="w-4 h-4" />
+          Create Admin
+        </button>
+        <button 
+          onClick={() => openCreateModal('REQUESTOR')} 
+          className="flex items-center gap-2 px-4 py-2 bg-white text-gray-700 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 transition-all"
+        >
+          <UserPlus className="w-4 h-4" />
+          Add User
+        </button>
+        <div className="flex-1" />
+        {pendingUsers.length > 0 && (
+          <button 
+            onClick={() => setActiveTab('pending')}
+            className="flex items-center gap-2 px-4 py-2 bg-amber-100 text-amber-700 text-sm font-medium rounded-lg hover:bg-amber-200 transition-all"
+          >
+            <Bell className="w-4 h-4" />
+            {pendingUsers.length} Pending Approval
+          </button>
+        )}
+      </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl w-fit">
+      <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg w-fit">
         <button
           onClick={() => setActiveTab('approved')}
-          className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+          className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
             activeTab === 'approved' 
               ? 'bg-white text-gray-900 shadow-sm' 
               : 'text-gray-600 hover:text-gray-900'
           }`}
         >
-          <div className="flex items-center gap-2">
-            <UserCheck className="w-4 h-4" />
-            Approved Users
-          </div>
+          Users
         </button>
         <button
           onClick={() => setActiveTab('pending')}
-          className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+          className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${
             activeTab === 'pending' 
               ? 'bg-white text-gray-900 shadow-sm' 
               : 'text-gray-600 hover:text-gray-900'
           }`}
         >
-          <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4" />
-            Pending Approvals
-            {pendingUsers.length > 0 && (
-              <span className="w-5 h-5 bg-amber-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                {pendingUsers.length}
-              </span>
-            )}
-          </div>
+          Pending
+          {pendingUsers.length > 0 && (
+            <span className="w-5 h-5 bg-amber-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+              {pendingUsers.length}
+            </span>
+          )}
         </button>
       </div>
 
       {/* Pending Users Tab */}
       {activeTab === 'pending' && (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {pendingLoading ? (
-            <div className="card flex items-center justify-center h-64">
-              <LoadingSpinner size="lg" />
+            <div className="card p-8 flex items-center justify-center">
+              <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
             </div>
           ) : pendingUsers.length === 0 ? (
-            <div className="card flex flex-col items-center justify-center py-16 text-gray-500">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                <CheckCircle2 className="w-8 h-8 text-gray-400" />
-              </div>
-              <p className="text-lg font-medium text-gray-700">No Pending Registrations</p>
-              <p className="text-sm text-gray-500 mt-1">All user registrations have been processed</p>
+            <div className="card flex flex-col items-center justify-center py-12 text-gray-500">
+              <CheckCircle2 className="w-12 h-12 text-gray-300 mb-3" />
+              <p className="font-medium text-gray-700">No Pending Registrations</p>
+              <p className="text-sm text-gray-500">All registrations have been processed</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {pendingUsers.map((user) => {
                 const roleBadge = getRoleBadge(user.requestedRole)
                 const RoleIcon = roleBadge.icon
                 return (
-                  <div key={user.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
-                    {/* Header */}
-                    <div className="bg-gradient-to-r from-amber-50 to-orange-50 px-4 py-3 border-b border-amber-100">
-                      <div className="flex items-center justify-between">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${roleBadge.bg} ${roleBadge.text}`}>
-                          <RoleIcon className="w-3.5 h-3.5" />
-                          {roleBadge.label}
-                        </span>
-                        <span className="text-xs text-amber-600 flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {formatDistanceToNow(new Date(user.createdAt), { addSuffix: true })}
-                        </span>
-                      </div>
+                  <div key={user.id} className="bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-md transition-all duration-200">
+                    <div className="bg-gradient-to-r from-amber-50 to-orange-50 px-4 py-2 border-b border-amber-100 flex items-center justify-between">
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${roleBadge.bg} ${roleBadge.text}`}>
+                        <RoleIcon className="w-3 h-3" />
+                        {roleBadge.label}
+                      </span>
+                      <span className="text-xs text-amber-600">
+                        {formatDistanceToNow(new Date(user.createdAt), { addSuffix: true })}
+                      </span>
                     </div>
                     
-                    {/* Body */}
                     <div className="p-4">
-                      <div className="flex items-start gap-3 mb-4">
-                        <div className="w-12 h-12 bg-gradient-to-br from-[#1e3a6e] to-[#2a4a80] rounded-full flex items-center justify-center flex-shrink-0">
-                          <span className="text-lg font-semibold text-white">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-[#1e3a6e] to-[#2a4a80] rounded-full flex items-center justify-center flex-shrink-0">
+                          <span className="text-sm font-semibold text-white">
                             {user.firstName?.[0]}{user.lastName?.[0]}
                           </span>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-gray-900 truncate">
+                        <div className="min-w-0">
+                          <h3 className="font-semibold text-gray-900 truncate text-sm">
                             {user.firstName} {user.lastName}
                           </h3>
-                          <p className="text-sm text-gray-500 truncate">{user.email}</p>
+                          <p className="text-xs text-gray-500 truncate">{user.email}</p>
                         </div>
                       </div>
                       
-                      <div className="space-y-2 text-sm">
-                        {user.phone && (
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <Phone className="w-4 h-4 text-gray-400" />
-                            <span>{user.phone}</span>
-                          </div>
-                        )}
-                        {user.department && (
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <Building className="w-4 h-4 text-gray-400" />
-                            <span>{user.department}</span>
-                          </div>
-                        )}
-                        <div className="flex items-center gap-2 text-gray-600">
-                          <Calendar className="w-4 h-4 text-gray-400" />
-                          <span>Registered {format(new Date(user.createdAt), 'MMM dd, yyyy')}</span>
+                      {(user.phone || user.department) && (
+                        <div className="flex flex-wrap gap-2 text-xs text-gray-500 mb-3">
+                          {user.phone && (
+                            <span className="flex items-center gap-1">
+                              <Phone className="w-3 h-3" /> {user.phone}
+                            </span>
+                          )}
+                          {user.department && (
+                            <span className="flex items-center gap-1">
+                              <Building className="w-3 h-3" /> {user.department}
+                            </span>
+                          )}
                         </div>
-                      </div>
+                      )}
                     </div>
                     
-                    {/* Actions */}
                     <div className="flex border-t border-gray-100">
                       <button
                         onClick={() => openRejectModal(user)}
-                        className="flex-1 px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors flex items-center justify-center gap-2"
+                        className="flex-1 px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors flex items-center justify-center gap-1"
                       >
-                        <XCircle className="w-4 h-4" />
+                        <XCircle className="w-3.5 h-3.5" />
                         Reject
                       </button>
                       <div className="w-px bg-gray-100" />
                       <button
                         onClick={() => handleApproveUser(user.id)}
-                        className="flex-1 px-4 py-3 text-sm font-medium text-emerald-600 hover:bg-emerald-50 transition-colors flex items-center justify-center gap-2"
+                        className="flex-1 px-3 py-2 text-xs font-medium text-emerald-600 hover:bg-emerald-50 transition-colors flex items-center justify-center gap-1"
                       >
-                        <CheckCircle2 className="w-4 h-4" />
+                        <CheckCircle2 className="w-3.5 h-3.5" />
                         Approve
                       </button>
                     </div>
@@ -435,164 +446,104 @@ const Users = () => {
       {/* Approved Users Tab */}
       {activeTab === 'approved' && (
         <>
-          {/* Search and Filters */}
-          <div className="card p-4">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search users by name or email..."
-                  value={filters.search}
-                  onChange={(e) => setFilters({ ...filters, search: e.target.value, page: 1 })}
-                  className="input pl-11"
-                />
-              </div>
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`btn ${showFilters ? 'btn-primary' : 'btn-secondary'}`}
-              >
-                <Filter className="w-5 h-5 mr-2" />
-                Filters
-              </button>
-              <button onClick={openCreateModal} className="btn btn-primary">
-                <Plus className="w-5 h-5 mr-2" />
-                Add User
-              </button>
+          {/* Search Bar - Simplified */}
+          <div className="flex gap-2">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search users..."
+                defaultValue={filters.search}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:border-[#1e3a6e] focus:ring-1 focus:ring-[#1e3a6e]/20 outline-none transition-all"
+              />
             </div>
-
-            {showFilters && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 pt-4 border-t border-gray-200 animate-slide-up">
-                <div>
-                  <label className="label">Role</label>
-                  <select
-                    value={filters.role}
-                    onChange={(e) => setFilters({ ...filters, role: e.target.value, page: 1 })}
-                    className="input"
-                  >
-                    <option value="">All Roles</option>
-                    <option value="ADMIN">Admin</option>
-                    <option value="SAFETY_OFFICER">Safety Officer</option>
-                    <option value="SITE_ENGINEER">Site Engineer</option>
-                    <option value="REQUESTOR">Requestor</option>
-                  </select>
-                </div>
-                <div className="flex items-end">
-                  <button
-                    onClick={() => setFilters({ search: '', role: '', page: 1 })}
-                    className="btn btn-secondary"
-                  >
-                    Clear Filters
-                  </button>
-                </div>
-              </div>
-            )}
+            <select
+              value={filters.role}
+              onChange={(e) => setFilters({ ...filters, role: e.target.value, page: 1 })}
+              className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:border-[#1e3a6e] outline-none"
+            >
+              <option value="">All Roles</option>
+              <option value="ADMIN">Admin</option>
+              <option value="SAFETY_OFFICER">Safety Officer</option>
+              <option value="SITE_ENGINEER">Site Engineer</option>
+              <option value="REQUESTOR">Requestor</option>
+            </select>
           </div>
 
           {/* Users Table */}
-          <div className="card overflow-hidden">
+          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
             {loading ? (
-              <div className="flex items-center justify-center h-64">
-                <LoadingSpinner size="lg" />
-              </div>
+              <TableSkeleton />
             ) : users.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-64 text-gray-500">
-                <UsersIcon className="w-16 h-16 text-gray-300 mb-4" />
-                <p className="text-lg font-medium">No users found</p>
-                <button onClick={openCreateModal} className="btn btn-primary mt-4">
-                  <Plus className="w-5 h-5 mr-2" />
-                  Add User
+              <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+                <UsersIcon className="w-12 h-12 text-gray-300 mb-3" />
+                <p className="font-medium">No users found</p>
+                <button onClick={() => openCreateModal()} className="btn btn-primary mt-3 text-sm">
+                  <Plus className="w-4 h-4 mr-1" /> Add User
                 </button>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gray-50 border-b border-gray-200">
+                  <thead className="bg-gray-50 border-b border-gray-100">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">User</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Contact</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Role</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Department</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Permits</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
-                      <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Actions</th>
+                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase">User</th>
+                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase">Role</th>
+                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase hidden md:table-cell">Department</th>
+                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase hidden lg:table-cell">Status</th>
+                      <th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-600 uppercase">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody className="divide-y divide-gray-50">
                     {users.map((user) => {
                       const roleBadge = getRoleBadge(user.role?.name || user.role)
                       const RoleIcon = roleBadge.icon
                       return (
-                        <tr key={user.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-4 py-4">
+                        <tr key={user.id} className="hover:bg-gray-50/50 transition-colors">
+                          <td className="px-4 py-3">
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 bg-gradient-to-br from-[#1e3a6e] to-[#2a4a80] rounded-full flex items-center justify-center">
-                                <span className="text-sm font-semibold text-white">
+                              <div className="w-9 h-9 bg-gradient-to-br from-[#1e3a6e] to-[#2a4a80] rounded-full flex items-center justify-center flex-shrink-0">
+                                <span className="text-xs font-semibold text-white">
                                   {user.firstName?.[0]}{user.lastName?.[0]}
                                 </span>
                               </div>
-                              <div>
-                                <p className="font-medium text-gray-900">
+                              <div className="min-w-0">
+                                <p className="font-medium text-gray-900 text-sm truncate">
                                   {user.firstName} {user.lastName}
                                 </p>
-                                <p className="text-xs text-gray-500">
-                                  Joined {format(new Date(user.createdAt), 'MMM dd, yyyy')}
-                                </p>
+                                <p className="text-xs text-gray-500 truncate">{user.email}</p>
                               </div>
                             </div>
                           </td>
-                          <td className="px-4 py-4">
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-1 text-sm text-gray-600">
-                                <Mail className="w-3.5 h-3.5" />
-                                {user.email}
-                              </div>
-                              {user.phone && (
-                                <div className="flex items-center gap-1 text-sm text-gray-500">
-                                  <Phone className="w-3.5 h-3.5" />
-                                  {user.phone}
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-4 py-4">
-                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${roleBadge.bg} ${roleBadge.text}`}>
-                              <RoleIcon className="w-3.5 h-3.5" />
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${roleBadge.bg} ${roleBadge.text}`}>
+                              <RoleIcon className="w-3 h-3" />
                               {roleBadge.label}
                             </span>
                           </td>
-                          <td className="px-4 py-4">
-                            {user.department ? (
-                              <div className="flex items-center gap-1 text-sm text-gray-600">
-                                <Building className="w-4 h-4 text-gray-400" />
-                                {user.department}
-                              </div>
-                            ) : (
-                              <span className="text-sm text-gray-400">—</span>
-                            )}
+                          <td className="px-4 py-3 hidden md:table-cell">
+                            <span className="text-sm text-gray-600">{user.department || '—'}</span>
                           </td>
-                          <td className="px-4 py-4">
-                            <span className="text-sm text-gray-600">{user._count?.permitRequests || 0}</span>
-                          </td>
-                          <td className="px-4 py-4">
-                            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${user.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                          <td className="px-4 py-3 hidden lg:table-cell">
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${user.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
                               <span className={`w-1.5 h-1.5 rounded-full ${user.isActive ? 'bg-emerald-500' : 'bg-red-500'}`} />
                               {user.isActive ? 'Active' : 'Inactive'}
                             </span>
                           </td>
-                          <td className="px-4 py-4">
+                          <td className="px-4 py-3">
                             <div className="flex items-center justify-end gap-1">
                               <button
                                 onClick={() => openEditModal(user)}
-                                className="p-2 text-gray-500 hover:text-[#1e3a6e] hover:bg-blue-50 rounded-lg transition-colors"
+                                className="p-1.5 text-gray-400 hover:text-[#1e3a6e] hover:bg-blue-50 rounded-lg transition-colors"
                                 title="Edit"
                               >
                                 <Edit className="w-4 h-4" />
                               </button>
                               <button
                                 onClick={() => openDeleteModal(user)}
-                                className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                title="Deactivate"
+                                className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Delete"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
@@ -608,26 +559,25 @@ const Users = () => {
 
             {/* Pagination */}
             {pagination.totalPages > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-gray-50">
-                <p className="text-sm text-gray-600">
-                  Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
-                  {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} users
+              <div className="flex items-center justify-between px-4 py-2.5 border-t border-gray-100 bg-gray-50/50">
+                <p className="text-xs text-gray-500">
+                  {((pagination.page - 1) * pagination.limit) + 1}-{Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}
                 </p>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
                   <button
                     onClick={() => setFilters({ ...filters, page: filters.page - 1 })}
                     disabled={filters.page === 1}
-                    className="btn btn-secondary py-1.5 px-3 disabled:opacity-50"
+                    className="p-1.5 rounded-lg border border-gray-200 disabled:opacity-50 hover:bg-white transition-colors"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
-                  <span className="text-sm text-gray-600">
-                    Page {pagination.page} of {pagination.totalPages}
+                  <span className="text-xs text-gray-600 px-2">
+                    {pagination.page}/{pagination.totalPages}
                   </span>
                   <button
                     onClick={() => setFilters({ ...filters, page: filters.page + 1 })}
                     disabled={filters.page === pagination.totalPages}
-                    className="btn btn-secondary py-1.5 px-3 disabled:opacity-50"
+                    className="p-1.5 rounded-lg border border-gray-200 disabled:opacity-50 hover:bg-white transition-colors"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </button>
@@ -638,91 +588,197 @@ const Users = () => {
         </>
       )}
 
-      {/* Create/Edit Modal */}
-      {modal.open && (modal.type === 'create' || modal.type === 'edit') && (
-        <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal-content max-w-lg" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${modal.type === 'create' ? 'bg-emerald-100' : 'bg-blue-100'}`}>
-                  {modal.type === 'create' ? (
-                    <UserPlus className="w-5 h-5 text-emerald-600" />
-                  ) : (
-                    <Edit className="w-5 h-5 text-blue-600" />
-                  )}
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    {modal.type === 'create' ? 'Add New User' : 'Edit User'}
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                    {modal.type === 'create' ? 'Create a new user account' : 'Update user details'}
-                  </p>
-                </div>
+      {/* Create Admin Modal */}
+      {modal.open && modal.type === 'create-admin' && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={closeModal}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md animate-fade-in" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100 bg-gradient-to-r from-purple-50 to-white rounded-t-2xl">
+              <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                <ShieldPlus className="w-5 h-5 text-purple-600" />
               </div>
-              <button onClick={closeModal} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+              <div>
+                <h3 className="font-semibold text-gray-900">Create Admin Account</h3>
+                <p className="text-xs text-gray-500">Full system access will be granted</p>
+              </div>
+              <button onClick={closeModal} className="ml-auto p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={handleSubmit} className="p-5 space-y-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="label">First Name *</label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                      type="text"
-                      value={formData.firstName}
-                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                      className="input pl-10"
-                      placeholder="John"
-                      required
-                    />
-                  </div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">First Name *</label>
+                  <input
+                    type="text"
+                    value={formData.firstName}
+                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500/20 outline-none"
+                    placeholder="John"
+                    required
+                  />
                 </div>
                 <div>
-                  <label className="label">Last Name *</label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                      type="text"
-                      value={formData.lastName}
-                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                      className="input pl-10"
-                      placeholder="Doe"
-                      required
-                    />
-                  </div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Last Name *</label>
+                  <input
+                    type="text"
+                    value={formData.lastName}
+                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500/20 outline-none"
+                    placeholder="Doe"
+                    required
+                  />
                 </div>
               </div>
               
               <div>
-                <label className="label">Email *</label>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Email Address *</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="input pl-10"
-                    placeholder="john@company.com"
+                    className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500/20 outline-none"
+                    placeholder="admin@company.com"
                     required
-                    disabled={modal.type === 'edit'}
                   />
                 </div>
               </div>
               
               <div>
-                <label className="label">
-                  Password {modal.type === 'create' ? '*' : '(leave blank to keep current)'}
+                <label className="block text-xs font-medium text-gray-700 mb-1">Password *</label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    className="w-full px-3 py-2 pr-10 border border-gray-200 rounded-lg text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500/20 outline-none"
+                    placeholder="Min. 6 characters"
+                    required
+                    minLength={6}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Department</label>
+                <input
+                  type="text"
+                  value={formData.department}
+                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500/20 outline-none"
+                  placeholder="Administration"
+                />
+              </div>
+
+              <div className="bg-purple-50 border border-purple-100 rounded-lg p-3">
+                <div className="flex items-center gap-2 text-purple-700">
+                  <Shield className="w-4 h-4" />
+                  <span className="text-sm font-medium">Admin Role</span>
+                </div>
+                <p className="text-xs text-purple-600 mt-1">This user will have full access to all system features including user management, approvals, and settings.</p>
+              </div>
+              
+              <div className="flex gap-2 pt-2">
+                <button type="button" onClick={closeModal} className="flex-1 px-4 py-2 border border-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors text-sm">
+                  Cancel
+                </button>
+                <button type="submit" disabled={submitting} className="flex-1 px-4 py-2 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-70 text-sm flex items-center justify-center gap-2">
+                  {submitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <ShieldPlus className="w-4 h-4" />
+                      Create Admin
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Create/Edit User Modal */}
+      {modal.open && (modal.type === 'create' || modal.type === 'edit') && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={closeModal}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md animate-fade-in" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${modal.type === 'create' ? 'bg-emerald-100' : 'bg-blue-100'}`}>
+                {modal.type === 'create' ? (
+                  <UserPlus className="w-5 h-5 text-emerald-600" />
+                ) : (
+                  <Edit className="w-5 h-5 text-blue-600" />
+                )}
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">
+                  {modal.type === 'create' ? 'Add New User' : 'Edit User'}
+                </h3>
+                <p className="text-xs text-gray-500">
+                  {modal.type === 'create' ? 'Create a new user account' : 'Update user details'}
+                </p>
+              </div>
+              <button onClick={closeModal} className="ml-auto p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleSubmit} className="p-5 space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">First Name *</label>
+                  <input
+                    type="text"
+                    value={formData.firstName}
+                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-[#1e3a6e] focus:ring-1 focus:ring-[#1e3a6e]/20 outline-none"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Last Name *</label>
+                  <input
+                    type="text"
+                    value={formData.lastName}
+                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-[#1e3a6e] focus:ring-1 focus:ring-[#1e3a6e]/20 outline-none"
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Email *</label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-[#1e3a6e] focus:ring-1 focus:ring-[#1e3a6e]/20 outline-none"
+                  required
+                  disabled={modal.type === 'edit'}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Password {modal.type === 'create' ? '*' : '(leave blank to keep)'}
                 </label>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="input pr-11"
-                    placeholder={modal.type === 'create' ? 'Min. 6 characters' : '••••••••'}
+                    className="w-full px-3 py-2 pr-10 border border-gray-200 rounded-lg text-sm focus:border-[#1e3a6e] focus:ring-1 focus:ring-[#1e3a6e]/20 outline-none"
                     required={modal.type === 'create'}
                     minLength={6}
                   />
@@ -731,18 +787,18 @@ const Users = () => {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="label">Role *</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Role *</label>
                   <select
                     value={formData.role}
                     onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                    className="input"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-[#1e3a6e] outline-none"
                     required
                   >
                     <option value="REQUESTOR">Requestor</option>
@@ -752,61 +808,38 @@ const Users = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="label">Department</label>
-                  <div className="relative">
-                    <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                      type="text"
-                      value={formData.department}
-                      onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                      className="input pl-10"
-                      placeholder="Operations"
-                    />
-                  </div>
-                </div>
-              </div>
-              
-              <div>
-                <label className="label">Phone Number</label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Department</label>
                   <input
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="input pl-10"
-                    placeholder="+91 98765 43210"
+                    type="text"
+                    value={formData.department}
+                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-[#1e3a6e] focus:ring-1 focus:ring-[#1e3a6e]/20 outline-none"
                   />
                 </div>
               </div>
               
               {modal.type === 'edit' && (
-                <div className="p-3 bg-gray-50 rounded-lg">
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.isActive}
-                      onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                      className="w-5 h-5 rounded border-gray-300 text-[#1e3a6e] focus:ring-[#1e3a6e]"
-                    />
-                    <div>
-                      <span className="font-medium text-gray-900">User is active</span>
-                      <p className="text-sm text-gray-500">Inactive users cannot login</p>
-                    </div>
-                  </label>
-                </div>
+                <label className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.isActive}
+                    onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                    className="w-4 h-4 rounded border-gray-300 text-[#1e3a6e] focus:ring-[#1e3a6e]"
+                  />
+                  <span className="text-sm text-gray-700">User is active</span>
+                </label>
               )}
               
-              <div className="flex gap-3 pt-4 border-t border-gray-200">
-                <button type="button" onClick={closeModal} className="btn btn-secondary flex-1">
+              <div className="flex gap-2 pt-2">
+                <button type="button" onClick={closeModal} className="flex-1 px-4 py-2 border border-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors text-sm">
                   Cancel
                 </button>
-                <button type="submit" disabled={submitting} className="btn btn-primary flex-1">
+                <button type="submit" disabled={submitting} className="flex-1 px-4 py-2 bg-[#1e3a6e] text-white font-medium rounded-lg hover:bg-[#162d57] transition-colors disabled:opacity-70 text-sm flex items-center justify-center gap-2">
                   {submitting ? (
-                    <span className="flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
                       Saving...
-                    </span>
+                    </>
                   ) : modal.type === 'create' ? 'Create User' : 'Save Changes'}
                 </button>
               </div>
@@ -817,23 +850,23 @@ const Users = () => {
 
       {/* Delete Modal */}
       {modal.open && modal.type === 'delete' && (
-        <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal-content max-w-md" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={closeModal}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm animate-fade-in" onClick={(e) => e.stopPropagation()}>
             <div className="p-6 text-center">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <AlertTriangle className="w-8 h-8 text-red-600" />
+              <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertTriangle className="w-7 h-7 text-red-600" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Deactivate User</h3>
-              <p className="text-gray-500 mb-6">
-                Are you sure you want to deactivate <span className="font-semibold text-gray-700">{modal.user?.firstName} {modal.user?.lastName}</span>? 
-                They will no longer be able to access the system.
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete User</h3>
+              <p className="text-gray-500 text-sm mb-5">
+                Delete <span className="font-semibold text-gray-700">{modal.user?.firstName} {modal.user?.lastName}</span>? This action cannot be undone.
               </p>
-              <div className="flex gap-3 justify-center">
-                <button onClick={closeModal} className="btn btn-secondary px-6" disabled={submitting}>
+              <div className="flex gap-2">
+                <button onClick={closeModal} className="flex-1 px-4 py-2 border border-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors text-sm" disabled={submitting}>
                   Cancel
                 </button>
-                <button onClick={handleDelete} className="btn btn-danger px-6" disabled={submitting}>
-                  {submitting ? 'Deactivating...' : 'Deactivate'}
+                <button onClick={handleDelete} className="flex-1 px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors text-sm flex items-center justify-center gap-2" disabled={submitting}>
+                  {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                  Delete
                 </button>
               </div>
             </div>
@@ -843,40 +876,38 @@ const Users = () => {
 
       {/* Reject Modal */}
       {modal.open && modal.type === 'reject' && (
-        <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal-content max-w-md" onClick={(e) => e.stopPropagation()}>
-            <div className="p-6">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={closeModal}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm animate-fade-in" onClick={(e) => e.stopPropagation()}>
+            <div className="p-5">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                  <XCircle className="w-6 h-6 text-red-600" />
+                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                  <XCircle className="w-5 h-5 text-red-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Reject Registration</h3>
-                  <p className="text-sm text-gray-500">
-                    {modal.user?.firstName} {modal.user?.lastName}
-                  </p>
+                  <h3 className="font-semibold text-gray-900">Reject Registration</h3>
+                  <p className="text-xs text-gray-500">{modal.user?.firstName} {modal.user?.lastName}</p>
                 </div>
               </div>
               
-              <div className="mb-6">
-                <label className="label">Reason for rejection (optional)</label>
+              <div className="mb-4">
+                <label className="block text-xs font-medium text-gray-700 mb-1">Reason (optional)</label>
                 <textarea
                   value={rejectReason}
                   onChange={(e) => setRejectReason(e.target.value)}
-                  className="input min-h-[100px]"
-                  placeholder="Provide a reason for rejecting this registration..."
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-red-500 focus:ring-1 focus:ring-red-500/20 outline-none min-h-[80px]"
+                  placeholder="Provide a reason..."
                 />
               </div>
               
-              <div className="flex gap-3">
-                <button onClick={closeModal} className="btn btn-secondary flex-1">
+              <div className="flex gap-2">
+                <button onClick={closeModal} className="flex-1 px-4 py-2 border border-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors text-sm">
                   Cancel
                 </button>
                 <button 
                   onClick={() => handleRejectUser(modal.user.id)} 
-                  className="btn btn-danger flex-1"
+                  className="flex-1 px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors text-sm"
                 >
-                  Reject Registration
+                  Reject
                 </button>
               </div>
             </div>

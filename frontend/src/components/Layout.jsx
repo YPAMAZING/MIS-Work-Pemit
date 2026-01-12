@@ -126,8 +126,12 @@ const Layout = () => {
       >
         {/* Logo */}
         <div className="flex items-center gap-3 px-4 py-4 border-b border-slate-700">
-          <div className="bg-white rounded-lg p-2">
-            <div className="text-xl font-bold text-[#1e3a6e]">RG</div>
+          <div className="bg-white rounded-lg p-1.5">
+            <img 
+              src="/logo.png" 
+              alt="Reliable Group" 
+              className="h-10 w-auto"
+            />
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-sm font-bold text-white leading-tight">Reliable Group</h1>

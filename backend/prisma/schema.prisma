@@ -78,6 +78,7 @@ model PermitRequest {
   equipment     String          @default("[]")
   measures      String          @default("[]")
   workers       String          @default("[]")
+  vendorDetails String?
   contractorName String?
   contractorPhone String?
   companyName   String?

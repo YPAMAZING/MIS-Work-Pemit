@@ -156,6 +156,12 @@ const createPermit = async (req, res) => {
       hazards,
       precautions,
       equipment,
+      workers,
+      vendorDetails,
+      contractorName,
+      contractorPhone,
+      companyName,
+      timezone,
     } = req.body;
 
     const user = req.user;
@@ -172,6 +178,12 @@ const createPermit = async (req, res) => {
       hazards: hazards || [],
       precautions: precautions || [],
       equipment: equipment || [],
+      workers: workers || [],
+      vendorDetails: vendorDetails || null,
+      contractorName: contractorName || vendorDetails?.vendorName || null,
+      contractorPhone: contractorPhone || vendorDetails?.vendorPhone || null,
+      companyName: companyName || vendorDetails?.vendorCompany || null,
+      timezone: timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
       status: 'PENDING',
       createdBy: user.id,
     });
@@ -248,6 +260,12 @@ const updatePermit = async (req, res) => {
       hazards,
       precautions,
       equipment,
+      workers,
+      vendorDetails,
+      contractorName,
+      contractorPhone,
+      companyName,
+      timezone,
     } = req.body;
 
     const existingPermit = await prisma.permitRequest.findUnique({
@@ -281,6 +299,12 @@ const updatePermit = async (req, res) => {
       hazards,
       precautions,
       equipment,
+      workers,
+      vendorDetails,
+      contractorName: contractorName || vendorDetails?.vendorName,
+      contractorPhone: contractorPhone || vendorDetails?.vendorPhone,
+      companyName: companyName || vendorDetails?.vendorCompany,
+      timezone,
     });
 
     // Remove undefined values

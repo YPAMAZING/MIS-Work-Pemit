@@ -18,6 +18,29 @@ const parseJsonArray = (value) => {
 };
 
 /**
+ * Parse a JSON string field to object, with fallback
+ */
+const parseJsonObject = (value) => {
+  if (typeof value === 'object' && value !== null && !Array.isArray(value)) return value;
+  if (!value) return null;
+  try {
+    const parsed = JSON.parse(value);
+    return typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Stringify an object to JSON for storage
+ */
+const stringifyObject = (value) => {
+  if (!value) return null;
+  if (typeof value === 'string') return value;
+  return JSON.stringify(value);
+};
+
+/**
  * Stringify an array to JSON for storage
  */
 const stringifyArray = (value) => {
@@ -37,6 +60,10 @@ const transformPermitResponse = (permit) => {
     hazards: parseJsonArray(permit.hazards),
     precautions: parseJsonArray(permit.precautions),
     equipment: parseJsonArray(permit.equipment),
+    workers: parseJsonArray(permit.workers),
+    measures: parseJsonArray(permit.measures),
+    closureChecklist: parseJsonArray(permit.closureChecklist),
+    vendorDetails: parseJsonObject(permit.vendorDetails),
   };
 };
 
@@ -55,13 +82,27 @@ const transformPermitForStorage = (data) => {
   if (data.equipment !== undefined) {
     transformed.equipment = stringifyArray(data.equipment);
   }
+  if (data.workers !== undefined) {
+    transformed.workers = stringifyArray(data.workers);
+  }
+  if (data.measures !== undefined) {
+    transformed.measures = stringifyArray(data.measures);
+  }
+  if (data.closureChecklist !== undefined) {
+    transformed.closureChecklist = stringifyArray(data.closureChecklist);
+  }
+  if (data.vendorDetails !== undefined) {
+    transformed.vendorDetails = stringifyObject(data.vendorDetails);
+  }
   
   return transformed;
 };
 
 module.exports = {
   parseJsonArray,
+  parseJsonObject,
   stringifyArray,
+  stringifyObject,
   transformPermitResponse,
   transformPermitForStorage,
 };

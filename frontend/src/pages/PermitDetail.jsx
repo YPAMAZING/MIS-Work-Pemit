@@ -7,7 +7,6 @@ import toast from 'react-hot-toast'
 import {
   ArrowLeft,
   Download,
-  QrCode,
   Clock,
   MapPin,
   Users,
@@ -101,8 +100,6 @@ const PermitDetail = () => {
   
   const [permit, setPermit] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [qrCode, setQrCode] = useState(null)
-  const [showQrModal, setShowQrModal] = useState(false)
   const [measures, setMeasures] = useState([])
   const [showWorkflowModal, setShowWorkflowModal] = useState(false)
   const [workflowAction, setWorkflowAction] = useState(null)
@@ -135,16 +132,6 @@ const PermitDetail = () => {
       navigate('/permits')
     } finally {
       setLoading(false)
-    }
-  }
-
-  const fetchQrCode = async () => {
-    try {
-      const response = await permitsAPI.getWorkerQR(id)
-      setQrCode(response.data)
-      setShowQrModal(true)
-    } catch (error) {
-      toast.error('Error generating QR code')
     }
   }
 
@@ -293,13 +280,6 @@ const PermitDetail = () => {
         
         <div className="flex items-center gap-3">
           <button
-            onClick={fetchQrCode}
-            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
-          >
-            <QrCode className="w-4 h-4" />
-            <span className="hidden sm:inline">QR Code</span>
-          </button>
-          <button
             onClick={handleDownloadPDF}
             className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg"
           >
@@ -327,11 +307,8 @@ const PermitDetail = () => {
               <p className="text-white/80">{permit.companyName || 'RELIABLE GROUP MEP'}</p>
             </div>
             
-            <div 
-              onClick={fetchQrCode}
-              className="w-24 h-24 bg-white rounded-xl flex items-center justify-center cursor-pointer hover:scale-105 transition-transform shadow-lg"
-            >
-              <QrCode className="w-16 h-16 text-gray-400" />
+            <div className="w-24 h-24 bg-white rounded-xl flex items-center justify-center shadow-lg">
+              <Download className="w-12 h-12 text-gray-400" />
             </div>
           </div>
         </div>
@@ -824,48 +801,6 @@ const PermitDetail = () => {
               <p className="text-sm text-blue-600 mt-1">
                 This permit has been auto-closed. Please add your fireman remarks above for record keeping.
               </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* QR Code Modal */}
-      {showQrModal && qrCode && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden animate-slide-up">
-            <div className="bg-gradient-to-r from-indigo-500 to-purple-500 px-6 py-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-white">Permit QR Code</h3>
-                <button 
-                  onClick={() => setShowQrModal(false)} 
-                  className="text-white/80 hover:text-white transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-            <div className="p-6 text-center">
-              <div className="bg-white p-4 rounded-xl inline-block shadow-md border-2 border-gray-100 mb-4">
-                <img src={qrCode.qrCode} alt="QR Code" className="w-48 h-48" />
-              </div>
-              <div className="mb-4">
-                <p className="text-sm font-semibold text-gray-800 mb-1">Permit #{qrCode.permitNumber}</p>
-                <p className="text-gray-600 text-sm">Scan to download permit PDF</p>
-              </div>
-              <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
-                <div className="flex items-center justify-center gap-2 text-blue-700 mb-2">
-                  <Download className="w-4 h-4" />
-                  <span className="text-sm font-semibold">Public PDF Download</span>
-                </div>
-                <p className="text-xs text-blue-600">Anyone with this QR code can download the permit details</p>
-              </div>
-              <button
-                onClick={() => window.open(qrCode.pdfUrl, '_blank')}
-                className="mt-4 w-full py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-medium hover:from-blue-700 hover:to-indigo-700 transition-all flex items-center justify-center gap-2"
-              >
-                <Download className="w-4 h-4" />
-                Download PDF Now
-              </button>
             </div>
           </div>
         </div>

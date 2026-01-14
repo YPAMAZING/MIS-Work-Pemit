@@ -363,16 +363,22 @@ const deletePermit = async (req, res) => {
       return res.status(404).json({ message: 'Permit not found' });
     }
 
-    // Only creator or admin can delete
-    if (user.role === 'REQUESTOR' && existingPermit.createdBy !== user.id) {
-      return res.status(403).json({ message: 'Access denied' });
+    // Admin and Fireman (SAFETY_OFFICER) can delete any permit
+    // Requestor can only delete their own pending permits
+    if (user.role === 'REQUESTOR') {
+      if (existingPermit.createdBy !== user.id) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+      if (existingPermit.status !== 'PENDING') {
+        return res.status(400).json({ 
+          message: 'Cannot delete permit that is already processed' 
+        });
+      }
     }
-
-    // Only pending permits can be deleted by requestor
-    if (existingPermit.status !== 'PENDING' && user.role !== 'ADMIN') {
-      return res.status(400).json({ 
-        message: 'Cannot delete permit that is already processed' 
-      });
+    
+    // For roles other than Admin and SAFETY_OFFICER, restrict deletion
+    if (!['ADMIN', 'SAFETY_OFFICER'].includes(user.role) && user.role !== 'REQUESTOR') {
+      return res.status(403).json({ message: 'Access denied' });
     }
 
     await prisma.permitRequest.delete({

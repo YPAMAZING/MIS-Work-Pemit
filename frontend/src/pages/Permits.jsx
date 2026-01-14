@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { permitsAPI } from '../services/api'
+import { useAuth } from '../context/AuthContext'
 import LoadingSpinner from '../components/LoadingSpinner'
 import toast from 'react-hot-toast'
 import {
@@ -26,6 +27,7 @@ import {
 import { format } from 'date-fns'
 
 const Permits = () => {
+  const { user, isAdmin, isSafetyOfficer } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const [permits, setPermits] = useState([])
   const [loading, setLoading] = useState(true)
@@ -301,7 +303,8 @@ const Permits = () => {
                           >
                             <Eye className="w-4 h-4" />
                           </Link>
-                          {permit.status === 'PENDING' && (
+                          {/* Admin and Fireman can delete any permit, Requestor can delete their own pending permits */}
+                          {(isAdmin || isSafetyOfficer || (permit.status === 'PENDING' && permit.createdBy === user?.id)) && (
                             <button
                               onClick={() => setDeleteModal({ open: true, permit })}
                               className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg"

@@ -263,10 +263,208 @@ const getApprovalStats = async (req, res) => {
   }
 };
 
+// Add safety officer remarks to permit
+const addSafetyRemarks = async (req, res) => {
+  try {
+    const { id } = req.params; // permit ID
+    const { safetyRemarks } = req.body;
+    const user = req.user;
+
+    if (!safetyRemarks || !safetyRemarks.trim()) {
+      return res.status(400).json({ message: 'Safety remarks are required' });
+    }
+
+    const permit = await prisma.permitRequest.findUnique({
+      where: { id },
+    });
+
+    if (!permit) {
+      return res.status(404).json({ message: 'Permit not found' });
+    }
+
+    // Only approved permits can have remarks added
+    if (permit.status !== 'APPROVED' && permit.status !== 'PENDING_REMARKS') {
+      return res.status(400).json({ 
+        message: 'Remarks can only be added to approved permits' 
+      });
+    }
+
+    // Update permit with remarks
+    const updatedPermit = await prisma.permitRequest.update({
+      where: { id },
+      data: {
+        safetyRemarks: safetyRemarks.trim(),
+        remarksAddedBy: `${user.firstName} ${user.lastName}`,
+        remarksAddedAt: new Date(),
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            department: true,
+          },
+        },
+        approvals: true,
+      },
+    });
+
+    await createAuditLog({
+      userId: user.id,
+      action: 'SAFETY_REMARKS_ADDED',
+      entity: 'PermitRequest',
+      entityId: id,
+      newValue: { safetyRemarks: safetyRemarks.trim(), remarksAddedBy: `${user.firstName} ${user.lastName}` },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+
+    res.json({
+      message: 'Safety remarks added successfully',
+      permit: transformPermitResponse(updatedPermit),
+    });
+  } catch (error) {
+    console.error('Add safety remarks error:', error);
+    res.status(500).json({ message: 'Error adding safety remarks' });
+  }
+};
+
+// Get permits pending remarks (approved but no remarks yet, and past end time)
+const getPendingRemarks = async (req, res) => {
+  try {
+    const now = new Date();
+    
+    const permits = await prisma.permitRequest.findMany({
+      where: {
+        status: 'APPROVED',
+        safetyRemarks: null,
+        endDate: { lte: now },
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            department: true,
+          },
+        },
+        approvals: true,
+      },
+      orderBy: { endDate: 'asc' },
+    });
+
+    res.json({
+      permits: permits.map(transformPermitResponse),
+      count: permits.length,
+    });
+  } catch (error) {
+    console.error('Get pending remarks error:', error);
+    res.status(500).json({ message: 'Error fetching pending remarks' });
+  }
+};
+
+// Auto-close expired permits (called by cron or on-demand)
+const autoCloseExpiredPermits = async (req, res) => {
+  try {
+    const now = new Date();
+    
+    // Find all approved permits that have ended and have remarks
+    const permitsToClose = await prisma.permitRequest.findMany({
+      where: {
+        status: 'APPROVED',
+        endDate: { lte: now },
+        safetyRemarks: { not: null },
+        closedAt: null,
+      },
+    });
+
+    // Close each permit
+    const closedPermits = [];
+    for (const permit of permitsToClose) {
+      const updated = await prisma.permitRequest.update({
+        where: { id: permit.id },
+        data: {
+          status: 'CLOSED',
+          closedAt: now,
+          autoClosedAt: now,
+        },
+      });
+      closedPermits.push(updated);
+    }
+
+    // Also mark permits as PENDING_REMARKS if they're past end time but no remarks
+    const permitsPendingRemarks = await prisma.permitRequest.updateMany({
+      where: {
+        status: 'APPROVED',
+        endDate: { lte: now },
+        safetyRemarks: null,
+      },
+      data: {
+        status: 'PENDING_REMARKS',
+      },
+    });
+
+    res.json({
+      message: 'Auto-close check completed',
+      closedCount: closedPermits.length,
+      pendingRemarksCount: permitsPendingRemarks.count,
+    });
+  } catch (error) {
+    console.error('Auto-close permits error:', error);
+    res.status(500).json({ message: 'Error auto-closing permits' });
+  }
+};
+
+// Check and update permit statuses based on time
+const checkPermitStatuses = async () => {
+  const now = new Date();
+  
+  try {
+    // 1. Close permits that have ended and have remarks
+    await prisma.permitRequest.updateMany({
+      where: {
+        status: 'APPROVED',
+        endDate: { lte: now },
+        safetyRemarks: { not: null },
+        closedAt: null,
+      },
+      data: {
+        status: 'CLOSED',
+        closedAt: now,
+        autoClosedAt: now,
+      },
+    });
+
+    // 2. Mark permits as PENDING_REMARKS if past end time without remarks
+    await prisma.permitRequest.updateMany({
+      where: {
+        status: 'APPROVED',
+        endDate: { lte: now },
+        safetyRemarks: null,
+      },
+      data: {
+        status: 'PENDING_REMARKS',
+      },
+    });
+
+    console.log('[Auto-Close] Permit status check completed at', now.toISOString());
+  } catch (error) {
+    console.error('[Auto-Close] Error checking permit statuses:', error);
+  }
+};
+
 module.exports = {
   getAllApprovals,
   getPendingCount,
   getApprovalById,
   updateApprovalDecision,
   getApprovalStats,
+  addSafetyRemarks,
+  getPendingRemarks,
+  autoCloseExpiredPermits,
+  checkPermitStatuses,
 };

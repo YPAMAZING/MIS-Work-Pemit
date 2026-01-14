@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { permitsAPI } from '../services/api'
+import { permitsAPI, approvalsAPI } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import LoadingSpinner from '../components/LoadingSpinner'
 import toast from 'react-hot-toast'
@@ -29,6 +29,8 @@ import {
   X,
   Plus,
   FileText,
+  MessageSquare,
+  Send,
 } from 'lucide-react'
 
 // Work type configurations
@@ -71,6 +73,7 @@ const statusConfig = {
   'CLOSED': { bg: 'bg-gray-100', text: 'text-gray-700', border: 'border-gray-200' },
   'EXTENDED': { bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-200' },
   'REVOKED': { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-200' },
+  'PENDING_REMARKS': { bg: 'bg-orange-100', text: 'text-orange-700', border: 'border-orange-200' },
 }
 
 const PermitDetail = () => {
@@ -87,6 +90,8 @@ const PermitDetail = () => {
   const [workflowAction, setWorkflowAction] = useState(null)
   const [workflowData, setWorkflowData] = useState({})
   const [actionLoading, setActionLoading] = useState(false)
+  const [safetyRemarks, setSafetyRemarks] = useState('')
+  const [remarksLoading, setRemarksLoading] = useState(false)
 
   useEffect(() => {
     fetchPermit()
@@ -152,6 +157,25 @@ const PermitDetail = () => {
     setWorkflowAction(action)
     setWorkflowData({})
     setShowWorkflowModal(true)
+  }
+
+  const handleSubmitRemarks = async () => {
+    if (!safetyRemarks.trim()) {
+      toast.error('Please enter safety remarks')
+      return
+    }
+    
+    setRemarksLoading(true)
+    try {
+      await approvalsAPI.addRemarks(id, safetyRemarks.trim())
+      toast.success('Safety remarks added successfully')
+      setSafetyRemarks('')
+      fetchPermit() // Refresh permit data
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Error adding remarks')
+    } finally {
+      setRemarksLoading(false)
+    }
   }
 
   const executeWorkflowAction = async () => {
@@ -455,7 +479,7 @@ const PermitDetail = () => {
         )}
 
         {/* Approvals & Signatures */}
-        <div>
+        <div className="border-b border-gray-200">
           <div className="bg-slate-700 text-white px-4 py-2 font-semibold">
             APPROVALS & SIGNATURES
           </div>
@@ -488,7 +512,72 @@ const PermitDetail = () => {
           </div>
         </div>
 
-        {/* Workflow Actions */}
+        {/* Safety Officer Remarks Section */}
+        <div className="border-b border-gray-200">
+          <div className="bg-purple-600 text-white px-4 py-2 font-semibold flex items-center gap-2">
+            <MessageSquare className="w-4 h-4" />
+            SAFETY OFFICER REMARKS
+          </div>
+          <div className="p-4">
+            {/* Existing Remarks */}
+            {permit.safetyRemarks ? (
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
+                <p className="text-gray-800 whitespace-pre-wrap">{permit.safetyRemarks}</p>
+                <div className="mt-3 pt-3 border-t border-purple-200 flex items-center justify-between text-sm text-gray-500">
+                  <span>Added by: {permit.remarksAddedBy}</span>
+                  {permit.remarksAddedAt && (
+                    <span>{new Date(permit.remarksAddedAt).toLocaleString()}</span>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-2 mb-4">No safety remarks added yet</p>
+            )}
+            
+            {/* Add Remarks Form - Only for Safety Officer/Admin and approved/pending_remarks permits */}
+            {(isAdmin || isSafetyOfficer) && ['APPROVED', 'PENDING_REMARKS', 'EXTENDED'].includes(permit.status) && !permit.safetyRemarks && (
+              <div className="space-y-3">
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-sm text-orange-700">
+                  <strong>Note:</strong> Safety remarks are required before the permit can be closed. 
+                  The permit will auto-close once remarks are added and the end time has passed.
+                </div>
+                <textarea
+                  value={safetyRemarks}
+                  onChange={(e) => setSafetyRemarks(e.target.value)}
+                  placeholder="Enter safety remarks, observations, and any concerns..."
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  rows={4}
+                />
+                <button
+                  onClick={handleSubmitRemarks}
+                  disabled={remarksLoading || !safetyRemarks.trim()}
+                  className="btn btn-primary flex items-center gap-2"
+                >
+                  {remarksLoading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      Submit Remarks
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+
+            {/* Auto-close info */}
+            {permit.autoClosedAt && (
+              <div className="mt-4 bg-gray-100 border border-gray-200 rounded-lg p-3 text-sm text-gray-600">
+                <strong>Auto-closed:</strong> {new Date(permit.autoClosedAt).toLocaleString()}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Workflow Actions - Removed Close PTW since it's now automatic */}
         {(isAdmin || isSafetyOfficer) && ['APPROVED', 'EXTENDED'].includes(permit.status) && (
           <div className="p-4 bg-gray-50 border-t flex items-center gap-3">
             <span className="text-sm font-medium text-gray-500">Actions:</span>
@@ -506,13 +595,21 @@ const PermitDetail = () => {
               <RotateCcw className="w-3 h-3" />
               Revoke
             </button>
-            <button
-              onClick={() => handleWorkflowAction('close')}
-              className="btn bg-gray-700 text-white hover:bg-gray-800 text-sm flex items-center gap-1"
-            >
-              <XCircle className="w-3 h-3" />
-              Close PTW
-            </button>
+          </div>
+        )}
+        
+        {/* Pending Remarks Alert */}
+        {permit.status === 'PENDING_REMARKS' && (
+          <div className="p-4 bg-orange-50 border-t border-orange-200">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium text-orange-700">Permit Expired - Awaiting Safety Remarks</p>
+                <p className="text-sm text-orange-600 mt-1">
+                  This permit's end time has passed. Safety officer must add remarks before it can be closed.
+                </p>
+              </div>
+            </div>
           </div>
         )}
       </div>

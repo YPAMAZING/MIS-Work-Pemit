@@ -88,6 +88,10 @@ export const approvalsAPI = {
   updateDecision: (id, data) => api.put(`/approvals/${id}/decision`, data),
   getPendingCount: () => api.get('/approvals/pending-count'),
   getStats: () => api.get('/approvals/stats'),
+  // Safety remarks
+  addRemarks: (permitId, safetyRemarks) => api.post(`/approvals/remarks/${permitId}`, { safetyRemarks }),
+  getPendingRemarks: () => api.get('/approvals/pending-remarks'),
+  triggerAutoClose: () => api.post('/approvals/auto-close'),
 }
 
 // Users API

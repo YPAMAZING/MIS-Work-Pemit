@@ -12,6 +12,7 @@ const ssoRoutes = require('./routes/sso.routes');
 const meterRoutes = require('./routes/meter.routes');
 const { errorHandler } = require('./middleware/error.middleware');
 const { initializeRolesAndPermissions } = require('./controllers/role.controller');
+const { checkPermitStatuses } = require('./controllers/approval.controller');
 
 const app = express();
 
@@ -62,6 +63,16 @@ app.listen(config.port, '0.0.0.0', async () => {
   
   // Initialize roles and permissions
   await initializeRolesAndPermissions();
+  
+  // Run initial permit status check
+  await checkPermitStatuses();
+  
+  // Set up periodic permit status check (every 5 minutes)
+  setInterval(async () => {
+    await checkPermitStatuses();
+  }, 5 * 60 * 1000); // 5 minutes
+  
+  console.log('⏰ Auto-close scheduler started (checks every 5 minutes)');
 });
 
 module.exports = app;

@@ -6,6 +6,9 @@ const {
   getApprovalById,
   updateApprovalDecision,
   getApprovalStats,
+  addSafetyRemarks,
+  getPendingRemarks,
+  autoCloseExpiredPermits,
 } = require('../controllers/approval.controller');
 const { authenticate, isSafetyOfficer } = require('../middleware/auth.middleware');
 const { validate } = require('../middleware/validate.middleware');
@@ -24,6 +27,12 @@ router.get('/pending-count', getPendingCount);
 
 // Get approval statistics
 router.get('/stats', getApprovalStats);
+
+// Get permits pending safety remarks
+router.get('/pending-remarks', getPendingRemarks);
+
+// Trigger auto-close check for expired permits
+router.post('/auto-close', autoCloseExpiredPermits);
 
 // Get approval by ID
 router.get(
@@ -45,6 +54,17 @@ router.put(
   ],
   validate,
   updateApprovalDecision
+);
+
+// Add safety remarks to a permit
+router.post(
+  '/remarks/:id',
+  [
+    param('id').isUUID().withMessage('Invalid permit ID'),
+    body('safetyRemarks').notEmpty().withMessage('Safety remarks are required'),
+  ],
+  validate,
+  addSafetyRemarks
 );
 
 module.exports = router;

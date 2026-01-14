@@ -108,7 +108,9 @@ const CreatePermit = () => {
     location: '',
     workType: preSelectedType || '',
     startDate: '',
+    startTime: '08:00',
     endDate: '',
+    endTime: '18:00',
     priority: 'MEDIUM',
     hazards: [],
     precautions: [],
@@ -183,6 +185,10 @@ const CreatePermit = () => {
         }
       }
       
+      // Parse date and time from ISO datetime
+      const startDateTime = new Date(permit.startDate)
+      const endDateTime = new Date(permit.endDate)
+      
       setFormData({
         title: permit.title,
         description: permit.description,
@@ -191,7 +197,9 @@ const CreatePermit = () => {
         location: permit.location,
         workType: permit.workType,
         startDate: permit.startDate.split('T')[0],
+        startTime: startDateTime.toTimeString().slice(0, 5) || '08:00',
         endDate: permit.endDate.split('T')[0],
+        endTime: endDateTime.toTimeString().slice(0, 5) || '18:00',
         priority: permit.priority,
         hazards: permit.hazards || [],
         precautions: permit.precautions || [],
@@ -358,9 +366,17 @@ const CreatePermit = () => {
     if (!formData.exactLocation.trim()) newErrors.exactLocation = 'Exact working area is required'
     if (!formData.workType) newErrors.workType = 'Work type is required'
     if (!formData.startDate) newErrors.startDate = 'Start date is required'
+    if (!formData.startTime) newErrors.startTime = 'Start time is required'
     if (!formData.endDate) newErrors.endDate = 'End date is required'
-    if (formData.startDate && formData.endDate && formData.startDate > formData.endDate) {
-      newErrors.endDate = 'End date must be after start date'
+    if (!formData.endTime) newErrors.endTime = 'End time is required'
+    
+    // Validate end datetime is after start datetime
+    if (formData.startDate && formData.endDate && formData.startTime && formData.endTime) {
+      const startDateTime = new Date(`${formData.startDate}T${formData.startTime}`)
+      const endDateTime = new Date(`${formData.endDate}T${formData.endTime}`)
+      if (endDateTime <= startDateTime) {
+        newErrors.endDate = 'End date/time must be after start date/time'
+      }
     }
     
     // Vendor validation
@@ -395,10 +411,16 @@ const CreatePermit = () => {
       ...otherPPEList
     ]
 
+    // Combine date and time into ISO datetime strings
+    const startDateTime = new Date(`${formData.startDate}T${formData.startTime}`).toISOString()
+    const endDateTime = new Date(`${formData.endDate}T${formData.endTime}`).toISOString()
+
     setLoading(true)
     try {
       const submitData = {
         ...formData,
+        startDate: startDateTime,
+        endDate: endDateTime,
         location: combinedLocation,
         equipment: allEquipment,
         vendorDetails: vendorDetails,
@@ -518,6 +540,7 @@ const CreatePermit = () => {
               </div>
             </div>
 
+            {/* Start Date & Time */}
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <label className="label">Start Date *</label>
@@ -531,6 +554,21 @@ const CreatePermit = () => {
                 {errors.startDate && <p className="text-red-500 text-sm mt-1">{errors.startDate}</p>}
               </div>
               <div>
+                <label className="label">Start Time *</label>
+                <input
+                  type="time"
+                  name="startTime"
+                  value={formData.startTime}
+                  onChange={handleChange}
+                  className={`input ${errors.startTime ? 'input-error' : ''}`}
+                />
+                {errors.startTime && <p className="text-red-500 text-sm mt-1">{errors.startTime}</p>}
+              </div>
+            </div>
+
+            {/* End Date & Time */}
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
                 <label className="label">End Date *</label>
                 <input
                   type="date"
@@ -541,7 +579,23 @@ const CreatePermit = () => {
                 />
                 {errors.endDate && <p className="text-red-500 text-sm mt-1">{errors.endDate}</p>}
               </div>
+              <div>
+                <label className="label">End Time *</label>
+                <input
+                  type="time"
+                  name="endTime"
+                  value={formData.endTime}
+                  onChange={handleChange}
+                  className={`input ${errors.endTime ? 'input-error' : ''}`}
+                />
+                {errors.endTime && <p className="text-red-500 text-sm mt-1">{errors.endTime}</p>}
+              </div>
             </div>
+            
+            <p className="text-sm text-gray-500 bg-blue-50 p-3 rounded-lg">
+              <span className="font-medium text-blue-700">Note:</span> The permit will automatically close at the specified end date and time. 
+              Safety officer remarks are required before closure.
+            </p>
           </div>
         </div>
 

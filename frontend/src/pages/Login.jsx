@@ -72,15 +72,17 @@ const Login = () => {
 
           {/* Title */}
           <div className="text-center">
-            <h2 className="text-3xl xl:text-4xl font-bold text-white leading-tight mb-4">
+            <h2 className="text-3xl xl:text-4xl font-bold text-white leading-tight">
               Reliable Group <span className="text-red-400">|</span> MEP
             </h2>
-            <p className="text-blue-200 text-lg">
-              Work Permit Management System
-            </p>
           </div>
 
-
+          {/* Copyright */}
+          <div className="absolute bottom-8 left-0 right-0 text-center">
+            <p className="text-blue-200 text-xs">
+              © 2025 YP SECURITY SERVICES PVT LTD
+            </p>
+          </div>
         </div>
       </div>
 
@@ -97,7 +99,6 @@ const Login = () => {
               />
             </div>
             <h2 className="text-lg font-bold text-gray-900">Reliable Group <span className="text-red-500">|</span> MEP</h2>
-            <p className="text-gray-500 text-xs">Work Permit Management System</p>
           </div>
 
           {/* Login card */}
@@ -176,7 +177,10 @@ const Login = () => {
             </div>
           </div>
 
-
+          {/* Copyright - Mobile */}
+          <p className="text-center text-gray-400 text-xs mt-4 lg:hidden">
+            © 2025 YP SECURITY SERVICES PVT LTD
+          </p>
         </div>
       </div>
     </div>

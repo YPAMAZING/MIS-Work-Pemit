@@ -415,7 +415,14 @@ const deleteUser = async (req, res) => {
       return res.status(400).json({ message: 'Cannot delete your own account' });
     }
 
-    const user = await prisma.user.findUnique({ where: { id } });
+    const user = await prisma.user.findUnique({ 
+      where: { id },
+      include: {
+        _count: {
+          select: { permitRequests: true }
+        }
+      }
+    });
     
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -427,12 +434,35 @@ const deleteUser = async (req, res) => {
       firstName: user.firstName,
       lastName: user.lastName,
       role: user.roleId,
+      permitCount: user._count.permitRequests,
     };
 
-    // Hard delete - permanently remove user from database
-    // This allows the email to be used for new registration
-    await prisma.user.delete({
-      where: { id },
+    // Use transaction to delete user and their related records
+    await prisma.$transaction(async (tx) => {
+      // First, delete all permit approvals for user's permits
+      const userPermits = await tx.permitRequest.findMany({
+        where: { createdBy: id },
+        select: { id: true }
+      });
+      
+      const permitIds = userPermits.map(p => p.id);
+      
+      if (permitIds.length > 0) {
+        // Delete approvals for user's permits
+        await tx.permitApproval.deleteMany({
+          where: { permitId: { in: permitIds } }
+        });
+        
+        // Delete user's permits
+        await tx.permitRequest.deleteMany({
+          where: { createdBy: id }
+        });
+      }
+      
+      // Finally delete the user
+      await tx.user.delete({
+        where: { id },
+      });
     });
 
     await createAuditLog({
@@ -446,7 +476,11 @@ const deleteUser = async (req, res) => {
       userAgent: req.headers['user-agent'],
     });
 
-    res.json({ message: 'User deleted permanently', deleted: true });
+    res.json({ 
+      message: 'User deleted permanently', 
+      deleted: true,
+      permitsDeleted: deletedUserInfo.permitCount 
+    });
   } catch (error) {
     console.error('Delete user error:', error);
     res.status(500).json({ message: 'Error deleting user' });

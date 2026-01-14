@@ -36,6 +36,7 @@ const Register = () => {
   const [mounted, setMounted] = useState(false)
   const [registrationSuccess, setRegistrationSuccess] = useState(false)
   const [pendingApproval, setPendingApproval] = useState(false)
+  const [consentChecked, setConsentChecked] = useState(false)
   const { register } = useAuth()
   const navigate = useNavigate()
 
@@ -80,6 +81,11 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+
+    if (!consentChecked) {
+      toast.error('Please accept the terms and privacy policy')
+      return
+    }
 
     if (formData.password !== formData.confirmPassword) {
       toast.error('Passwords do not match')
@@ -412,10 +418,41 @@ const Register = () => {
                 </div>
               </div>
 
+              {/* Consent Checkbox */}
+              <div className="mt-4">
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <div className="relative flex-shrink-0 mt-0.5">
+                    <input
+                      type="checkbox"
+                      checked={consentChecked}
+                      onChange={(e) => setConsentChecked(e.target.checked)}
+                      className="peer sr-only"
+                    />
+                    <div className="w-5 h-5 border-2 border-gray-300 rounded-md peer-checked:border-[#1e3a6e] peer-checked:bg-[#1e3a6e] transition-all duration-200 flex items-center justify-center group-hover:border-[#1e3a6e]/50">
+                      <svg
+                        className={`w-3 h-3 text-white transition-opacity duration-200 ${consentChecked ? 'opacity-100' : 'opacity-0'}`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={3}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  </div>
+                  <span className="text-xs text-gray-600 leading-relaxed">
+                    I acknowledge that I am providing my personal information voluntarily. I consent to the collection, storage, and processing of my data for the purpose of account creation and work permit management. I have read and agree to the{' '}
+                    <a href="#" className="text-[#1e3a6e] font-semibold hover:underline">Terms of Service</a>{' '}
+                    and{' '}
+                    <a href="#" className="text-[#1e3a6e] font-semibold hover:underline">Privacy Policy</a>.
+                  </span>
+                </label>
+              </div>
+
               <button
                 type="submit"
-                disabled={loading}
-                className="w-full py-3 bg-gradient-to-r from-[#1e3a6e] to-[#2a4a80] hover:from-[#162d57] hover:to-[#1e3a6e] text-white font-semibold rounded-xl shadow-lg shadow-[#1e3a6e]/25 hover:shadow-xl hover:shadow-[#1e3a6e]/30 transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 group text-sm mt-2"
+                disabled={loading || !consentChecked}
+                className="w-full py-3 bg-gradient-to-r from-[#1e3a6e] to-[#2a4a80] hover:from-[#162d57] hover:to-[#1e3a6e] text-white font-semibold rounded-xl shadow-lg shadow-[#1e3a6e]/25 hover:shadow-xl hover:shadow-[#1e3a6e]/30 transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 group text-sm mt-3"
               >
                 {loading ? (
                   <>

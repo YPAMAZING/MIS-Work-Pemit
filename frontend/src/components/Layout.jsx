@@ -235,14 +235,18 @@ const Layout = () => {
               <div className="relative">
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100"
+                  className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-gray-100 transition-colors"
                 >
-                  <div className="w-8 h-8 bg-gradient-to-br from-gray-700 to-gray-900 rounded-full flex items-center justify-center">
-                    <span className="text-xs font-semibold text-white">
-                      {user?.firstName?.[0]}{user?.lastName?.[0]}
-                    </span>
+                  <div className="w-9 h-9 bg-gradient-to-br from-[#1e3a6e] to-[#2a4a80] rounded-full flex items-center justify-center ring-2 ring-white shadow-md">
+                    {user?.profilePicture ? (
+                      <img src={user.profilePicture} alt="Profile" className="w-full h-full rounded-full object-cover" />
+                    ) : (
+                      <span className="text-sm font-semibold text-white">
+                        {user?.firstName?.[0]}{user?.lastName?.[0]}
+                      </span>
+                    )}
                   </div>
-                  <ChevronDown className="w-4 h-4 text-gray-500" />
+                  <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${userMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 {userMenuOpen && (
@@ -251,28 +255,49 @@ const Layout = () => {
                       className="fixed inset-0 z-40"
                       onClick={() => setUserMenuOpen(false)}
                     />
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-200 py-1 z-50 animate-fade-in">
-                      <div className="px-4 py-2 border-b border-gray-100">
-                        <p className="text-sm font-medium text-gray-900">
-                          {user?.firstName} {user?.lastName}
-                        </p>
-                        <p className="text-xs text-gray-500">{user?.email}</p>
+                    <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50 animate-fade-in">
+                      {/* User Info Header */}
+                      <div className="px-4 py-4 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 bg-gradient-to-br from-[#1e3a6e] to-[#2a4a80] rounded-full flex items-center justify-center shadow-md">
+                            {user?.profilePicture ? (
+                              <img src={user.profilePicture} alt="Profile" className="w-full h-full rounded-full object-cover" />
+                            ) : (
+                              <span className="text-lg font-semibold text-white">
+                                {user?.firstName?.[0]}{user?.lastName?.[0]}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-gray-900 truncate">
+                              {user?.firstName} {user?.lastName}
+                            </p>
+                            <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+                            <span className={`inline-flex items-center mt-1 px-2 py-0.5 text-xs font-medium rounded-full ${roleBadge.bg} ${roleBadge.text}`}>
+                              {roleBadge.label}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <NavLink
-                        to="/settings"
-                        onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                      >
-                        <Settings className="w-4 h-4" />
-                        Settings
-                      </NavLink>
-                      <button
-                        onClick={handleLogout}
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full"
-                      >
-                        <LogOut className="w-4 h-4" />
-                        Logout
-                      </button>
+                      {/* Menu Items */}
+                      <div className="py-2">
+                        <NavLink
+                          to="/settings"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        >
+                          <Settings className="w-4 h-4 text-gray-400" />
+                          <span>Settings</span>
+                        </NavLink>
+                        <div className="border-t border-gray-100 my-1"></div>
+                        <button
+                          onClick={handleLogout}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 w-full transition-colors"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          <span>Logout</span>
+                        </button>
+                      </div>
                     </div>
                   </>
                 )}

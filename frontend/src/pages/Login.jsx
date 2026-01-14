@@ -61,11 +61,11 @@ const Login = () => {
         <div className={`relative z-10 flex flex-col justify-center items-center w-full px-10 xl:px-16 transition-all duration-700 ${mounted ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-10'}`}>
           {/* Logo */}
           <div className="mb-8">
-            <div className="bg-white rounded-2xl p-6 inline-block shadow-2xl">
+            <div className="bg-white rounded-3xl p-8 inline-block shadow-2xl">
               <img 
                 src="/logo.png" 
                 alt="Reliable Group Logo" 
-                className="h-32 w-auto"
+                className="h-44 w-auto"
               />
             </div>
           </div>
@@ -80,13 +80,7 @@ const Login = () => {
             </p>
           </div>
 
-          {/* Company badge */}
-          <div className="absolute bottom-8 left-0 right-0 text-center">
-            <p className="text-blue-300 text-xs">Powered by</p>
-            <p className="text-white font-semibold text-sm mt-1">
-              YP SECURITY SERVICES PVT LTD
-            </p>
-          </div>
+
         </div>
       </div>
 
@@ -182,10 +176,7 @@ const Login = () => {
             </div>
           </div>
 
-          {/* Copyright - Mobile */}
-          <p className="text-center text-gray-400 text-xs mt-4 lg:hidden">
-            © 2025 YP SECURITY SERVICES PVT LTD
-          </p>
+
         </div>
       </div>
     </div>

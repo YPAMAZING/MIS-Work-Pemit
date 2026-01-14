@@ -406,7 +406,7 @@ const updateUser = async (req, res) => {
   }
 };
 
-// Delete user (Admin only)
+// Delete user (Admin only) - HARD DELETE
 const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
@@ -421,24 +421,32 @@ const deleteUser = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Soft delete - deactivate instead of hard delete
-    await prisma.user.update({
+    // Store user info for audit log before deletion
+    const deletedUserInfo = {
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.roleId,
+    };
+
+    // Hard delete - permanently remove user from database
+    // This allows the email to be used for new registration
+    await prisma.user.delete({
       where: { id },
-      data: { isActive: false },
     });
 
     await createAuditLog({
       userId: req.user.id,
-      action: 'USER_DELETED',
+      action: 'USER_DELETED_PERMANENT',
       entity: 'User',
       entityId: id,
-      oldValue: { email: user.email, isActive: true },
-      newValue: { isActive: false },
+      oldValue: deletedUserInfo,
+      newValue: null,
       ipAddress: req.ip,
       userAgent: req.headers['user-agent'],
     });
 
-    res.json({ message: 'User deleted successfully', deleted: true });
+    res.json({ message: 'User deleted permanently', deleted: true });
   } catch (error) {
     console.error('Delete user error:', error);
     res.status(500).json({ message: 'Error deleting user' });

@@ -76,6 +76,108 @@ const sendEmailOTP = async (email, otp) => {
   return true;
 };
 
+// Send Welcome Email on Account Creation
+const sendWelcomeEmail = async (userData) => {
+  const { email, firstName, lastName, role, requiresApproval } = userData;
+  const currentDate = new Date().toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  console.log(`📧 Welcome email sent to ${email}`);
+  console.log(`   Name: ${firstName} ${lastName}`);
+  console.log(`   Role: ${role}`);
+  console.log(`   Date: ${currentDate}`);
+  console.log(`   Requires Approval: ${requiresApproval}`);
+
+  // In production, use nodemailer, SendGrid, etc.
+  /*
+  const nodemailer = require('nodemailer');
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: process.env.SMTP_PORT,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+  });
+  
+  const subject = requiresApproval 
+    ? 'Account Registration Pending Approval - Reliable Group MEP'
+    : 'Welcome to Reliable Group MEP - Account Created';
+  
+  const approvalMessage = requiresApproval 
+    ? `<div style="background-color: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 16px; margin: 20px 0;">
+        <p style="color: #92400e; margin: 0;"><strong>⏳ Pending Approval</strong></p>
+        <p style="color: #92400e; margin: 8px 0 0 0;">Your account requires administrator approval. You will be notified once approved.</p>
+       </div>`
+    : `<div style="background-color: #d1fae5; border: 1px solid #10b981; border-radius: 8px; padding: 16px; margin: 20px 0;">
+        <p style="color: #065f46; margin: 0;"><strong>✅ Account Active</strong></p>
+        <p style="color: #065f46; margin: 8px 0 0 0;">Your account is active and ready to use. You can login now.</p>
+       </div>`;
+
+  await transporter.sendMail({
+    from: process.env.FROM_EMAIL,
+    to: email,
+    subject: subject,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h1 style="color: #1e3a6e; margin: 0;">Reliable Group MEP</h1>
+          <p style="color: #6b7280; margin: 5px 0;">Work Permit Management System</p>
+        </div>
+        
+        <h2 style="color: #1f2937;">Hello ${firstName} ${lastName},</h2>
+        
+        <p style="color: #4b5563; line-height: 1.6;">
+          Your account has been successfully created on the Reliable Group MEP - Work Permit Management System.
+        </p>
+        
+        ${approvalMessage}
+        
+        <div style="background-color: #f3f4f6; border-radius: 8px; padding: 20px; margin: 20px 0;">
+          <h3 style="color: #1f2937; margin-top: 0;">Account Details:</h3>
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280;">Name:</td>
+              <td style="padding: 8px 0; color: #1f2937; font-weight: 500;">${firstName} ${lastName}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280;">Email:</td>
+              <td style="padding: 8px 0; color: #1f2937; font-weight: 500;">${email}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280;">Role:</td>
+              <td style="padding: 8px 0; color: #1f2937; font-weight: 500;">${role}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280;">Created On:</td>
+              <td style="padding: 8px 0; color: #1f2937; font-weight: 500;">${currentDate}</td>
+            </tr>
+          </table>
+        </div>
+        
+        <p style="color: #4b5563; line-height: 1.6;">
+          If you did not create this account, please contact our support team immediately.
+        </p>
+        
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
+        
+        <p style="color: #9ca3af; font-size: 12px; text-align: center;">
+          © ${new Date().getFullYear()} YP Security Services Pvt Ltd. All rights reserved.<br />
+          This is an automated message. Please do not reply to this email.
+        </p>
+      </div>
+    `,
+  });
+  */
+
+  return true;
+};
+
 // Send OTP via SMS (mock - replace with actual SMS service)
 const sendSMSOTP = async (phone, otp) => {
   // In production, use Twilio, MSG91, etc.
@@ -241,4 +343,5 @@ module.exports = {
   verifyRegistrationOTP,
   sendPasswordChangeOTP,
   verifyPasswordChangeOTP,
+  sendWelcomeEmail,
 };

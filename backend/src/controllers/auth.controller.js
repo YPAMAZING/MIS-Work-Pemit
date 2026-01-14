@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const config = require('../config');
 const { createAuditLog } = require('../services/audit.service');
-const { sendOTP, verifyRegistrationOTP, sendPasswordChangeOTP, verifyPasswordChangeOTP } = require('../services/otp.service');
+const { sendOTP, verifyRegistrationOTP, sendPasswordChangeOTP, verifyPasswordChangeOTP, sendWelcomeEmail } = require('../services/otp.service');
 
 const prisma = new PrismaClient();
 
@@ -249,10 +249,24 @@ const register = async (req, res) => {
       userAgent: req.headers['user-agent'],
     });
 
+    // Send welcome email notification
+    try {
+      await sendWelcomeEmail({
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: role,
+        requiresApproval: needsApproval,
+      });
+    } catch (emailError) {
+      console.error('Welcome email failed:', emailError);
+      // Don't fail registration if email fails
+    }
+
     // If needs approval, don't generate token
     if (needsApproval) {
       return res.status(201).json({
-        message: 'Registration submitted for approval',
+        message: 'Registration submitted for approval. A confirmation email has been sent.',
         requiresApproval: true,
         user: {
           id: user.id,
@@ -272,7 +286,7 @@ const register = async (req, res) => {
     );
 
     res.status(201).json({
-      message: 'Registration successful',
+      message: 'Registration successful. A confirmation email has been sent.',
       user: {
         id: user.id,
         email: user.email,

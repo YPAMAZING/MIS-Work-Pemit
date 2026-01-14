@@ -105,10 +105,10 @@ const CreatePermit = () => {
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   })
   
-  // PPE State - mandatory items are always true
+  // PPE State - mandatory items start as false, user must check them
   const [selectedPPE, setSelectedPPE] = useState(() => {
     const initial = {}
-    mandatoryPPE.forEach(item => { initial[item] = true })
+    mandatoryPPE.forEach(item => { initial[item] = false })
     optionalPPE.forEach(item => { initial[item] = false })
     return initial
   })
@@ -215,13 +215,14 @@ const CreatePermit = () => {
   }
 
   const handlePPEChange = (item) => {
-    // Don't allow unchecking mandatory items
-    if (mandatoryPPE.includes(item)) return
-    
     setSelectedPPE(prev => ({
       ...prev,
       [item]: !prev[item]
     }))
+    // Clear error when user checks a mandatory item
+    if (errors.mandatoryPPE && mandatoryPPE.includes(item)) {
+      setErrors(prev => ({ ...prev, mandatoryPPE: null }))
+    }
   }
 
   const addOtherPPE = () => {
@@ -264,6 +265,13 @@ const CreatePermit = () => {
     if (formData.startDate && formData.endDate && formData.startDate > formData.endDate) {
       newErrors.endDate = 'End date must be after start date'
     }
+    
+    // Check if all mandatory PPE items are checked
+    const uncheckedMandatory = mandatoryPPE.filter(item => !selectedPPE[item])
+    if (uncheckedMandatory.length > 0) {
+      newErrors.mandatoryPPE = `Please confirm all mandatory PPE items: ${uncheckedMandatory.join(', ')}`
+    }
+    
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -498,19 +506,32 @@ const CreatePermit = () => {
             {/* Instructions */}
             <div className="text-sm text-gray-600 space-y-1">
               <p>1. <span className="text-amber-700">(To be filled by the applicant/Tick the applicable items)</span></p>
-              <p>2. <strong>These below listed PPE items are unavoidable</strong></p>
+              <p>2. <strong>These below listed PPE items are unavoidable (must be checked)</strong></p>
             </div>
 
-            {/* Mandatory Items (Always checked, disabled) */}
+            {/* Mandatory Items (Must be checked) */}
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-              <ul className="space-y-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {mandatoryPPE.map((item) => (
-                  <li key={item} className="flex items-center gap-2 text-gray-800">
-                    <span className="text-amber-600">•</span>
-                    <strong>{item}</strong>
-                  </li>
+                  <label
+                    key={item}
+                    className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+                      selectedPPE[item]
+                        ? 'border-amber-500 bg-amber-100'
+                        : 'border-amber-300 bg-white hover:border-amber-400'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedPPE[item]}
+                      onChange={() => handlePPEChange(item)}
+                      className="w-4 h-4 text-amber-600 rounded"
+                    />
+                    <span className="text-gray-800 font-medium">{item} <span className="text-red-500">*</span></span>
+                  </label>
                 ))}
-              </ul>
+              </div>
+              {errors.mandatoryPPE && <p className="text-red-500 text-sm mt-2">{errors.mandatoryPPE}</p>}
             </div>
 
             {/* Optional PPE Checkboxes */}

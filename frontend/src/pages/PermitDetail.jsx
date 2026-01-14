@@ -179,14 +179,14 @@ const PermitDetail = () => {
 
   const handleSubmitRemarks = async () => {
     if (!safetyRemarks.trim()) {
-      toast.error('Please enter safety remarks')
+      toast.error('Please enter fireman remarks')
       return
     }
     
     setRemarksLoading(true)
     try {
       await approvalsAPI.addRemarks(id, safetyRemarks.trim())
-      toast.success('Safety remarks added successfully')
+      toast.success('Fireman remarks added successfully')
       setSafetyRemarks('')
       fetchPermit() // Refresh permit data
     } catch (error) {
@@ -669,9 +669,9 @@ const PermitDetail = () => {
         </Section>
       </div>
 
-      {/* Safety Officer Remarks */}
+      {/* Fireman Remarks */}
       <div className="mt-6">
-        <Section icon={MessageSquare} title="SAFETY OFFICER REMARKS">
+        <Section icon={MessageSquare} title="FIREMAN REMARKS">
           {/* Existing Remarks */}
           {permit.safetyRemarks ? (
             <div className="bg-purple-50 border border-purple-200 rounded-xl p-5 mb-4">
@@ -691,7 +691,7 @@ const PermitDetail = () => {
           ) : (
             <div className="text-center py-6 text-gray-500 bg-gray-50 rounded-xl mb-4">
               <MessageSquare className="w-10 h-10 mx-auto mb-2 text-gray-300" />
-              <p>No safety remarks added yet</p>
+              <p>No fireman remarks added yet</p>
             </div>
           )}
           
@@ -708,12 +708,12 @@ const PermitDetail = () => {
                   {permit.status === 'CLOSED' ? (
                     <p className="text-blue-700">
                       <strong>Note:</strong> This permit has been auto-closed. 
-                      You can still add safety remarks for record keeping.
+                      You can still add fireman remarks for record keeping.
                     </p>
                   ) : (
                     <p className="text-amber-700">
                       <strong>Note:</strong> The permit will auto-close at the end time. 
-                      Please add your safety remarks and observations.
+                      Please add your fireman remarks and observations.
                     </p>
                   )}
                 </div>
@@ -722,7 +722,7 @@ const PermitDetail = () => {
               <textarea
                 value={safetyRemarks}
                 onChange={(e) => setSafetyRemarks(e.target.value)}
-                placeholder="Enter safety remarks, observations, and any concerns regarding this permit..."
+                placeholder="Enter fireman remarks, observations, and any concerns regarding this permit..."
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-200 focus:border-purple-500 transition-all resize-none"
                 rows={4}
               />
@@ -744,7 +744,7 @@ const PermitDetail = () => {
                 ) : (
                   <>
                     <Send className="w-5 h-5" />
-                    Submit Safety Remarks
+                    Submit Fireman Remarks
                   </>
                 )}
               </button>
@@ -800,9 +800,9 @@ const PermitDetail = () => {
               <MessageSquare className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <p className="font-semibold text-blue-800">Permit Closed - Safety Remarks Pending</p>
+              <p className="font-semibold text-blue-800">Permit Closed - Fireman Remarks Pending</p>
               <p className="text-sm text-blue-600 mt-1">
-                This permit has been auto-closed. Please add your safety remarks above for record keeping.
+                This permit has been auto-closed. Please add your fireman remarks above for record keeping.
               </p>
             </div>
           </div>

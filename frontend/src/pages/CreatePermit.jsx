@@ -708,7 +708,7 @@ const CreatePermit = () => {
               <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
               <div className="text-sm text-blue-700">
                 <strong>Auto-Close Feature:</strong> The permit will automatically close at the specified end date and time. 
-                Safety officer can add remarks before or after closure for record keeping.
+                Fireman can add remarks before or after closure for record keeping.
               </div>
             </div>
           </div>
@@ -1264,7 +1264,7 @@ const CreatePermit = () => {
                   
                   <div className="flex gap-3">
                     <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-bold">2</span>
-                    <p>All the above requirements have been clearly explained and communicated to us by Reliable Group's authorized site team, safety officers, and designated officials.</p>
+                    <p>All the above requirements have been clearly explained and communicated to us by Reliable Group's authorized site team, fireman, and designated officials.</p>
                   </div>
                   
                   <div className="flex gap-3">

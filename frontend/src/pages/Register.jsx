@@ -27,7 +27,8 @@ const Register = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    department: '',
+    department: '', // Used as Company Name for Requestor
+    companyName: '',
     phone: '',
     requestedRole: 'REQUESTOR',
   })
@@ -51,23 +52,17 @@ const Register = () => {
       description: 'Create and track work permits',
       icon: ClipboardCheck,
       color: 'emerald',
-      requiresApproval: false,
+      requiresApproval: true,
+      showCompanyName: true, // Show Company Name field instead of Department
     },
     {
       id: 'SAFETY_OFFICER',
-      name: 'Safety Officer',
+      name: 'Fireman',
       description: 'Review and approve permits',
       icon: HardHat,
       color: 'blue',
       requiresApproval: true,
-    },
-    {
-      id: 'SITE_ENGINEER',
-      name: 'Site Engineer',
-      description: 'Meter readings & OCR',
-      icon: Wrench,
-      color: 'orange',
-      requiresApproval: true,
+      showCompanyName: false,
     },
     {
       id: 'ADMIN',
@@ -76,6 +71,7 @@ const Register = () => {
       icon: Shield,
       color: 'purple',
       requiresApproval: true,
+      showCompanyName: false,
     },
   ]
 
@@ -84,6 +80,12 @@ const Register = () => {
 
     if (!consentChecked) {
       toast.error('Please accept the terms and privacy policy')
+      return
+    }
+
+    // Require company name for Requestor
+    if (selectedRole?.showCompanyName && !formData.department.trim()) {
+      toast.error('Company name is required for Requestor')
       return
     }
 
@@ -247,7 +249,7 @@ const Register = () => {
             {/* Role Selection */}
             <div className="mb-4">
               <label className="block text-xs font-medium text-gray-700 mb-2">Select Your Role</label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 {roles.map((role) => {
                   const Icon = role.icon
                   const isSelected = formData.requestedRole === role.id
@@ -364,7 +366,10 @@ const Register = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Department</label>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  {selectedRole?.showCompanyName ? 'Company Name' : 'Department'}
+                  {selectedRole?.showCompanyName && <span className="text-red-500 ml-1">*</span>}
+                </label>
                 <div className="relative group">
                   <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-[#1e3a6e] transition-colors" />
                   <input
@@ -373,9 +378,13 @@ const Register = () => {
                     value={formData.department}
                     onChange={handleChange}
                     className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:bg-white focus:border-[#1e3a6e] focus:ring-2 focus:ring-[#1e3a6e]/20 transition-all duration-200 outline-none text-sm"
-                    placeholder="Operations / MEP / Engineering"
+                    placeholder={selectedRole?.showCompanyName ? "Enter your company name" : "Operations / MEP / Engineering"}
+                    required={selectedRole?.showCompanyName}
                   />
                 </div>
+                {selectedRole?.showCompanyName && (
+                  <p className="text-xs text-gray-500 mt-1">This will be used as your company/contractor name for permits</p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">

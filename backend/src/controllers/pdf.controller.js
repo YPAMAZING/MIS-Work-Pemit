@@ -46,7 +46,7 @@ const idProofLabels = {
 // Enhanced Declaration & Undertaking text
 const declarationPoints = [
   '1. I/We have thoroughly read, comprehensively understood, and fully acknowledged all the safety requirements, protocols, procedures, and guidelines mentioned in this permit application.',
-  '2. All the above requirements have been clearly explained and communicated to us by Reliable Group\'s authorized site team, safety officers, and designated officials.',
+  '2. All the above requirements have been clearly explained and communicated to us by Reliable Group\'s authorized site team, fireman, and designated officials.',
   '3. I/We unconditionally agree to strictly comply with and faithfully abide by all the listed requirements, safety measures, emergency procedures, and standard operating procedures throughout the entire duration of this work permit.',
   '4. I/We understand and accept that the vendor/contractor/person requesting this work permit shall be held SOLELY AND ENTIRELY RESPONSIBLE for any untoward incident, accident, injury, damage to property, equipment, machinery, or human life arising due to any unsafe act, negligence, violation of safety protocols, or non-compliance during this work/job/activity.',
   '5. I/We acknowledge that verifying and ensuring the validity of all workers\' necessary licenses, certifications, competency certificates, training records, medical fitness certificates, and utility vehicle\'s compliance documents (including valid insurance, PUC, fitness certificate, registration, etc.) is SOLELY our (clients\'/tenants\'/contractors\') responsibility.',
@@ -372,10 +372,10 @@ const generatePermitPDF = async (req, res) => {
     
     yPos += 30;
 
-    // === SAFETY OFFICER REMARKS ===
+    // === FIREMAN REMARKS ===
     if (permit.safetyRemarks) {
       checkPageBreak(80);
-      drawSectionHeader('SAFETY OFFICER REMARKS', '#7c3aed');
+      drawSectionHeader('FIREMAN REMARKS', '#7c3aed');
       
       doc.fontSize(9).font('Helvetica').fillColor('#1e293b')
          .text(permit.safetyRemarks, 45, yPos, { width: 500 });

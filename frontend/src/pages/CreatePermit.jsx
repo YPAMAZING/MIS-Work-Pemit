@@ -496,11 +496,55 @@ const CreatePermit = () => {
           </div>
         </div>
 
-        {/* Mandatory PPE & Tools */}
+        {/* Hazards */}
         <div className="card">
           <div className="card-header flex items-center gap-2">
-            <HardHat className="w-5 h-5 text-orange-500" />
-            <h2 className="text-lg font-semibold text-gray-900">List of Mandatory PPE & Tools</h2>
+            <AlertTriangle className="w-5 h-5 text-red-500" />
+            <h2 className="text-lg font-semibold text-gray-900">Hazards Identified</h2>
+          </div>
+          <div className="card-body">
+            <div className="flex gap-2 mb-3">
+              <input
+                type="text"
+                value={newHazard}
+                onChange={(e) => setNewHazard(e.target.value)}
+                className="input flex-1"
+                placeholder="e.g., Fire, Burns, Toxic fumes"
+                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addItem('hazards', newHazard, setNewHazard))}
+              />
+              <button
+                type="button"
+                onClick={() => addItem('hazards', newHazard, setNewHazard)}
+                className="btn btn-secondary"
+              >
+                <Plus className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {formData.hazards.map((hazard, index) => (
+                <span
+                  key={index}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-700 rounded-full text-sm"
+                >
+                  {hazard}
+                  <button
+                    type="button"
+                    onClick={() => removeItem('hazards', index)}
+                    className="hover:text-red-900"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Safety Precautions (Combined with PPE & Tools) */}
+        <div className="card">
+          <div className="card-header flex items-center gap-2">
+            <Shield className="w-5 h-5 text-green-500" />
+            <h2 className="text-lg font-semibold text-gray-900">Safety Precautions - List of Mandatory PPE & Tools</h2>
           </div>
           <div className="card-body space-y-4">
             {/* Instructions */}
@@ -603,94 +647,6 @@ const CreatePermit = () => {
                   ))}
                 </div>
               )}
-            </div>
-          </div>
-        </div>
-
-        {/* Hazards */}
-        <div className="card">
-          <div className="card-header flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-red-500" />
-            <h2 className="text-lg font-semibold text-gray-900">Hazards Identified</h2>
-          </div>
-          <div className="card-body">
-            <div className="flex gap-2 mb-3">
-              <input
-                type="text"
-                value={newHazard}
-                onChange={(e) => setNewHazard(e.target.value)}
-                className="input flex-1"
-                placeholder="e.g., Fire, Burns, Toxic fumes"
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addItem('hazards', newHazard, setNewHazard))}
-              />
-              <button
-                type="button"
-                onClick={() => addItem('hazards', newHazard, setNewHazard)}
-                className="btn btn-secondary"
-              >
-                <Plus className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {formData.hazards.map((hazard, index) => (
-                <span
-                  key={index}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-700 rounded-full text-sm"
-                >
-                  {hazard}
-                  <button
-                    type="button"
-                    onClick={() => removeItem('hazards', index)}
-                    className="hover:text-red-900"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Precautions */}
-        <div className="card">
-          <div className="card-header flex items-center gap-2">
-            <Shield className="w-5 h-5 text-green-500" />
-            <h2 className="text-lg font-semibold text-gray-900">Safety Precautions</h2>
-          </div>
-          <div className="card-body">
-            <div className="flex gap-2 mb-3">
-              <input
-                type="text"
-                value={newPrecaution}
-                onChange={(e) => setNewPrecaution(e.target.value)}
-                className="input flex-1"
-                placeholder="e.g., Fire extinguisher nearby, PPE required"
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addItem('precautions', newPrecaution, setNewPrecaution))}
-              />
-              <button
-                type="button"
-                onClick={() => addItem('precautions', newPrecaution, setNewPrecaution)}
-                className="btn btn-secondary"
-              >
-                <Plus className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {formData.precautions.map((precaution, index) => (
-                <span
-                  key={index}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-50 text-green-700 rounded-full text-sm"
-                >
-                  {precaution}
-                  <button
-                    type="button"
-                    onClick={() => removeItem('precautions', index)}
-                    className="hover:text-green-900"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </span>
-              ))}
             </div>
           </div>
         </div>

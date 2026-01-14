@@ -21,6 +21,8 @@ import {
   Phone,
   CheckSquare,
   ClipboardCheck,
+  MapPin,
+  HardHat,
 } from 'lucide-react'
 
 // Work type labels mapping
@@ -42,6 +44,38 @@ const workTypeLabels = {
   'SWMS': 'Safe Work Method Statement',
 }
 
+// Building locations
+const buildingLocations = [
+  { id: 'reliable_plaza', name: 'Reliable Plaza' },
+  { id: 'liberty_tower', name: 'Liberty Tower' },
+  { id: 'reliable_tech_park', name: 'Reliable Tech Park' },
+  { id: 'empire_tower', name: 'Empire Tower' },
+]
+
+// Mandatory PPE items (cannot be unchecked)
+const mandatoryPPE = [
+  'Fire Extinguisher',
+  'Safety Belts',
+  'Safety Shoes',
+  'Safety Helmets',
+  'Electrical Isolation',
+]
+
+// Optional PPE items (can be checked/unchecked)
+const optionalPPE = [
+  'Gloves',
+  'Ear Plugs',
+  'Dust Masks',
+  'Face Shields',
+  'Locks & Tags',
+  'Safety Goggles',
+  'Area Barricading',
+  'Reflective Jackets',
+  'Warning Signages',
+  'Flashback Arrestors',
+  'Scaffolds & Ladders',
+]
+
 const CreatePermit = () => {
   const { id } = useParams()
   const [searchParams] = useSearchParams()
@@ -55,7 +89,9 @@ const CreatePermit = () => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    location: '',
+    buildingLocation: '',
+    exactLocation: '',
+    location: '', // Combined location for backend
     workType: preSelectedType || '',
     startDate: '',
     endDate: '',
@@ -68,6 +104,16 @@ const CreatePermit = () => {
     companyName: '',
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   })
+  
+  // PPE State - mandatory items are always true
+  const [selectedPPE, setSelectedPPE] = useState(() => {
+    const initial = {}
+    mandatoryPPE.forEach(item => { initial[item] = true })
+    optionalPPE.forEach(item => { initial[item] = false })
+    return initial
+  })
+  const [otherPPE, setOtherPPE] = useState('')
+  const [otherPPEList, setOtherPPEList] = useState([])
   
   // Default measures checklist
   const [measures, setMeasures] = useState([
@@ -107,9 +153,25 @@ const CreatePermit = () => {
     try {
       const response = await permitsAPI.getById(id)
       const permit = response.data.permit
+      
+      // Parse location to extract building and exact location
+      let buildingLocation = ''
+      let exactLocation = permit.location || ''
+      
+      // Try to match building from location string
+      for (const building of buildingLocations) {
+        if (permit.location?.includes(building.name)) {
+          buildingLocation = building.id
+          exactLocation = permit.location.replace(building.name, '').replace(' - ', '').trim()
+          break
+        }
+      }
+      
       setFormData({
         title: permit.title,
         description: permit.description,
+        buildingLocation: buildingLocation,
+        exactLocation: exactLocation,
         location: permit.location,
         workType: permit.workType,
         startDate: permit.startDate.split('T')[0],
@@ -119,6 +181,23 @@ const CreatePermit = () => {
         precautions: permit.precautions || [],
         equipment: permit.equipment || [],
       })
+      
+      // Parse equipment for PPE
+      if (permit.equipment && permit.equipment.length > 0) {
+        const newSelectedPPE = { ...selectedPPE }
+        const others = []
+        
+        permit.equipment.forEach(item => {
+          if (mandatoryPPE.includes(item) || optionalPPE.includes(item)) {
+            newSelectedPPE[item] = true
+          } else {
+            others.push(item)
+          }
+        })
+        
+        setSelectedPPE(newSelectedPPE)
+        setOtherPPEList(others)
+      }
     } catch (error) {
       toast.error('Error fetching permit')
       navigate('/permits')
@@ -133,6 +212,27 @@ const CreatePermit = () => {
     if (errors[name]) {
       setErrors({ ...errors, [name]: null })
     }
+  }
+
+  const handlePPEChange = (item) => {
+    // Don't allow unchecking mandatory items
+    if (mandatoryPPE.includes(item)) return
+    
+    setSelectedPPE(prev => ({
+      ...prev,
+      [item]: !prev[item]
+    }))
+  }
+
+  const addOtherPPE = () => {
+    if (otherPPE.trim() && !otherPPEList.includes(otherPPE.trim())) {
+      setOtherPPEList([...otherPPEList, otherPPE.trim()])
+      setOtherPPE('')
+    }
+  }
+
+  const removeOtherPPE = (item) => {
+    setOtherPPEList(otherPPEList.filter(p => p !== item))
   }
 
   const addItem = (type, value, setValue) => {
@@ -156,7 +256,8 @@ const CreatePermit = () => {
     const newErrors = {}
     if (!formData.title.trim()) newErrors.title = 'Title is required'
     if (!formData.description.trim()) newErrors.description = 'Description is required'
-    if (!formData.location.trim()) newErrors.location = 'Location is required'
+    if (!formData.buildingLocation) newErrors.buildingLocation = 'Building location is required'
+    if (!formData.exactLocation.trim()) newErrors.exactLocation = 'Exact working area is required'
     if (!formData.workType) newErrors.workType = 'Work type is required'
     if (!formData.startDate) newErrors.startDate = 'Start date is required'
     if (!formData.endDate) newErrors.endDate = 'End date is required'
@@ -171,13 +272,29 @@ const CreatePermit = () => {
     e.preventDefault()
     if (!validate()) return
 
+    // Combine building and exact location
+    const building = buildingLocations.find(b => b.id === formData.buildingLocation)
+    const combinedLocation = `${building?.name || ''} - ${formData.exactLocation}`
+
+    // Collect all selected PPE
+    const allEquipment = [
+      ...Object.entries(selectedPPE).filter(([_, selected]) => selected).map(([item]) => item),
+      ...otherPPEList
+    ]
+
     setLoading(true)
     try {
+      const submitData = {
+        ...formData,
+        location: combinedLocation,
+        equipment: allEquipment,
+      }
+
       if (isEdit) {
-        await permitsAPI.update(id, formData)
+        await permitsAPI.update(id, submitData)
         toast.success('Permit updated successfully')
       } else {
-        await permitsAPI.create(formData)
+        await permitsAPI.create(submitData)
         toast.success('Permit created successfully')
       }
       navigate('/permits')
@@ -293,19 +410,6 @@ const CreatePermit = () => {
               </div>
             </div>
 
-            <div>
-              <label className="label">Location *</label>
-              <input
-                type="text"
-                name="location"
-                value={formData.location}
-                onChange={handleChange}
-                className={`input ${errors.location ? 'input-error' : ''}`}
-                placeholder="e.g., Building A - Boiler Room B2"
-              />
-              {errors.location && <p className="text-red-500 text-sm mt-1">{errors.location}</p>}
-            </div>
-
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <label className="label">Start Date *</label>
@@ -329,6 +433,155 @@ const CreatePermit = () => {
                 />
                 {errors.endDate && <p className="text-red-500 text-sm mt-1">{errors.endDate}</p>}
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Work Location */}
+        <div className="card">
+          <div className="card-header flex items-center gap-2">
+            <MapPin className="w-5 h-5 text-blue-500" />
+            <h2 className="text-lg font-semibold text-gray-900">Work Location *</h2>
+          </div>
+          <div className="card-body space-y-4">
+            {/* Building Selection */}
+            <div>
+              <label className="label text-amber-700">(To be filled by the applicant/Name of the building)</label>
+              <div className="space-y-2 mt-2">
+                {buildingLocations.map((building) => (
+                  <label
+                    key={building.id}
+                    className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+                      formData.buildingLocation === building.id
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="buildingLocation"
+                      value={building.id}
+                      checked={formData.buildingLocation === building.id}
+                      onChange={handleChange}
+                      className="w-4 h-4 text-blue-600"
+                    />
+                    <span className="text-gray-700">{building.name}</span>
+                  </label>
+                ))}
+              </div>
+              {errors.buildingLocation && <p className="text-red-500 text-sm mt-1">{errors.buildingLocation}</p>}
+            </div>
+
+            {/* Exact Location */}
+            <div>
+              <label className="label text-amber-700">(To be filled by the applicant/Exact working area)</label>
+              <input
+                type="text"
+                name="exactLocation"
+                value={formData.exactLocation}
+                onChange={handleChange}
+                className={`input mt-2 ${errors.exactLocation ? 'input-error' : ''}`}
+                placeholder="Your answer"
+              />
+              {errors.exactLocation && <p className="text-red-500 text-sm mt-1">{errors.exactLocation}</p>}
+            </div>
+          </div>
+        </div>
+
+        {/* Mandatory PPE & Tools */}
+        <div className="card">
+          <div className="card-header flex items-center gap-2">
+            <HardHat className="w-5 h-5 text-orange-500" />
+            <h2 className="text-lg font-semibold text-gray-900">List of Mandatory PPE & Tools</h2>
+          </div>
+          <div className="card-body space-y-4">
+            {/* Instructions */}
+            <div className="text-sm text-gray-600 space-y-1">
+              <p>1. <span className="text-amber-700">(To be filled by the applicant/Tick the applicable items)</span></p>
+              <p>2. <strong>These below listed PPE items are unavoidable</strong></p>
+            </div>
+
+            {/* Mandatory Items (Always checked, disabled) */}
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <ul className="space-y-1">
+                {mandatoryPPE.map((item) => (
+                  <li key={item} className="flex items-center gap-2 text-gray-800">
+                    <span className="text-amber-600">•</span>
+                    <strong>{item}</strong>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Optional PPE Checkboxes */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {optionalPPE.map((item) => (
+                <label
+                  key={item}
+                  className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+                    selectedPPE[item]
+                      ? 'border-green-500 bg-green-50'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedPPE[item]}
+                    onChange={() => handlePPEChange(item)}
+                    className="w-4 h-4 text-green-600 rounded"
+                  />
+                  <span className="text-gray-700">{item}</span>
+                </label>
+              ))}
+            </div>
+
+            {/* Other PPE Input */}
+            <div>
+              <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg">
+                <input
+                  type="checkbox"
+                  checked={otherPPEList.length > 0}
+                  readOnly
+                  className="w-4 h-4 text-green-600 rounded"
+                />
+                <span className="text-gray-700">Other:</span>
+                <input
+                  type="text"
+                  value={otherPPE}
+                  onChange={(e) => setOtherPPE(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addOtherPPE())}
+                  className="flex-1 border-b border-gray-300 focus:border-blue-500 outline-none px-2 py-1"
+                  placeholder="Enter other PPE/Tool"
+                />
+                <button
+                  type="button"
+                  onClick={addOtherPPE}
+                  className="btn btn-secondary btn-sm"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </label>
+              
+              {/* Other PPE List */}
+              {otherPPEList.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {otherPPEList.map((item, index) => (
+                    <span
+                      key={index}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-purple-50 text-purple-700 rounded-full text-sm"
+                    >
+                      {item}
+                      <button
+                        type="button"
+                        onClick={() => removeOtherPPE(item)}
+                        className="hover:text-purple-900"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -412,50 +665,6 @@ const CreatePermit = () => {
                     type="button"
                     onClick={() => removeItem('precautions', index)}
                     className="hover:text-green-900"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Equipment */}
-        <div className="card">
-          <div className="card-header flex items-center gap-2">
-            <Wrench className="w-5 h-5 text-blue-500" />
-            <h2 className="text-lg font-semibold text-gray-900">Required Equipment</h2>
-          </div>
-          <div className="card-body">
-            <div className="flex gap-2 mb-3">
-              <input
-                type="text"
-                value={newEquipment}
-                onChange={(e) => setNewEquipment(e.target.value)}
-                className="input flex-1"
-                placeholder="e.g., Welding helmet, Fire blanket, Safety harness"
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addItem('equipment', newEquipment, setNewEquipment))}
-              />
-              <button
-                type="button"
-                onClick={() => addItem('equipment', newEquipment, setNewEquipment)}
-                className="btn btn-secondary"
-              >
-                <Plus className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {formData.equipment.map((item, index) => (
-                <span
-                  key={index}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm"
-                >
-                  {item}
-                  <button
-                    type="button"
-                    onClick={() => removeItem('equipment', index)}
-                    className="hover:text-blue-900"
                   >
                     <X className="w-4 h-4" />
                   </button>

@@ -1,6 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const { createAuditLog } = require('../services/audit.service');
 const { transformPermitResponse, transformPermitForStorage } = require('../utils/arrayHelpers');
+const { notifyFiremenNewPermit } = require('../services/otp.service');
 
 const prisma = new PrismaClient();
 
@@ -233,6 +234,36 @@ const createPermit = async (req, res) => {
       ipAddress: req.ip,
       userAgent: req.headers['user-agent'],
     });
+
+    // Notify all Firemen (SAFETY_OFFICER) about the new permit
+    try {
+      const firemen = await prisma.user.findMany({
+        where: {
+          role: { name: 'SAFETY_OFFICER' },
+          isActive: true,
+          isApproved: true,
+        },
+        select: { email: true },
+      });
+      const firemanEmails = firemen.map(f => f.email);
+      if (firemanEmails.length > 0) {
+        await notifyFiremenNewPermit({
+          title,
+          workType,
+          location,
+          startDate,
+          endDate,
+          priority: priority || 'MEDIUM',
+          createdBy: {
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+          },
+        }, firemanEmails);
+      }
+    } catch (notifyError) {
+      console.error('Failed to notify firemen:', notifyError);
+    }
 
     res.status(201).json({
       message: 'Permit request created successfully',

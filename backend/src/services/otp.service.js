@@ -421,6 +421,217 @@ const verifyPasswordChangeOTP = (email, phone, otp) => {
   return { valid: false, message: 'Invalid or expired OTP' };
 };
 
+// Notify Admins when someone requests an account
+const notifyAdminsNewRegistration = async (userData, adminEmails) => {
+  if (!isEmailConfigured() || !adminEmails || adminEmails.length === 0) {
+    console.log('⚠️  SMTP not configured or no admin emails - skipping admin notification');
+    return false;
+  }
+
+  const { firstName, lastName, email, phone, requestedRole, department } = userData;
+  const currentDate = new Date().toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  console.log(`📧 Sending new registration notification to admins: ${adminEmails.join(', ')}`);
+
+  try {
+    const transport = getTransporter();
+    await transport.sendMail({
+      from: `"${process.env.FROM_NAME || 'Reliable Group MEP'}" <${process.env.FROM_EMAIL || process.env.SMTP_USER}>`,
+      to: adminEmails.join(', '),
+      subject: '🔔 New Account Registration Request - Action Required',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #1e3a6e; margin: 0;">Reliable Group MEP</h1>
+            <p style="color: #6b7280; margin: 5px 0;">Work Permit Management System</p>
+          </div>
+          
+          <div style="background-color: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+            <h2 style="color: #92400e; margin: 0 0 10px 0;">🔔 New Account Registration Request</h2>
+            <p style="color: #92400e; margin: 0;">A new user has requested to create an account and is waiting for your approval.</p>
+          </div>
+          
+          <div style="background-color: #f3f4f6; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+            <h3 style="color: #1f2937; margin-top: 0;">👤 User Details:</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; width: 140px;">Name:</td>
+                <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">${firstName} ${lastName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280;">Email:</td>
+                <td style="padding: 8px 0; color: #1f2937;">${email}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280;">Phone:</td>
+                <td style="padding: 8px 0; color: #1f2937;">${phone || 'Not provided'}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280;">Department:</td>
+                <td style="padding: 8px 0; color: #1f2937;">${department || 'Not specified'}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280;">Requested Role:</td>
+                <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">${requestedRole}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280;">Requested On:</td>
+                <td style="padding: 8px 0; color: #1f2937;">${currentDate}</td>
+              </tr>
+            </table>
+          </div>
+          
+          <div style="text-align: center; margin: 25px 0;">
+            <a href="http://mepreliable.cloud/users?tab=pending" style="background-color: #1e3a6e; color: #ffffff; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">Review & Approve</a>
+          </div>
+          
+          <p style="color: #6b7280; font-size: 14px; text-align: center;">
+            Please login to the admin panel to approve or reject this registration request.
+          </p>
+          
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
+          
+          <p style="color: #9ca3af; font-size: 12px; text-align: center;">
+            © ${new Date().getFullYear()} YP Security Services Pvt Ltd. All rights reserved.<br />
+            This is an automated notification from the Work Permit Management System.
+          </p>
+        </div>
+      `,
+    });
+    console.log(`✅ Admin notification sent successfully`);
+    return true;
+  } catch (error) {
+    console.error(`❌ Failed to send admin notification:`, error.message);
+    return false;
+  }
+};
+
+// Notify Firemen when a new permit is created
+const notifyFiremenNewPermit = async (permitData, firemanEmails) => {
+  if (!isEmailConfigured() || !firemanEmails || firemanEmails.length === 0) {
+    console.log('⚠️  SMTP not configured or no fireman emails - skipping fireman notification');
+    return false;
+  }
+
+  const { title, workType, location, startDate, endDate, priority, createdBy } = permitData;
+  const currentDate = new Date().toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  const workTypeLabels = {
+    'HOT_WORK': 'Hot Work Permit',
+    'CONFINED_SPACE': 'Confined Space Permit',
+    'ELECTRICAL': 'Electrical Work Permit',
+    'WORKING_AT_HEIGHT': 'Work at Height Permit',
+    'EXCAVATION': 'Excavation Permit',
+    'LIFTING': 'Lifting Permit',
+    'CHEMICAL': 'Chemical Handling Permit',
+    'RADIATION': 'Radiation Work Permit',
+    'GENERAL': 'General Permit',
+    'COLD_WORK': 'Cold Work Permit',
+    'LOTO': 'LOTO Permit',
+    'VEHICLE': 'Vehicle Work Permit',
+    'PRESSURE_TESTING': 'Hydro Pressure Testing',
+    'ENERGIZE': 'Energize Permit',
+    'SWMS': 'Safe Work Method Statement',
+  };
+
+  const priorityColors = {
+    'LOW': '#10b981',
+    'MEDIUM': '#3b82f6',
+    'HIGH': '#f59e0b',
+    'CRITICAL': '#ef4444',
+  };
+
+  console.log(`📧 Sending new permit notification to firemen: ${firemanEmails.join(', ')}`);
+
+  try {
+    const transport = getTransporter();
+    await transport.sendMail({
+      from: `"${process.env.FROM_NAME || 'Reliable Group MEP'}" <${process.env.FROM_EMAIL || process.env.SMTP_USER}>`,
+      to: firemanEmails.join(', '),
+      subject: `🔥 New Permit Request - ${workTypeLabels[workType] || workType} - Approval Required`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #1e3a6e; margin: 0;">Reliable Group MEP</h1>
+            <p style="color: #6b7280; margin: 5px 0;">Work Permit Management System</p>
+          </div>
+          
+          <div style="background-color: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+            <h2 style="color: #92400e; margin: 0 0 10px 0;">🔥 New Permit Request</h2>
+            <p style="color: #92400e; margin: 0;">A new work permit has been submitted and requires your approval.</p>
+          </div>
+          
+          <div style="background-color: #1e3a6e; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+            <h3 style="color: #ffffff; margin: 0 0 15px 0;">📋 Permit Details:</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #93c5fd; width: 120px;">Title:</td>
+                <td style="padding: 8px 0; color: #ffffff; font-weight: 600;">${title}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #93c5fd;">Type:</td>
+                <td style="padding: 8px 0; color: #ffffff;">${workTypeLabels[workType] || workType}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #93c5fd;">Location:</td>
+                <td style="padding: 8px 0; color: #ffffff;">${location}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #93c5fd;">Start Date:</td>
+                <td style="padding: 8px 0; color: #ffffff;">${new Date(startDate).toLocaleString('en-IN')}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #93c5fd;">End Date:</td>
+                <td style="padding: 8px 0; color: #ffffff;">${new Date(endDate).toLocaleString('en-IN')}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #93c5fd;">Priority:</td>
+                <td style="padding: 8px 0;"><span style="background-color: ${priorityColors[priority] || '#3b82f6'}; color: white; padding: 4px 12px; border-radius: 4px; font-weight: 600;">${priority}</span></td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #93c5fd;">Requested By:</td>
+                <td style="padding: 8px 0; color: #ffffff;">${createdBy?.firstName || ''} ${createdBy?.lastName || ''} (${createdBy?.email || 'N/A'})</td>
+              </tr>
+            </table>
+          </div>
+          
+          <div style="text-align: center; margin: 25px 0;">
+            <a href="http://mepreliable.cloud/approvals" style="background-color: #f59e0b; color: #ffffff; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">Review & Approve Permit</a>
+          </div>
+          
+          <p style="color: #6b7280; font-size: 14px; text-align: center;">
+            Please login to review the permit details and take appropriate action.
+          </p>
+          
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
+          
+          <p style="color: #9ca3af; font-size: 12px; text-align: center;">
+            © ${new Date().getFullYear()} YP Security Services Pvt Ltd. All rights reserved.<br />
+            This is an automated notification from the Work Permit Management System.
+          </p>
+        </div>
+      `,
+    });
+    console.log(`✅ Fireman notification sent successfully`);
+    return true;
+  } catch (error) {
+    console.error(`❌ Failed to send fireman notification:`, error.message);
+    return false;
+  }
+};
+
 module.exports = {
   generateOTP,
   sendOTP,
@@ -429,4 +640,6 @@ module.exports = {
   sendPasswordChangeOTP,
   verifyPasswordChangeOTP,
   sendWelcomeEmail,
+  notifyAdminsNewRegistration,
+  notifyFiremenNewPermit,
 };

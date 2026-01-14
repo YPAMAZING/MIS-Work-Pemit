@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const config = require('../config');
 const { createAuditLog } = require('../services/audit.service');
-const { sendOTP, verifyRegistrationOTP, sendPasswordChangeOTP, verifyPasswordChangeOTP, sendWelcomeEmail } = require('../services/otp.service');
+const { sendOTP, verifyRegistrationOTP, sendPasswordChangeOTP, verifyPasswordChangeOTP, sendWelcomeEmail, notifyAdminsNewRegistration } = require('../services/otp.service');
 
 const prisma = new PrismaClient();
 
@@ -264,8 +264,33 @@ const register = async (req, res) => {
       // Don't fail registration if email fails
     }
 
-    // If needs approval, don't generate token
+    // If needs approval, notify admins and don't generate token
     if (needsApproval) {
+      // Notify all admins about the new registration request
+      try {
+        const admins = await prisma.user.findMany({
+          where: {
+            role: { name: 'ADMIN' },
+            isActive: true,
+            isApproved: true,
+          },
+          select: { email: true },
+        });
+        const adminEmails = admins.map(a => a.email);
+        if (adminEmails.length > 0) {
+          await notifyAdminsNewRegistration({
+            firstName,
+            lastName,
+            email,
+            phone,
+            requestedRole: role,
+            department,
+          }, adminEmails);
+        }
+      } catch (notifyError) {
+        console.error('Failed to notify admins:', notifyError);
+      }
+
       return res.status(201).json({
         message: 'Registration submitted for approval. A confirmation email has been sent.',
         requiresApproval: true,

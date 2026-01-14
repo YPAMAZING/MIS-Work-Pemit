@@ -1,6 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const { createAuditLog } = require('../services/audit.service');
+const { sendWelcomeEmail } = require('../services/otp.service');
 
 const prisma = new PrismaClient();
 
@@ -315,8 +316,23 @@ const createUser = async (req, res) => {
       userAgent: req.headers['user-agent'],
     });
 
+    // Send welcome email with login credentials to the new user
+    try {
+      await sendWelcomeEmail({
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role?.name || role || 'REQUESTOR',
+        requiresApproval: false, // Admin-created users are auto-approved
+        password: password, // Send plain password in welcome email
+      });
+    } catch (emailError) {
+      console.error('Welcome email failed:', emailError);
+      // Don't fail user creation if email fails
+    }
+
     res.status(201).json({ 
-      message: 'User created successfully', 
+      message: 'User created successfully. Welcome email sent.', 
       user: {
         id: user.id,
         email: user.email,

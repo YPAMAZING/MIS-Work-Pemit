@@ -10,14 +10,18 @@ let transporter = null;
 
 const getTransporter = () => {
   if (!transporter && process.env.SMTP_HOST) {
+    const port = parseInt(process.env.SMTP_PORT) || 465;
     transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT) || 587,
-      secure: process.env.SMTP_PORT === '465', // true for 465, false for other ports
+      port: port,
+      secure: port === 465, // true for 465 (SSL), false for 587 (TLS)
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
       },
+      tls: {
+        rejectUnauthorized: false // Allow self-signed certificates
+      }
     });
   }
   return transporter;

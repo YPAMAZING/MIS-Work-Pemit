@@ -152,6 +152,7 @@ const CreatePermit = () => {
   
   const [newHazard, setNewHazard] = useState('')
   const [errors, setErrors] = useState({})
+  const [declarationAgreed, setDeclarationAgreed] = useState(false)
 
   useEffect(() => {
     fetchWorkTypes()
@@ -392,6 +393,11 @@ const CreatePermit = () => {
       newErrors.mandatoryPPE = `Please confirm all mandatory PPE items: ${uncheckedMandatory.join(', ')}`
     }
     
+    // Declaration validation (only for new permits)
+    if (!isEdit && !declarationAgreed) {
+      newErrors.declaration = 'You must agree to the declaration & undertaking'
+    }
+    
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -400,6 +406,11 @@ const CreatePermit = () => {
     e.preventDefault()
     if (!validate()) {
       toast.error('Please fill all required fields')
+      return
+    }
+    
+    if (!isEdit && !declarationAgreed) {
+      toast.error('Please agree to the Declaration & Undertaking')
       return
     }
 
@@ -1022,6 +1033,51 @@ const CreatePermit = () => {
           </div>
         </div>
 
+        {/* Declaration & Undertaking - Only for new permits */}
+        {!isEdit && (
+          <div className="card bg-blue-50 border-blue-200">
+            <div className="card-header bg-blue-100 border-b border-blue-200">
+              <h2 className="text-lg font-semibold text-gray-900">Declaration & Undertaking</h2>
+            </div>
+            <div className="card-body">
+              <p className="text-gray-700 leading-relaxed mb-4">
+                I/We have read & understood all the above requirements and the same are also 
+                explained to us by Reliable Group's site team and officials. I/We agree to abide all 
+                the above listed requirements. I/We understand agree that, the vendor/
+                contractor/person requesting this work permit will be held solely responsible for 
+                any untoward incident, any damage to property and human life, due to any unsafe 
+                act during this work/job/activity. Also, checking the workers necessary licenses, 
+                utility vehicle's compliance documents is solely our (clients'/tenants') 
+                responsibility.
+              </p>
+              
+              <label className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+                declarationAgreed 
+                  ? 'border-blue-500 bg-blue-100' 
+                  : errors.declaration 
+                    ? 'border-red-300 bg-red-50' 
+                    : 'border-gray-300 hover:border-blue-400'
+              }`}>
+                <input
+                  type="checkbox"
+                  checked={declarationAgreed}
+                  onChange={(e) => {
+                    setDeclarationAgreed(e.target.checked)
+                    if (errors.declaration) {
+                      setErrors({ ...errors, declaration: null })
+                    }
+                  }}
+                  className="w-5 h-5 text-blue-600 rounded"
+                />
+                <span className="text-gray-800 font-medium">I agree <span className="text-red-500">*</span></span>
+              </label>
+              {errors.declaration && (
+                <p className="text-red-500 text-sm mt-2">{errors.declaration}</p>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Actions */}
         <div className="flex justify-end gap-3">
           <button
@@ -1031,7 +1087,7 @@ const CreatePermit = () => {
           >
             Cancel
           </button>
-          <button type="submit" disabled={loading} className="btn btn-primary">
+          <button type="submit" disabled={loading || (!isEdit && !declarationAgreed)} className="btn btn-primary">
             {loading ? (
               <span className="flex items-center gap-2">
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

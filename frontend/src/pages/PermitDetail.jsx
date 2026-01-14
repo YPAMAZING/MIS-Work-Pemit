@@ -534,12 +534,25 @@ const PermitDetail = () => {
               <p className="text-gray-500 text-center py-2 mb-4">No safety remarks added yet</p>
             )}
             
-            {/* Add Remarks Form - Only for Safety Officer/Admin and approved/pending_remarks permits */}
-            {(isAdmin || isSafetyOfficer) && ['APPROVED', 'PENDING_REMARKS', 'EXTENDED'].includes(permit.status) && !permit.safetyRemarks && (
+            {/* Add Remarks Form - Safety Officer/Admin can add remarks even after closure */}
+            {(isAdmin || isSafetyOfficer) && ['APPROVED', 'PENDING_REMARKS', 'EXTENDED', 'CLOSED'].includes(permit.status) && !permit.safetyRemarks && (
               <div className="space-y-3">
-                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-sm text-orange-700">
-                  <strong>Note:</strong> Safety remarks are required before the permit can be closed. 
-                  The permit will auto-close once remarks are added and the end time has passed.
+                <div className={`border rounded-lg p-3 text-sm ${
+                  permit.status === 'CLOSED' 
+                    ? 'bg-blue-50 border-blue-200 text-blue-700' 
+                    : 'bg-orange-50 border-orange-200 text-orange-700'
+                }`}>
+                  {permit.status === 'CLOSED' ? (
+                    <>
+                      <strong>Note:</strong> This permit has been auto-closed. 
+                      You can still add safety remarks for record keeping.
+                    </>
+                  ) : (
+                    <>
+                      <strong>Note:</strong> The permit will auto-close at the end time. 
+                      Please add your safety remarks and observations.
+                    </>
+                  )}
                 </div>
                 <textarea
                   value={safetyRemarks}
@@ -598,15 +611,15 @@ const PermitDetail = () => {
           </div>
         )}
         
-        {/* Pending Remarks Alert */}
-        {permit.status === 'PENDING_REMARKS' && (
-          <div className="p-4 bg-orange-50 border-t border-orange-200">
+        {/* Closed Without Remarks Alert */}
+        {permit.status === 'CLOSED' && !permit.safetyRemarks && (isAdmin || isSafetyOfficer) && (
+          <div className="p-4 bg-blue-50 border-t border-blue-200">
             <div className="flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
+              <MessageSquare className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="font-medium text-orange-700">Permit Expired - Awaiting Safety Remarks</p>
-                <p className="text-sm text-orange-600 mt-1">
-                  This permit's end time has passed. Safety officer must add remarks before it can be closed.
+                <p className="font-medium text-blue-700">Permit Closed - Safety Remarks Pending</p>
+                <p className="text-sm text-blue-600 mt-1">
+                  This permit has been auto-closed. Please add your safety remarks for record keeping.
                 </p>
               </div>
             </div>

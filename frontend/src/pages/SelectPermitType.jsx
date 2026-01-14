@@ -21,19 +21,31 @@ import {
   Info
 } from 'lucide-react'
 
-// Safetymint-style permit types with abbreviations
+// Safetymint-style permit types with abbreviations - Sorted Alphabetically by name
 const permitTypes = [
   { 
-    id: 'HOT_WORK', 
-    abbr: 'HWP', 
-    name: 'Hot Work Permit',
-    description: 'Welding, cutting, grinding operations',
-    icon: Flame, 
-    color: 'orange',
-    bgColor: 'bg-orange-50',
-    iconColor: 'text-orange-500',
-    borderColor: 'border-orange-200',
-    hoverColor: 'hover:border-orange-400 hover:bg-orange-50'
+    id: 'CHEMICAL', 
+    abbr: 'CHP', 
+    name: 'Chemical Handling Permit',
+    description: 'Handling hazardous chemicals',
+    icon: FlaskConical, 
+    color: 'red',
+    bgColor: 'bg-red-50',
+    iconColor: 'text-red-500',
+    borderColor: 'border-red-200',
+    hoverColor: 'hover:border-red-400 hover:bg-red-50'
+  },
+  { 
+    id: 'COLD_WORK', 
+    abbr: 'CWP', 
+    name: 'Cold Work Permit',
+    description: 'Non-sparking maintenance work',
+    icon: Thermometer, 
+    color: 'cyan',
+    bgColor: 'bg-cyan-50',
+    iconColor: 'text-cyan-500',
+    borderColor: 'border-cyan-200',
+    hoverColor: 'hover:border-cyan-400 hover:bg-cyan-50'
   },
   { 
     id: 'CONFINED_SPACE', 
@@ -60,16 +72,16 @@ const permitTypes = [
     hoverColor: 'hover:border-yellow-400 hover:bg-yellow-50'
   },
   { 
-    id: 'WORKING_AT_HEIGHT', 
-    abbr: 'WHP', 
-    name: 'Work Height Permit',
-    description: 'Work above 2 meters height',
-    icon: ArrowUpFromLine, 
-    color: 'blue',
-    bgColor: 'bg-blue-50',
-    iconColor: 'text-blue-500',
-    borderColor: 'border-blue-200',
-    hoverColor: 'hover:border-blue-400 hover:bg-blue-50'
+    id: 'ENERGIZE', 
+    abbr: 'EOMP', 
+    name: 'Energize Permit',
+    description: 'Energizing equipment',
+    icon: Zap, 
+    color: 'emerald',
+    bgColor: 'bg-emerald-50',
+    iconColor: 'text-emerald-500',
+    borderColor: 'border-emerald-200',
+    hoverColor: 'hover:border-emerald-400 hover:bg-emerald-50'
   },
   { 
     id: 'EXCAVATION', 
@@ -84,42 +96,6 @@ const permitTypes = [
     hoverColor: 'hover:border-amber-400 hover:bg-amber-50'
   },
   { 
-    id: 'LIFTING', 
-    abbr: 'LP', 
-    name: 'Lifting Permit',
-    description: 'Crane and lifting operations',
-    icon: Weight, 
-    color: 'teal',
-    bgColor: 'bg-teal-50',
-    iconColor: 'text-teal-500',
-    borderColor: 'border-teal-200',
-    hoverColor: 'hover:border-teal-400 hover:bg-teal-50'
-  },
-  { 
-    id: 'CHEMICAL', 
-    abbr: 'CHP', 
-    name: 'Chemical Handling Permit',
-    description: 'Handling hazardous chemicals',
-    icon: FlaskConical, 
-    color: 'red',
-    bgColor: 'bg-red-50',
-    iconColor: 'text-red-500',
-    borderColor: 'border-red-200',
-    hoverColor: 'hover:border-red-400 hover:bg-red-50'
-  },
-  { 
-    id: 'RADIATION', 
-    abbr: 'RWP', 
-    name: 'Radiation Work Permit',
-    description: 'Work with radioactive materials',
-    icon: Radiation, 
-    color: 'lime',
-    bgColor: 'bg-lime-50',
-    iconColor: 'text-lime-600',
-    borderColor: 'border-lime-200',
-    hoverColor: 'hover:border-lime-400 hover:bg-lime-50'
-  },
-  { 
     id: 'GENERAL', 
     abbr: 'GP', 
     name: 'General Permit',
@@ -132,40 +108,16 @@ const permitTypes = [
     hoverColor: 'hover:border-gray-400 hover:bg-gray-100'
   },
   { 
-    id: 'COLD_WORK', 
-    abbr: 'CWP', 
-    name: 'Cold Work Permit',
-    description: 'Non-sparking maintenance work',
-    icon: Thermometer, 
-    color: 'cyan',
-    bgColor: 'bg-cyan-50',
-    iconColor: 'text-cyan-500',
-    borderColor: 'border-cyan-200',
-    hoverColor: 'hover:border-cyan-400 hover:bg-cyan-50'
-  },
-  { 
-    id: 'LOTO', 
-    abbr: 'LOTO', 
-    name: 'LOTO Permit',
-    description: 'Lockout/Tagout procedures',
-    icon: Lock, 
-    color: 'indigo',
-    bgColor: 'bg-indigo-50',
-    iconColor: 'text-indigo-500',
-    borderColor: 'border-indigo-200',
-    hoverColor: 'hover:border-indigo-400 hover:bg-indigo-50'
-  },
-  { 
-    id: 'VEHICLE', 
-    abbr: 'VWP', 
-    name: 'Vehicle Work Permit',
-    description: 'Mobile equipment operations',
-    icon: Truck, 
-    color: 'slate',
-    bgColor: 'bg-slate-50',
-    iconColor: 'text-slate-500',
-    borderColor: 'border-slate-200',
-    hoverColor: 'hover:border-slate-400 hover:bg-slate-50'
+    id: 'HOT_WORK', 
+    abbr: 'HWP', 
+    name: 'Hot Work Permit',
+    description: 'Welding, cutting, grinding operations',
+    icon: Flame, 
+    color: 'orange',
+    bgColor: 'bg-orange-50',
+    iconColor: 'text-orange-500',
+    borderColor: 'border-orange-200',
+    hoverColor: 'hover:border-orange-400 hover:bg-orange-50'
   },
   { 
     id: 'PRESSURE_TESTING', 
@@ -180,16 +132,40 @@ const permitTypes = [
     hoverColor: 'hover:border-sky-400 hover:bg-sky-50'
   },
   { 
-    id: 'ENERGIZE', 
-    abbr: 'EOMP', 
-    name: 'Energize Permit',
-    description: 'Energizing equipment',
-    icon: Zap, 
-    color: 'emerald',
-    bgColor: 'bg-emerald-50',
-    iconColor: 'text-emerald-500',
-    borderColor: 'border-emerald-200',
-    hoverColor: 'hover:border-emerald-400 hover:bg-emerald-50'
+    id: 'LIFTING', 
+    abbr: 'LP', 
+    name: 'Lifting Permit',
+    description: 'Crane and lifting operations',
+    icon: Weight, 
+    color: 'teal',
+    bgColor: 'bg-teal-50',
+    iconColor: 'text-teal-500',
+    borderColor: 'border-teal-200',
+    hoverColor: 'hover:border-teal-400 hover:bg-teal-50'
+  },
+  { 
+    id: 'LOTO', 
+    abbr: 'LOTO', 
+    name: 'LOTO Permit',
+    description: 'Lockout/Tagout procedures',
+    icon: Lock, 
+    color: 'indigo',
+    bgColor: 'bg-indigo-50',
+    iconColor: 'text-indigo-500',
+    borderColor: 'border-indigo-200',
+    hoverColor: 'hover:border-indigo-400 hover:bg-indigo-50'
+  },
+  { 
+    id: 'RADIATION', 
+    abbr: 'RWP', 
+    name: 'Radiation Work Permit',
+    description: 'Work with radioactive materials',
+    icon: Radiation, 
+    color: 'lime',
+    bgColor: 'bg-lime-50',
+    iconColor: 'text-lime-600',
+    borderColor: 'border-lime-200',
+    hoverColor: 'hover:border-lime-400 hover:bg-lime-50'
   },
   { 
     id: 'SWMS', 
@@ -202,6 +178,30 @@ const permitTypes = [
     iconColor: 'text-rose-500',
     borderColor: 'border-rose-200',
     hoverColor: 'hover:border-rose-400 hover:bg-rose-50'
+  },
+  { 
+    id: 'VEHICLE', 
+    abbr: 'VWP', 
+    name: 'Vehicle Work Permit',
+    description: 'Mobile equipment operations',
+    icon: Truck, 
+    color: 'slate',
+    bgColor: 'bg-slate-50',
+    iconColor: 'text-slate-500',
+    borderColor: 'border-slate-200',
+    hoverColor: 'hover:border-slate-400 hover:bg-slate-50'
+  },
+  { 
+    id: 'WORKING_AT_HEIGHT', 
+    abbr: 'WHP', 
+    name: 'Work Height Permit',
+    description: 'Work above 2 meters height',
+    icon: ArrowUpFromLine, 
+    color: 'blue',
+    bgColor: 'bg-blue-50',
+    iconColor: 'text-blue-500',
+    borderColor: 'border-blue-200',
+    hoverColor: 'hover:border-blue-400 hover:bg-blue-50'
   },
 ]
 

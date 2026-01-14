@@ -105,7 +105,7 @@ function App() {
         <Route path="permits/:id" element={<PermitDetail />} />
         <Route path="permits/:id/edit" element={<CreatePermit />} />
         
-        {/* Safety Officer & Admin only */}
+        {/* Fireman & Admin only */}
         <Route
           path="approvals"
           element={

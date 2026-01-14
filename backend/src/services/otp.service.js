@@ -1,7 +1,32 @@
 // OTP Service - Generates and verifies OTPs
-// For production, integrate with actual SMS/Email providers like Twilio, SendGrid, etc.
+// Email sending enabled with nodemailer
+
+const nodemailer = require('nodemailer');
 
 const otpStore = new Map(); // In production, use Redis or database
+
+// Create email transporter (lazy initialization)
+let transporter = null;
+
+const getTransporter = () => {
+  if (!transporter && process.env.SMTP_HOST) {
+    transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT) || 587,
+      secure: process.env.SMTP_PORT === '465', // true for 465, false for other ports
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+  }
+  return transporter;
+};
+
+// Check if email is configured
+const isEmailConfigured = () => {
+  return !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
+};
 
 // Generate 6-digit OTP
 const generateOTP = () => {
@@ -41,39 +66,54 @@ const verifyOTP = (identifier, otp) => {
   return { valid: true };
 };
 
-// Send OTP via Email (mock - replace with actual email service)
+// Send OTP via Email
 const sendEmailOTP = async (email, otp) => {
-  // In production, use nodemailer, SendGrid, etc.
-  console.log(`📧 OTP sent to email ${email}: ${otp}`);
+  // Always log to console for debugging
+  console.log(`📧 OTP for ${email}: ${otp}`);
   
-  // Mock implementation - always succeeds
-  // Replace with actual email sending logic
-  /*
-  const nodemailer = require('nodemailer');
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: process.env.SMTP_PORT,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
-  
-  await transporter.sendMail({
-    from: process.env.FROM_EMAIL,
-    to: email,
-    subject: 'Your OTP for Reliable Group MEP Registration',
-    html: `
-      <h2>Reliable Group MEP - Work Permit System</h2>
-      <p>Your OTP for registration is:</p>
-      <h1 style="color: #1e3a6e; font-size: 32px; letter-spacing: 5px;">${otp}</h1>
-      <p>This OTP is valid for 5 minutes.</p>
-      <p>If you didn't request this, please ignore this email.</p>
-    `,
-  });
-  */
-  
-  return true;
+  // If SMTP is configured, send real email
+  if (isEmailConfigured()) {
+    try {
+      const transport = getTransporter();
+      await transport.sendMail({
+        from: `"${process.env.FROM_NAME || 'Reliable Group MEP'}" <${process.env.FROM_EMAIL || process.env.SMTP_USER}>`,
+        to: email,
+        subject: 'Your OTP - Reliable Group MEP',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #1e3a6e; margin: 0;">Reliable Group MEP</h1>
+              <p style="color: #6b7280; margin: 5px 0;">Work Permit Management System</p>
+            </div>
+            
+            <p style="color: #4b5563;">Your One-Time Password (OTP) is:</p>
+            
+            <div style="background-color: #1e3a6e; border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0;">
+              <h1 style="color: #ffffff; font-size: 36px; letter-spacing: 8px; margin: 0;">${otp}</h1>
+            </div>
+            
+            <p style="color: #4b5563;">This OTP is valid for <strong>5 minutes</strong>.</p>
+            <p style="color: #4b5563;">If you didn't request this OTP, please ignore this email.</p>
+            
+            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
+            
+            <p style="color: #9ca3af; font-size: 12px; text-align: center;">
+              © ${new Date().getFullYear()} YP Security Services Pvt Ltd. All rights reserved.
+            </p>
+          </div>
+        `,
+      });
+      console.log(`✅ OTP email sent successfully to ${email}`);
+      return true;
+    } catch (error) {
+      console.error(`❌ Failed to send OTP email to ${email}:`, error.message);
+      // Return true anyway so the flow continues (OTP is logged to console)
+      return true;
+    }
+  } else {
+    console.log(`⚠️  SMTP not configured - OTP logged to console only`);
+    return true;
+  }
 };
 
 // Send Welcome Email on Account Creation with Login Credentials
@@ -87,6 +127,7 @@ const sendWelcomeEmail = async (userData) => {
     minute: '2-digit',
   });
 
+  // Always log to console
   console.log(`\n${'='.repeat(70)}`);
   console.log(`📧 WELCOME EMAIL - Account Created Successfully`);
   console.log(`${'='.repeat(70)}`);
@@ -117,100 +158,105 @@ const sendWelcomeEmail = async (userData) => {
   }
   console.log(`${'='.repeat(70)}\n`);
 
-  // In production, use nodemailer, SendGrid, etc.
-  /*
-  const nodemailer = require('nodemailer');
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: process.env.SMTP_PORT,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
-  
-  const subject = requiresApproval 
-    ? 'Account Registration Pending Approval - Reliable Group MEP'
-    : 'Welcome to Reliable Group MEP - Account Created';
-  
-  const approvalMessage = requiresApproval 
-    ? `<div style="background-color: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 16px; margin: 20px 0;">
-        <p style="color: #92400e; margin: 0;"><strong>⏳ Pending Approval</strong></p>
-        <p style="color: #92400e; margin: 8px 0 0 0;">Your account requires administrator approval. You will be notified once approved.</p>
-       </div>`
-    : `<div style="background-color: #d1fae5; border: 1px solid #10b981; border-radius: 8px; padding: 16px; margin: 20px 0;">
-        <p style="color: #065f46; margin: 0;"><strong>✅ Account Active</strong></p>
-        <p style="color: #065f46; margin: 8px 0 0 0;">Your account is active and ready to use. You can login now.</p>
-       </div>`;
+  // If SMTP is configured, send real email
+  if (isEmailConfigured()) {
+    try {
+      const transport = getTransporter();
+      
+      const subject = requiresApproval 
+        ? 'Account Registration Pending Approval - Reliable Group MEP'
+        : 'Welcome to Reliable Group MEP - Your Account is Ready!';
+      
+      const approvalMessage = requiresApproval 
+        ? `<div style="background-color: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 16px; margin: 20px 0;">
+            <p style="color: #92400e; margin: 0;"><strong>⏳ Pending Approval</strong></p>
+            <p style="color: #92400e; margin: 8px 0 0 0;">Your account requires administrator approval. You will be notified once approved.</p>
+           </div>`
+        : `<div style="background-color: #d1fae5; border: 1px solid #10b981; border-radius: 8px; padding: 16px; margin: 20px 0;">
+            <p style="color: #065f46; margin: 0;"><strong>✅ Account Active</strong></p>
+            <p style="color: #065f46; margin: 8px 0 0 0;">Your account is active and ready to use. You can login now!</p>
+           </div>`;
 
-  await transporter.sendMail({
-    from: process.env.FROM_EMAIL,
-    to: email,
-    subject: subject,
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="text-align: center; margin-bottom: 30px;">
-          <h1 style="color: #1e3a6e; margin: 0;">Reliable Group MEP</h1>
-          <p style="color: #6b7280; margin: 5px 0;">Work Permit Management System</p>
-        </div>
-        
-        <h2 style="color: #1f2937;">Hello ${firstName} ${lastName},</h2>
-        
-        <p style="color: #4b5563; line-height: 1.6;">
-          Your account has been successfully created on the Reliable Group MEP - Work Permit Management System.
-        </p>
-        
-        ${approvalMessage}
-        
-        <div style="background-color: #1e3a6e; border-radius: 8px; padding: 20px; margin: 20px 0;">
-          <h3 style="color: #ffffff; margin-top: 0;">🔐 Your Login Credentials:</h3>
-          <table style="width: 100%; border-collapse: collapse;">
-            <tr>
-              <td style="padding: 8px 0; color: #93c5fd;">Email:</td>
-              <td style="padding: 8px 0; color: #ffffff; font-weight: 600; font-family: monospace;">${email}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px 0; color: #93c5fd;">Password:</td>
-              <td style="padding: 8px 0; color: #ffffff; font-weight: 600; font-family: monospace;">${password}</td>
-            </tr>
-          </table>
-          <p style="color: #fcd34d; font-size: 12px; margin: 10px 0 0 0;">⚠️ Please change your password after first login for security.</p>
-        </div>
-        
-        <div style="background-color: #f3f4f6; border-radius: 8px; padding: 20px; margin: 20px 0;">
-          <h3 style="color: #1f2937; margin-top: 0;">Account Details:</h3>
-          <table style="width: 100%; border-collapse: collapse;">
-            <tr>
-              <td style="padding: 8px 0; color: #6b7280;">Name:</td>
-              <td style="padding: 8px 0; color: #1f2937; font-weight: 500;">${firstName} ${lastName}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px 0; color: #6b7280;">Role:</td>
-              <td style="padding: 8px 0; color: #1f2937; font-weight: 500;">${role}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px 0; color: #6b7280;">Created On:</td>
-              <td style="padding: 8px 0; color: #1f2937; font-weight: 500;">${currentDate}</td>
-            </tr>
-          </table>
-        </div>
-        
-        <p style="color: #4b5563; line-height: 1.6;">
-          If you did not create this account, please contact our support team immediately.
-        </p>
-        
-        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
-        
-        <p style="color: #9ca3af; font-size: 12px; text-align: center;">
-          © ${new Date().getFullYear()} YP Security Services Pvt Ltd. All rights reserved.<br />
-          This is an automated message. Please do not reply to this email.
-        </p>
-      </div>
-    `,
-  });
-  */
-
-  return true;
+      await transport.sendMail({
+        from: `"${process.env.FROM_NAME || 'Reliable Group MEP'}" <${process.env.FROM_EMAIL || process.env.SMTP_USER}>`,
+        to: email,
+        subject: subject,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #1e3a6e; margin: 0;">Reliable Group MEP</h1>
+              <p style="color: #6b7280; margin: 5px 0;">Work Permit Management System</p>
+            </div>
+            
+            <h2 style="color: #1f2937;">Hello ${firstName} ${lastName},</h2>
+            
+            <p style="color: #4b5563; line-height: 1.6;">
+              Your account has been successfully created on the Reliable Group MEP - Work Permit Management System.
+            </p>
+            
+            ${approvalMessage}
+            
+            <div style="background-color: #1e3a6e; border-radius: 8px; padding: 20px; margin: 20px 0;">
+              <h3 style="color: #ffffff; margin-top: 0;">🔐 Your Login Credentials:</h3>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="padding: 8px 0; color: #93c5fd; width: 100px;">Email:</td>
+                  <td style="padding: 8px 0; color: #ffffff; font-weight: 600; font-family: monospace;">${email}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #93c5fd;">Password:</td>
+                  <td style="padding: 8px 0; color: #ffffff; font-weight: 600; font-family: monospace;">${password || '********'}</td>
+                </tr>
+              </table>
+              <p style="color: #fcd34d; font-size: 12px; margin: 15px 0 0 0;">⚠️ Please change your password after first login for security.</p>
+            </div>
+            
+            <div style="text-align: center; margin: 25px 0;">
+              <a href="http://mepreliable.cloud" style="background-color: #1e3a6e; color: #ffffff; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">Login Now</a>
+            </div>
+            
+            <div style="background-color: #f3f4f6; border-radius: 8px; padding: 20px; margin: 20px 0;">
+              <h3 style="color: #1f2937; margin-top: 0;">📋 Account Details:</h3>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="padding: 8px 0; color: #6b7280; width: 120px;">Name:</td>
+                  <td style="padding: 8px 0; color: #1f2937; font-weight: 500;">${firstName} ${lastName}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #6b7280;">Role:</td>
+                  <td style="padding: 8px 0; color: #1f2937; font-weight: 500;">${role}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #6b7280;">Created On:</td>
+                  <td style="padding: 8px 0; color: #1f2937; font-weight: 500;">${currentDate}</td>
+                </tr>
+              </table>
+            </div>
+            
+            <p style="color: #4b5563; line-height: 1.6;">
+              If you did not create this account, please contact our support team immediately.
+            </p>
+            
+            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
+            
+            <p style="color: #9ca3af; font-size: 12px; text-align: center;">
+              © ${new Date().getFullYear()} YP Security Services Pvt Ltd. All rights reserved.<br />
+              This is an automated message. Please do not reply to this email.
+            </p>
+          </div>
+        `,
+      });
+      console.log(`✅ Welcome email sent successfully to ${email}`);
+      return true;
+    } catch (error) {
+      console.error(`❌ Failed to send welcome email to ${email}:`, error.message);
+      // Return true anyway so registration continues
+      return true;
+    }
+  } else {
+    console.log(`⚠️  SMTP not configured - Welcome email logged to console only`);
+    return true;
+  }
 };
 
 // Send OTP via SMS (mock - replace with actual SMS service)
@@ -219,13 +265,13 @@ const sendSMSOTP = async (phone, otp) => {
   console.log(`📱 OTP sent to phone ${phone}: ${otp}`);
   
   // Mock implementation - always succeeds
-  // Replace with actual SMS sending logic
+  // Replace with actual SMS sending logic when needed
   /*
   const twilio = require('twilio');
   const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN);
   
   await client.messages.create({
-    body: `Your OTP for Reliable Group MEP registration is: ${otp}. Valid for 5 minutes.`,
+    body: `Your OTP for Reliable Group MEP is: ${otp}. Valid for 5 minutes.`,
     from: process.env.TWILIO_PHONE,
     to: phone,
   });

@@ -31,25 +31,33 @@ import {
   FileText,
   MessageSquare,
   Send,
+  User,
+  Mail,
+  CreditCard,
+  ClipboardCheck,
+  Timer,
+  Info,
+  Clipboard,
+  Hash,
 } from 'lucide-react'
 
 // Work type configurations
 const workTypeConfig = {
-  'HOT_WORK': { label: 'HOT WORK PERMIT', color: 'orange', abbr: 'HWP' },
-  'CONFINED_SPACE': { label: 'CONFINED SPACE PERMIT', color: 'purple', abbr: 'CSP' },
-  'ELECTRICAL': { label: 'ELECTRICAL WORK PERMIT', color: 'yellow', abbr: 'EWP' },
-  'WORKING_AT_HEIGHT': { label: 'WORK AT HEIGHT PERMIT', color: 'blue', abbr: 'WHP' },
-  'EXCAVATION': { label: 'EXCAVATION PERMIT', color: 'amber', abbr: 'EXP' },
-  'LIFTING': { label: 'LIFTING PERMIT', color: 'teal', abbr: 'LP' },
-  'CHEMICAL': { label: 'CHEMICAL HANDLING PERMIT', color: 'red', abbr: 'CHP' },
-  'RADIATION': { label: 'RADIATION WORK PERMIT', color: 'lime', abbr: 'RWP' },
-  'GENERAL': { label: 'GENERAL PERMIT', color: 'gray', abbr: 'GP' },
-  'COLD_WORK': { label: 'COLD WORK PERMIT', color: 'cyan', abbr: 'CWP' },
-  'LOTO': { label: 'LOTO PERMIT', color: 'indigo', abbr: 'LOTO' },
-  'VEHICLE': { label: 'VEHICLE WORK PERMIT', color: 'slate', abbr: 'VWP' },
-  'PRESSURE_TESTING': { label: 'HYDRO PRESSURE TESTING', color: 'sky', abbr: 'HPT' },
-  'ENERGIZE': { label: 'ENERGIZE PERMIT', color: 'emerald', abbr: 'EOMP' },
-  'SWMS': { label: 'SAFE WORK METHOD STATEMENT', color: 'rose', abbr: 'SWMS' },
+  'HOT_WORK': { label: 'HOT WORK PERMIT', color: 'orange', abbr: 'HWP', bg: 'from-orange-500 to-red-500' },
+  'CONFINED_SPACE': { label: 'CONFINED SPACE PERMIT', color: 'purple', abbr: 'CSP', bg: 'from-purple-500 to-indigo-500' },
+  'ELECTRICAL': { label: 'ELECTRICAL WORK PERMIT', color: 'yellow', abbr: 'EWP', bg: 'from-yellow-500 to-amber-500' },
+  'WORKING_AT_HEIGHT': { label: 'WORK AT HEIGHT PERMIT', color: 'blue', abbr: 'WHP', bg: 'from-blue-500 to-cyan-500' },
+  'EXCAVATION': { label: 'EXCAVATION PERMIT', color: 'amber', abbr: 'EXP', bg: 'from-amber-500 to-orange-500' },
+  'LIFTING': { label: 'LIFTING PERMIT', color: 'teal', abbr: 'LP', bg: 'from-teal-500 to-emerald-500' },
+  'CHEMICAL': { label: 'CHEMICAL HANDLING PERMIT', color: 'red', abbr: 'CHP', bg: 'from-red-500 to-pink-500' },
+  'RADIATION': { label: 'RADIATION WORK PERMIT', color: 'lime', abbr: 'RWP', bg: 'from-lime-500 to-green-500' },
+  'GENERAL': { label: 'GENERAL PERMIT', color: 'gray', abbr: 'GP', bg: 'from-gray-500 to-slate-500' },
+  'COLD_WORK': { label: 'COLD WORK PERMIT', color: 'cyan', abbr: 'CWP', bg: 'from-cyan-500 to-blue-500' },
+  'LOTO': { label: 'LOTO PERMIT', color: 'indigo', abbr: 'LOTO', bg: 'from-indigo-500 to-purple-500' },
+  'VEHICLE': { label: 'VEHICLE WORK PERMIT', color: 'slate', abbr: 'VWP', bg: 'from-slate-500 to-gray-500' },
+  'PRESSURE_TESTING': { label: 'HYDRO PRESSURE TESTING', color: 'sky', abbr: 'HPT', bg: 'from-sky-500 to-blue-500' },
+  'ENERGIZE': { label: 'ENERGIZE PERMIT', color: 'emerald', abbr: 'EOMP', bg: 'from-emerald-500 to-teal-500' },
+  'SWMS': { label: 'SAFE WORK METHOD STATEMENT', color: 'rose', abbr: 'SWMS', bg: 'from-rose-500 to-red-500' },
 }
 
 // Default measures for checklist
@@ -67,13 +75,23 @@ const defaultMeasures = [
 ]
 
 const statusConfig = {
-  'PENDING': { bg: 'bg-amber-100', text: 'text-amber-700', border: 'border-amber-200' },
-  'APPROVED': { bg: 'bg-emerald-100', text: 'text-emerald-700', border: 'border-emerald-200' },
-  'REJECTED': { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-200' },
-  'CLOSED': { bg: 'bg-gray-100', text: 'text-gray-700', border: 'border-gray-200' },
-  'EXTENDED': { bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-200' },
-  'REVOKED': { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-200' },
-  'PENDING_REMARKS': { bg: 'bg-orange-100', text: 'text-orange-700', border: 'border-orange-200' },
+  'PENDING': { bg: 'bg-amber-100', text: 'text-amber-700', border: 'border-amber-300', gradient: 'from-amber-400 to-orange-400' },
+  'APPROVED': { bg: 'bg-emerald-100', text: 'text-emerald-700', border: 'border-emerald-300', gradient: 'from-emerald-400 to-green-400' },
+  'REJECTED': { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-300', gradient: 'from-red-400 to-rose-400' },
+  'CLOSED': { bg: 'bg-gray-100', text: 'text-gray-700', border: 'border-gray-300', gradient: 'from-gray-400 to-slate-400' },
+  'EXTENDED': { bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-300', gradient: 'from-blue-400 to-cyan-400' },
+  'REVOKED': { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-300', gradient: 'from-red-400 to-rose-400' },
+  'PENDING_REMARKS': { bg: 'bg-orange-100', text: 'text-orange-700', border: 'border-orange-300', gradient: 'from-orange-400 to-amber-400' },
+}
+
+// ID Proof types mapping
+const idProofTypes = {
+  'aadhaar': 'Aadhaar Card',
+  'pan': 'PAN Card',
+  'driving_license': 'Driving License',
+  'voter_id': 'Voter ID',
+  'passport': 'Passport',
+  'other': 'Other ID',
 }
 
 const PermitDetail = () => {
@@ -225,192 +243,302 @@ const PermitDetail = () => {
   const config = workTypeConfig[permit.workType] || workTypeConfig['GENERAL']
   const status = statusConfig[permit.status] || statusConfig['PENDING']
   const workers = permit.workers ? JSON.parse(permit.workers) : []
+  const vendorDetails = permit.vendorDetails || {}
   const hazards = permit.hazards || []
   const precautions = permit.precautions || []
   const equipment = permit.equipment || []
 
+  // Section component
+  const Section = ({ icon: Icon, title, color = "slate", children }) => (
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+      <div className={`flex items-center gap-3 px-5 py-3 bg-gradient-to-r ${config.bg} text-white`}>
+        <Icon className="w-5 h-5" />
+        <span className="font-semibold">{title}</span>
+      </div>
+      <div className="p-5">{children}</div>
+    </div>
+  )
+
   return (
-    <div className="animate-fade-in max-w-5xl mx-auto">
+    <div className="animate-fade-in max-w-6xl mx-auto pb-12">
       {/* Top Actions Bar */}
       <div className="flex items-center justify-between mb-6">
         <button
           onClick={() => navigate('/permits')}
-          className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium"
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium transition-colors"
         >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Permits
+          <ArrowLeft className="w-5 h-5" />
+          <span>Back to Permits</span>
         </button>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <button
             onClick={fetchQrCode}
-            className="btn btn-secondary flex items-center gap-2"
+            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
           >
             <QrCode className="w-4 h-4" />
-            QR Code
+            <span className="hidden sm:inline">QR Code</span>
           </button>
           <button
             onClick={handleDownloadPDF}
-            className="btn btn-primary flex items-center gap-2"
+            className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg"
           >
             <Download className="w-4 h-4" />
-            Download PDF
+            <span className="hidden sm:inline">Download PDF</span>
           </button>
         </div>
       </div>
 
-      {/* Professional Permit Document */}
-      <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-        {/* Header */}
-        <div className="p-6 border-b border-gray-200">
+      {/* Main Permit Card Header */}
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden mb-6">
+        {/* Header with gradient */}
+        <div className={`bg-gradient-to-r ${config.bg} p-6 text-white`}>
           <div className="flex items-start justify-between">
-            {/* Company & Title */}
             <div>
-              <h1 className="text-2xl font-bold text-slate-800">
-                {permit.companyName || 'COMPANY'}
-              </h1>
-              <h2 className="text-xl font-semibold text-slate-700 mt-1">
-                {config.label}
-              </h2>
-              <p className="text-sm text-gray-500 mt-1">
-                Requested by {permit.user?.firstName} {permit.user?.lastName} on {new Date(permit.createdAt).toLocaleDateString()}
-              </p>
+              <div className="flex items-center gap-3 mb-2">
+                <span className="px-3 py-1 bg-white/20 rounded-lg text-sm font-semibold backdrop-blur-sm">
+                  {config.abbr}
+                </span>
+                <span className={`px-3 py-1 rounded-lg text-sm font-semibold ${status.bg} ${status.text}`}>
+                  {permit.status}
+                </span>
+              </div>
+              <h1 className="text-2xl font-bold mb-1">{config.label}</h1>
+              <p className="text-white/80">{permit.companyName || 'RELIABLE GROUP MEP'}</p>
             </div>
             
-            {/* QR Code & Status */}
-            <div className="text-right">
-              <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center mb-2 cursor-pointer hover:bg-gray-200"
-                   onClick={fetchQrCode}>
-                <QrCode className="w-12 h-12 text-gray-400" />
-              </div>
-              <span className={`inline-flex px-3 py-1 rounded-full text-sm font-semibold ${status.bg} ${status.text}`}>
-                {permit.status}
-              </span>
+            <div 
+              onClick={fetchQrCode}
+              className="w-24 h-24 bg-white rounded-xl flex items-center justify-center cursor-pointer hover:scale-105 transition-transform shadow-lg"
+            >
+              <QrCode className="w-16 h-16 text-gray-400" />
             </div>
           </div>
-          
-          {/* Permit Number */}
-          <div className="mt-4">
-            <span className="text-sm font-mono bg-slate-100 px-3 py-1 rounded text-slate-700">
-              {permit.permitNumber}
+        </div>
+        
+        {/* Permit Info Bar */}
+        <div className="px-6 py-4 bg-gray-50 border-b border-gray-200 flex flex-wrap items-center gap-6">
+          <div className="flex items-center gap-2">
+            <Hash className="w-4 h-4 text-gray-400" />
+            <span className="font-mono text-sm font-semibold text-gray-700">{permit.permitNumber}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <User className="w-4 h-4 text-gray-400" />
+            <span className="text-sm text-gray-600">
+              Requested by <strong className="text-gray-800">{permit.user?.firstName} {permit.user?.lastName}</strong>
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-gray-400" />
+            <span className="text-sm text-gray-600">
+              {new Date(permit.createdAt).toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+              })}
             </span>
           </div>
         </div>
-
-        {/* Workers Section */}
-        <div className="border-b border-gray-200">
-          <div className="bg-slate-700 text-white px-4 py-2 font-semibold flex items-center gap-2">
-            <Users className="w-4 h-4" />
-            WORKERS
-          </div>
-          <div className="p-4">
-            {workers.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-left text-gray-500 border-b">
-                      <th className="pb-2 font-medium">Name</th>
-                      <th className="pb-2 font-medium">Company</th>
-                      <th className="pb-2 font-medium">Phone</th>
-                      <th className="pb-2 font-medium">Badge No.</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {workers.map((worker, idx) => (
-                      <tr key={idx} className="border-b border-gray-100">
-                        <td className="py-2 font-medium text-gray-900">{worker.name}</td>
-                        <td className="py-2 text-gray-600">{worker.company || '-'}</td>
-                        <td className="py-2 text-gray-600">{worker.phone || '-'}</td>
-                        <td className="py-2 text-gray-600">{worker.badgeNumber || '-'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <p className="text-gray-500 text-center py-4">No workers assigned yet</p>
-            )}
-            {permit.contractorName && (
-              <div className="mt-3 pt-3 border-t border-gray-100 flex items-center gap-4">
-                <span className="text-sm text-gray-500">Contractor:</span>
-                <span className="font-medium">{permit.contractorName}</span>
-                {permit.contractorPhone && (
-                  <span className="text-gray-600 flex items-center gap-1">
-                    <Phone className="w-3 h-3" />
-                    {permit.contractorPhone}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
+        
+        {/* Title & Description */}
+        <div className="p-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-2">{permit.title}</h2>
+          <p className="text-gray-600 leading-relaxed">{permit.description}</p>
         </div>
+      </div>
 
+      {/* Main Content Grid */}
+      <div className="grid lg:grid-cols-2 gap-6 mb-6">
         {/* Location & Duration */}
-        <div className="grid md:grid-cols-2 border-b border-gray-200">
+        <div className="space-y-6">
           {/* Location */}
-          <div className="border-r border-gray-200">
-            <div className="bg-slate-700 text-white px-4 py-2 font-semibold flex items-center gap-2">
-              <MapPin className="w-4 h-4" />
-              LOCATION OF WORK
+          <Section icon={MapPin} title="WORK LOCATION">
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <Building className="w-5 h-5 text-gray-400 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-gray-900">{permit.location}</p>
+                  <p className="text-sm text-gray-500">{permit.timezone || 'Local Timezone'}</p>
+                </div>
+              </div>
             </div>
-            <div className="p-4">
-              <p className="font-medium text-gray-900">{permit.location}</p>
-              <p className="text-sm text-gray-500 mt-1">{permit.timezone || 'UTC'}</p>
-            </div>
-          </div>
-          
+          </Section>
+
           {/* Duration */}
-          <div>
-            <div className="bg-slate-700 text-white px-4 py-2 font-semibold flex items-center gap-2">
-              <Clock className="w-4 h-4" />
-              DURATION OF WORK
+          <Section icon={Clock} title="WORK DURATION">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-green-50 rounded-xl p-4 border border-green-200">
+                <p className="text-xs font-semibold text-green-600 uppercase mb-1">Start</p>
+                <p className="text-sm font-bold text-green-800">
+                  {new Date(permit.startDate).toLocaleDateString('en-US', { 
+                    weekday: 'short',
+                    month: 'short', 
+                    day: 'numeric'
+                  })}
+                </p>
+                <p className="text-lg font-bold text-green-700">
+                  {new Date(permit.startDate).toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit'
+                  })}
+                </p>
+              </div>
+              <div className="bg-red-50 rounded-xl p-4 border border-red-200">
+                <p className="text-xs font-semibold text-red-600 uppercase mb-1">End</p>
+                <p className="text-sm font-bold text-red-800">
+                  {new Date(permit.endDate).toLocaleDateString('en-US', { 
+                    weekday: 'short',
+                    month: 'short', 
+                    day: 'numeric'
+                  })}
+                </p>
+                <p className="text-lg font-bold text-red-700">
+                  {new Date(permit.endDate).toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit'
+                  })}
+                </p>
+              </div>
             </div>
-            <div className="p-4">
-              <div className="grid grid-cols-3 gap-4 text-sm">
+            {permit.isExtended && (
+              <div className="mt-3 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-2">
+                <Timer className="w-4 h-4 text-blue-600" />
+                <span className="text-sm font-medium text-blue-700">This permit has been extended</span>
+              </div>
+            )}
+          </Section>
+        </div>
+
+        {/* Vendor & Contact */}
+        <div className="space-y-6">
+          {/* Vendor Details */}
+          <Section icon={Building} title="VENDOR / CONTRACTOR">
+            <div className="space-y-4">
+              <div className="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <p className="text-gray-500 font-medium">Start Time</p>
-                  <p className="text-gray-900">{new Date(permit.startDate).toLocaleString()}</p>
+                  <p className="text-xs font-semibold text-gray-400 uppercase mb-1">Vendor Name</p>
+                  <p className="font-semibold text-gray-900">{vendorDetails.vendorName || permit.contractorName || '-'}</p>
                 </div>
                 <div>
-                  <p className="text-gray-500 font-medium">End Time</p>
-                  <p className="text-gray-900">{new Date(permit.endDate).toLocaleString()}</p>
+                  <p className="text-xs font-semibold text-gray-400 uppercase mb-1">Phone</p>
+                  <div className="flex items-center gap-2">
+                    <Phone className="w-4 h-4 text-gray-400" />
+                    <p className="text-gray-700">{vendorDetails.vendorPhone || permit.contractorPhone || '-'}</p>
+                  </div>
                 </div>
                 <div>
-                  <p className="text-gray-500 font-medium">Extended</p>
-                  <p className={permit.isExtended ? 'text-blue-600 font-semibold' : 'text-gray-900'}>
-                    {permit.isExtended ? 'YES' : 'NO'}
-                  </p>
+                  <p className="text-xs font-semibold text-gray-400 uppercase mb-1">Company</p>
+                  <p className="text-gray-700">{vendorDetails.vendorCompany || permit.companyName || '-'}</p>
                 </div>
+                <div>
+                  <p className="text-xs font-semibold text-gray-400 uppercase mb-1">Email</p>
+                  <div className="flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-gray-400" />
+                    <p className="text-gray-700 text-sm truncate">{vendorDetails.vendorEmail || '-'}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Section>
+
+          {/* Priority */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase mb-1">Priority Level</p>
+                <p className="text-lg font-bold text-gray-900">{permit.priority}</p>
+              </div>
+              <div className={`px-4 py-2 rounded-xl font-bold text-lg ${
+                permit.priority === 'CRITICAL' ? 'bg-red-100 text-red-700' :
+                permit.priority === 'HIGH' ? 'bg-orange-100 text-orange-700' :
+                permit.priority === 'MEDIUM' ? 'bg-blue-100 text-blue-700' :
+                'bg-gray-100 text-gray-700'
+              }`}>
+                {permit.priority}
               </div>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Measures Checklist */}
-        <div className="border-b border-gray-200">
-          <div className="bg-slate-700 text-white px-4 py-2 font-semibold flex items-center gap-2">
-            <FileText className="w-4 h-4" />
-            MEASURES
+      {/* Workers Section */}
+      <Section icon={Users} title="WORKERS">
+        {workers.length > 0 ? (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {workers.map((worker, idx) => (
+              <div
+                key={idx}
+                className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center flex-shrink-0 overflow-hidden border border-indigo-200">
+                    {worker.idProofImage ? (
+                      <img src={worker.idProofImage} alt={worker.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <User className="w-6 h-6 text-indigo-400" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-gray-900 truncate">{worker.name}</p>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <CreditCard className="w-3.5 h-3.5 text-gray-400" />
+                      <span className="text-xs text-gray-500">{idProofTypes[worker.idProofType] || worker.idProofType}</span>
+                    </div>
+                    <p className="text-xs text-gray-500 truncate mt-0.5">{worker.idProofNumber}</p>
+                    {worker.phone && (
+                      <div className="flex items-center gap-1.5 mt-1.5">
+                        <Phone className="w-3.5 h-3.5 text-gray-400" />
+                        <span className="text-xs text-gray-600">{worker.phone}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
-          <div className="p-4 space-y-3">
-            {measures.map((measure) => (
-              <div key={measure.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-                <p className="text-sm text-gray-700 flex-1 pr-4">{measure.question}</p>
-                <div className="flex items-center gap-2">
+        ) : (
+          <div className="text-center py-8 text-gray-500">
+            <Users className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+            <p>No workers assigned yet</p>
+          </div>
+        )}
+      </Section>
+
+      {/* Safety Measures Checklist */}
+      <div className="mt-6">
+        <Section icon={ClipboardCheck} title="SAFETY MEASURES CHECKLIST">
+          <div className="space-y-3">
+            {measures.map((measure, idx) => (
+              <div 
+                key={measure.id} 
+                className={`flex items-center justify-between p-4 rounded-xl border transition-all ${
+                  measure.answer === 'YES' ? 'bg-green-50 border-green-200' :
+                  measure.answer === 'NO' ? 'bg-red-50 border-red-200' :
+                  measure.answer === 'N/A' ? 'bg-gray-50 border-gray-200' :
+                  'bg-white border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                <div className="flex items-start gap-3 flex-1">
+                  <span className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-xs font-bold">
+                    {idx + 1}
+                  </span>
+                  <p className="text-sm text-gray-700">{measure.question}</p>
+                </div>
+                <div className="flex items-center gap-2 ml-4">
                   {['YES', 'NO', 'N/A'].map((option) => (
                     <button
                       key={option}
                       onClick={() => handleMeasureChange(measure.id, option)}
-                      disabled={permit.status === 'CLOSED'}
-                      className={`px-3 py-1 text-xs font-semibold rounded transition-colors ${
+                      disabled={permit.status === 'CLOSED' || permit.status === 'REVOKED'}
+                      className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
                         measure.answer === option
                           ? option === 'YES'
-                            ? 'bg-emerald-500 text-white'
+                            ? 'bg-green-500 text-white shadow-md'
                             : option === 'NO'
-                            ? 'bg-red-500 text-white'
-                            : 'bg-gray-500 text-white'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                      }`}
+                            ? 'bg-red-500 text-white shadow-md'
+                            : 'bg-gray-500 text-white shadow-md'
+                          : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                      } ${(permit.status === 'CLOSED' || permit.status === 'REVOKED') ? 'cursor-not-allowed opacity-60' : ''}`}
                     >
                       {option}
                     </button>
@@ -419,230 +547,291 @@ const PermitDetail = () => {
               </div>
             ))}
           </div>
-        </div>
+        </Section>
+      </div>
 
+      {/* Hazards, Precautions, Equipment */}
+      <div className="grid md:grid-cols-3 gap-6 mt-6">
         {/* Hazards */}
-        {hazards.length > 0 && (
-          <div className="border-b border-gray-200">
-            <div className="bg-red-600 text-white px-4 py-2 font-semibold flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4" />
-              HAZARDS IDENTIFIED
-            </div>
-            <div className="p-4">
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+          <div className="flex items-center gap-3 px-5 py-3 bg-gradient-to-r from-red-500 to-rose-500 text-white">
+            <AlertTriangle className="w-5 h-5" />
+            <span className="font-semibold">HAZARDS</span>
+          </div>
+          <div className="p-5">
+            {hazards.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {hazards.map((hazard, idx) => (
-                  <span key={idx} className="px-3 py-1 bg-red-50 text-red-700 rounded-full text-sm">
+                  <span
+                    key={idx}
+                    className="px-3 py-1.5 bg-red-50 text-red-700 rounded-lg text-sm font-medium border border-red-200"
+                  >
                     {hazard}
                   </span>
                 ))}
               </div>
-            </div>
+            ) : (
+              <p className="text-gray-400 text-center py-4">No hazards listed</p>
+            )}
           </div>
-        )}
+        </div>
 
         {/* Precautions */}
-        {precautions.length > 0 && (
-          <div className="border-b border-gray-200">
-            <div className="bg-emerald-600 text-white px-4 py-2 font-semibold flex items-center gap-2">
-              <Shield className="w-4 h-4" />
-              SAFETY PRECAUTIONS
-            </div>
-            <div className="p-4">
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+          <div className="flex items-center gap-3 px-5 py-3 bg-gradient-to-r from-emerald-500 to-green-500 text-white">
+            <Shield className="w-5 h-5" />
+            <span className="font-semibold">PRECAUTIONS</span>
+          </div>
+          <div className="p-5">
+            {precautions.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {precautions.map((precaution, idx) => (
-                  <span key={idx} className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-sm">
+                  <span
+                    key={idx}
+                    className="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-sm font-medium border border-emerald-200"
+                  >
                     {precaution}
                   </span>
                 ))}
               </div>
-            </div>
+            ) : (
+              <p className="text-gray-400 text-center py-4">No precautions listed</p>
+            )}
           </div>
-        )}
+        </div>
 
         {/* Equipment */}
-        {equipment.length > 0 && (
-          <div className="border-b border-gray-200">
-            <div className="bg-blue-600 text-white px-4 py-2 font-semibold flex items-center gap-2">
-              <Wrench className="w-4 h-4" />
-              REQUIRED EQUIPMENT
-            </div>
-            <div className="p-4">
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+          <div className="flex items-center gap-3 px-5 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 text-white">
+            <Wrench className="w-5 h-5" />
+            <span className="font-semibold">PPE & EQUIPMENT</span>
+          </div>
+          <div className="p-5">
+            {equipment.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {equipment.map((item, idx) => (
-                  <span key={idx} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm">
+                  <span
+                    key={idx}
+                    className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium border border-blue-200"
+                  >
                     {item}
                   </span>
                 ))}
               </div>
-            </div>
+            ) : (
+              <p className="text-gray-400 text-center py-4">No equipment listed</p>
+            )}
           </div>
-        )}
+        </div>
+      </div>
 
-        {/* Approvals & Signatures */}
-        <div className="border-b border-gray-200">
-          <div className="bg-slate-700 text-white px-4 py-2 font-semibold">
-            APPROVALS & SIGNATURES
-          </div>
-          <div className="p-4 grid md:grid-cols-3 gap-4">
+      {/* Approvals & Signatures */}
+      <div className="mt-6">
+        <Section icon={CheckCircle2} title="APPROVALS & SIGNATURES">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {permit.approvals?.map((approval, idx) => (
-              <div key={idx} className="border rounded-lg p-4">
-                <p className="text-xs text-gray-500 font-medium uppercase">
+              <div
+                key={idx}
+                className={`p-4 rounded-xl border-2 transition-all ${
+                  approval.decision === 'APPROVED' ? 'border-emerald-300 bg-emerald-50' :
+                  approval.decision === 'REJECTED' ? 'border-red-300 bg-red-50' :
+                  'border-amber-300 bg-amber-50'
+                }`}
+              >
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
                   {approval.approverRole?.replace('_', ' ')}
                 </p>
-                <p className="font-medium text-gray-900 mt-1">
-                  {approval.approverName || 'Pending'}
+                <p className="font-semibold text-gray-900">
+                  {approval.approverName || 'Pending Approval'}
                 </p>
-                <span className={`inline-flex mt-2 px-2 py-0.5 rounded text-xs font-semibold ${
-                  approval.decision === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' :
-                  approval.decision === 'REJECTED' ? 'bg-red-100 text-red-700' :
-                  'bg-amber-100 text-amber-700'
-                }`}>
-                  {approval.decision}
-                </span>
+                <div className="mt-3 flex items-center gap-2">
+                  <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold ${
+                    approval.decision === 'APPROVED' ? 'bg-emerald-500 text-white' :
+                    approval.decision === 'REJECTED' ? 'bg-red-500 text-white' :
+                    'bg-amber-500 text-white'
+                  }`}>
+                    {approval.decision === 'APPROVED' && <CheckCircle2 className="w-3 h-3" />}
+                    {approval.decision === 'REJECTED' && <XCircle className="w-3 h-3" />}
+                    {approval.decision}
+                  </span>
+                </div>
                 {approval.signature && (
-                  <p className="mt-2 italic text-gray-600 font-serif">{approval.signature}</p>
+                  <p className="mt-3 italic text-gray-600 font-serif text-lg">{approval.signature}</p>
                 )}
                 {approval.signedAt && (
-                  <p className="text-xs text-gray-400 mt-1">
+                  <p className="text-xs text-gray-400 mt-2">
                     {new Date(approval.signedAt).toLocaleString()}
                   </p>
                 )}
               </div>
             ))}
           </div>
-        </div>
+        </Section>
+      </div>
 
-        {/* Safety Officer Remarks Section */}
-        <div className="border-b border-gray-200">
-          <div className="bg-purple-600 text-white px-4 py-2 font-semibold flex items-center gap-2">
-            <MessageSquare className="w-4 h-4" />
-            SAFETY OFFICER REMARKS
-          </div>
-          <div className="p-4">
-            {/* Existing Remarks */}
-            {permit.safetyRemarks ? (
-              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
-                <p className="text-gray-800 whitespace-pre-wrap">{permit.safetyRemarks}</p>
-                <div className="mt-3 pt-3 border-t border-purple-200 flex items-center justify-between text-sm text-gray-500">
-                  <span>Added by: {permit.remarksAddedBy}</span>
-                  {permit.remarksAddedAt && (
-                    <span>{new Date(permit.remarksAddedAt).toLocaleString()}</span>
-                  )}
+      {/* Safety Officer Remarks */}
+      <div className="mt-6">
+        <Section icon={MessageSquare} title="SAFETY OFFICER REMARKS">
+          {/* Existing Remarks */}
+          {permit.safetyRemarks ? (
+            <div className="bg-purple-50 border border-purple-200 rounded-xl p-5 mb-4">
+              <p className="text-gray-800 whitespace-pre-wrap leading-relaxed">{permit.safetyRemarks}</p>
+              <div className="mt-4 pt-4 border-t border-purple-200 flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm text-purple-600">
+                  <User className="w-4 h-4" />
+                  <span>{permit.remarksAddedBy}</span>
                 </div>
-              </div>
-            ) : (
-              <p className="text-gray-500 text-center py-2 mb-4">No safety remarks added yet</p>
-            )}
-            
-            {/* Add Remarks Form - Safety Officer/Admin can add remarks even after closure */}
-            {(isAdmin || isSafetyOfficer) && ['APPROVED', 'PENDING_REMARKS', 'EXTENDED', 'CLOSED'].includes(permit.status) && !permit.safetyRemarks && (
-              <div className="space-y-3">
-                <div className={`border rounded-lg p-3 text-sm ${
-                  permit.status === 'CLOSED' 
-                    ? 'bg-blue-50 border-blue-200 text-blue-700' 
-                    : 'bg-orange-50 border-orange-200 text-orange-700'
-                }`}>
-                  {permit.status === 'CLOSED' ? (
-                    <>
-                      <strong>Note:</strong> This permit has been auto-closed. 
-                      You can still add safety remarks for record keeping.
-                    </>
-                  ) : (
-                    <>
-                      <strong>Note:</strong> The permit will auto-close at the end time. 
-                      Please add your safety remarks and observations.
-                    </>
-                  )}
-                </div>
-                <textarea
-                  value={safetyRemarks}
-                  onChange={(e) => setSafetyRemarks(e.target.value)}
-                  placeholder="Enter safety remarks, observations, and any concerns..."
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  rows={4}
-                />
-                <button
-                  onClick={handleSubmitRemarks}
-                  disabled={remarksLoading || !safetyRemarks.trim()}
-                  className="btn btn-primary flex items-center gap-2"
-                >
-                  {remarksLoading ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Submitting...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4" />
-                      Submit Remarks
-                    </>
-                  )}
-                </button>
-              </div>
-            )}
-
-            {/* Auto-close info */}
-            {permit.autoClosedAt && (
-              <div className="mt-4 bg-gray-100 border border-gray-200 rounded-lg p-3 text-sm text-gray-600">
-                <strong>Auto-closed:</strong> {new Date(permit.autoClosedAt).toLocaleString()}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Workflow Actions - Removed Close PTW since it's now automatic */}
-        {(isAdmin || isSafetyOfficer) && ['APPROVED', 'EXTENDED'].includes(permit.status) && (
-          <div className="p-4 bg-gray-50 border-t flex items-center gap-3">
-            <span className="text-sm font-medium text-gray-500">Actions:</span>
-            <button
-              onClick={() => handleWorkflowAction('extend')}
-              className="btn btn-secondary text-sm flex items-center gap-1"
-            >
-              <Play className="w-3 h-3" />
-              Extend
-            </button>
-            <button
-              onClick={() => handleWorkflowAction('revoke')}
-              className="btn bg-red-100 text-red-700 hover:bg-red-200 text-sm flex items-center gap-1"
-            >
-              <RotateCcw className="w-3 h-3" />
-              Revoke
-            </button>
-          </div>
-        )}
-        
-        {/* Closed Without Remarks Alert */}
-        {permit.status === 'CLOSED' && !permit.safetyRemarks && (isAdmin || isSafetyOfficer) && (
-          <div className="p-4 bg-blue-50 border-t border-blue-200">
-            <div className="flex items-start gap-3">
-              <MessageSquare className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-medium text-blue-700">Permit Closed - Safety Remarks Pending</p>
-                <p className="text-sm text-blue-600 mt-1">
-                  This permit has been auto-closed. Please add your safety remarks for record keeping.
-                </p>
+                {permit.remarksAddedAt && (
+                  <span className="text-sm text-purple-500">
+                    {new Date(permit.remarksAddedAt).toLocaleString()}
+                  </span>
+                )}
               </div>
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="text-center py-6 text-gray-500 bg-gray-50 rounded-xl mb-4">
+              <MessageSquare className="w-10 h-10 mx-auto mb-2 text-gray-300" />
+              <p>No safety remarks added yet</p>
+            </div>
+          )}
+          
+          {/* Add Remarks Form */}
+          {(isAdmin || isSafetyOfficer) && ['APPROVED', 'PENDING_REMARKS', 'EXTENDED', 'CLOSED'].includes(permit.status) && !permit.safetyRemarks && (
+            <div className="space-y-4">
+              <div className={`p-4 rounded-xl flex items-start gap-3 ${
+                permit.status === 'CLOSED' 
+                  ? 'bg-blue-50 border border-blue-200' 
+                  : 'bg-amber-50 border border-amber-200'
+              }`}>
+                <Info className={`w-5 h-5 flex-shrink-0 mt-0.5 ${permit.status === 'CLOSED' ? 'text-blue-500' : 'text-amber-500'}`} />
+                <div className="text-sm">
+                  {permit.status === 'CLOSED' ? (
+                    <p className="text-blue-700">
+                      <strong>Note:</strong> This permit has been auto-closed. 
+                      You can still add safety remarks for record keeping.
+                    </p>
+                  ) : (
+                    <p className="text-amber-700">
+                      <strong>Note:</strong> The permit will auto-close at the end time. 
+                      Please add your safety remarks and observations.
+                    </p>
+                  )}
+                </div>
+              </div>
+              
+              <textarea
+                value={safetyRemarks}
+                onChange={(e) => setSafetyRemarks(e.target.value)}
+                placeholder="Enter safety remarks, observations, and any concerns regarding this permit..."
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-200 focus:border-purple-500 transition-all resize-none"
+                rows={4}
+              />
+              
+              <button
+                onClick={handleSubmitRemarks}
+                disabled={remarksLoading || !safetyRemarks.trim()}
+                className={`w-full py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all ${
+                  remarksLoading || !safetyRemarks.trim()
+                    ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white hover:from-purple-600 hover:to-indigo-600 shadow-lg hover:shadow-xl'
+                }`}
+              >
+                {remarksLoading ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Submitting Remarks...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-5 h-5" />
+                    Submit Safety Remarks
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+
+          {/* Auto-close info */}
+          {permit.autoClosedAt && (
+            <div className="mt-4 bg-gray-100 border border-gray-200 rounded-xl p-4 flex items-center gap-3">
+              <Clock className="w-5 h-5 text-gray-500" />
+              <div>
+                <p className="text-sm font-semibold text-gray-700">Auto-Closed</p>
+                <p className="text-xs text-gray-500">{new Date(permit.autoClosedAt).toLocaleString()}</p>
+              </div>
+            </div>
+          )}
+        </Section>
       </div>
+
+      {/* Workflow Actions */}
+      {(isAdmin || isSafetyOfficer) && ['APPROVED', 'EXTENDED'].includes(permit.status) && (
+        <div className="mt-6 bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center gap-2">
+              <Wrench className="w-5 h-5 text-gray-400" />
+              <span className="font-semibold text-gray-700">Workflow Actions</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => handleWorkflowAction('extend')}
+                className="flex items-center gap-2 px-4 py-2.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-xl font-medium hover:bg-blue-100 transition-colors"
+              >
+                <Play className="w-4 h-4" />
+                Extend Permit
+              </button>
+              <button
+                onClick={() => handleWorkflowAction('revoke')}
+                className="flex items-center gap-2 px-4 py-2.5 bg-red-50 text-red-700 border border-red-200 rounded-xl font-medium hover:bg-red-100 transition-colors"
+              >
+                <RotateCcw className="w-4 h-4" />
+                Revoke Permit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Closed Without Remarks Alert */}
+      {permit.status === 'CLOSED' && !permit.safetyRemarks && (isAdmin || isSafetyOfficer) && (
+        <div className="mt-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-5">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
+              <MessageSquare className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <p className="font-semibold text-blue-800">Permit Closed - Safety Remarks Pending</p>
+              <p className="text-sm text-blue-600 mt-1">
+                This permit has been auto-closed. Please add your safety remarks above for record keeping.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* QR Code Modal */}
       {showQrModal && qrCode && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 max-w-sm w-full mx-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Worker Registration QR</h3>
-              <button onClick={() => setShowQrModal(false)} className="text-gray-400 hover:text-gray-600">
-                <X className="w-5 h-5" />
-              </button>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden animate-slide-up">
+            <div className="bg-gradient-to-r from-indigo-500 to-purple-500 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold text-white">Worker Registration QR</h3>
+                <button 
+                  onClick={() => setShowQrModal(false)} 
+                  className="text-white/80 hover:text-white transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
-            <div className="text-center">
-              <img src={qrCode.qrCode} alt="QR Code" className="mx-auto mb-4" />
-              <p className="text-sm text-gray-500 mb-2">Scan to register workers</p>
-              <p className="text-xs font-mono bg-gray-100 p-2 rounded break-all">
-                {qrCode.registrationUrl}
-              </p>
+            <div className="p-6 text-center">
+              <div className="bg-white p-4 rounded-xl inline-block shadow-md mb-4">
+                <img src={qrCode.qrCode} alt="QR Code" className="w-48 h-48" />
+              </div>
+              <p className="text-gray-600 mb-3">Scan to register workers for this permit</p>
+              <div className="bg-gray-50 rounded-xl p-3">
+                <p className="text-xs font-mono text-gray-500 break-all">{qrCode.registrationUrl}</p>
+              </div>
             </div>
           </div>
         </div>
@@ -650,75 +839,90 @@ const PermitDetail = () => {
 
       {/* Workflow Action Modal */}
       {showWorkflowModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold capitalize">{workflowAction} Permit</h3>
-              <button onClick={() => setShowWorkflowModal(false)} className="text-gray-400 hover:text-gray-600">
-                <X className="w-5 h-5" />
-              </button>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-slide-up">
+            <div className={`px-6 py-4 ${
+              workflowAction === 'extend' ? 'bg-gradient-to-r from-blue-500 to-cyan-500' :
+              workflowAction === 'revoke' ? 'bg-gradient-to-r from-red-500 to-rose-500' :
+              'bg-gradient-to-r from-gray-500 to-slate-500'
+            }`}>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold text-white capitalize">{workflowAction} Permit</h3>
+                <button 
+                  onClick={() => setShowWorkflowModal(false)} 
+                  className="text-white/80 hover:text-white transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
             
-            {workflowAction === 'extend' && (
-              <div className="space-y-4">
-                <div>
-                  <label className="label">Extend Until</label>
-                  <input
-                    type="datetime-local"
-                    className="input"
-                    onChange={(e) => setWorkflowData({ ...workflowData, extendedUntil: e.target.value })}
-                  />
+            <div className="p-6">
+              {workflowAction === 'extend' && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Extend Until *</label>
+                    <input
+                      type="datetime-local"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-200 focus:border-blue-500"
+                      onChange={(e) => setWorkflowData({ ...workflowData, extendedUntil: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Reason for Extension</label>
+                    <textarea
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-200 focus:border-blue-500 resize-none"
+                      rows={3}
+                      placeholder="Enter reason for extending this permit..."
+                      onChange={(e) => setWorkflowData({ ...workflowData, reason: e.target.value })}
+                    />
+                  </div>
                 </div>
+              )}
+
+              {workflowAction === 'revoke' && (
                 <div>
-                  <label className="label">Reason</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Reason for Revocation *</label>
                   <textarea
-                    className="input"
-                    rows={3}
-                    placeholder="Reason for extension..."
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-200 focus:border-red-500 resize-none"
+                    rows={4}
+                    placeholder="Enter reason for revoking this permit..."
                     onChange={(e) => setWorkflowData({ ...workflowData, reason: e.target.value })}
                   />
                 </div>
-              </div>
-            )}
+              )}
 
-            {workflowAction === 'revoke' && (
-              <div>
-                <label className="label">Reason for Revocation *</label>
-                <textarea
-                  className="input"
-                  rows={3}
-                  placeholder="Reason for revoking this permit..."
-                  onChange={(e) => setWorkflowData({ ...workflowData, reason: e.target.value })}
-                />
-              </div>
-            )}
+              {workflowAction === 'close' && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Closure Comments</label>
+                  <textarea
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-200 focus:border-gray-500 resize-none"
+                    rows={3}
+                    placeholder="Any comments for closure..."
+                    onChange={(e) => setWorkflowData({ ...workflowData, comments: e.target.value })}
+                  />
+                </div>
+              )}
 
-            {workflowAction === 'close' && (
-              <div>
-                <label className="label">Closure Comments</label>
-                <textarea
-                  className="input"
-                  rows={3}
-                  placeholder="Any comments for closure..."
-                  onChange={(e) => setWorkflowData({ ...workflowData, comments: e.target.value })}
-                />
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  onClick={() => setShowWorkflowModal(false)}
+                  className="px-5 py-2.5 text-gray-700 bg-gray-100 rounded-xl font-medium hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={executeWorkflowAction}
+                  disabled={actionLoading}
+                  className={`px-5 py-2.5 rounded-xl font-medium text-white transition-all ${
+                    workflowAction === 'extend' ? 'bg-blue-600 hover:bg-blue-700' :
+                    workflowAction === 'revoke' ? 'bg-red-600 hover:bg-red-700' :
+                    'bg-gray-600 hover:bg-gray-700'
+                  } ${actionLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {actionLoading ? 'Processing...' : 'Confirm'}
+                </button>
               </div>
-            )}
-
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                onClick={() => setShowWorkflowModal(false)}
-                className="btn btn-secondary"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={executeWorkflowAction}
-                disabled={actionLoading}
-                className="btn btn-primary"
-              >
-                {actionLoading ? 'Processing...' : 'Confirm'}
-              </button>
             </div>
           </div>
         </div>

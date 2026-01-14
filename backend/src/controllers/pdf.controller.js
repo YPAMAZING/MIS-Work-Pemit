@@ -43,8 +43,18 @@ const idProofLabels = {
   'other': 'Other ID',
 };
 
-// Declaration text
-const declarationText = `I/We have read & understood all the above requirements and the same are also explained to us by Reliable Group's site team and officials. I/We agree to abide all the above listed requirements. I/We understand agree that, the vendor/contractor/person requesting this work permit will be held solely responsible for any untoward incident, any damage to property and human life, due to any unsafe act during this work/job/activity. Also, checking the workers necessary licenses, utility vehicle's compliance documents is solely our (clients'/tenants') responsibility.`;
+// Enhanced Declaration & Undertaking text
+const declarationPoints = [
+  '1. I/We have thoroughly read, comprehensively understood, and fully acknowledged all the safety requirements, protocols, procedures, and guidelines mentioned in this permit application.',
+  '2. All the above requirements have been clearly explained and communicated to us by Reliable Group\'s authorized site team, safety officers, and designated officials.',
+  '3. I/We unconditionally agree to strictly comply with and faithfully abide by all the listed requirements, safety measures, emergency procedures, and standard operating procedures throughout the entire duration of this work permit.',
+  '4. I/We understand and accept that the vendor/contractor/person requesting this work permit shall be held SOLELY AND ENTIRELY RESPONSIBLE for any untoward incident, accident, injury, damage to property, equipment, machinery, or human life arising due to any unsafe act, negligence, violation of safety protocols, or non-compliance during this work/job/activity.',
+  '5. I/We acknowledge that verifying and ensuring the validity of all workers\' necessary licenses, certifications, competency certificates, training records, medical fitness certificates, and utility vehicle\'s compliance documents (including valid insurance, PUC, fitness certificate, registration, etc.) is SOLELY our (clients\'/tenants\'/contractors\') responsibility.',
+  '6. I/We confirm that all workers deployed for this activity are adequately trained, possess required skills, are medically fit, and are equipped with all the required Personal Protective Equipment (PPE) as specified in this permit.',
+  '7. I/We agree to immediately report any unsafe conditions, near-miss incidents, accidents, or emergencies to the site safety team and follow all emergency evacuation procedures as directed.',
+];
+
+const declarationFooter = 'By checking the box below, I/We confirm that this declaration has been read, understood, and agreed upon by all parties involved in this work permit application. This constitutes a legally binding undertaking.';
 
 // Generate permit PDF
 const generatePermitPDF = async (req, res) => {
@@ -323,22 +333,44 @@ const generatePermitPDF = async (req, res) => {
     });
 
     // === DECLARATION & UNDERTAKING ===
-    checkPageBreak(120);
+    checkPageBreak(200);
     yPos += 5;
     
     drawSectionHeader('DECLARATION & UNDERTAKING', '#1d4ed8');
     
-    doc.fontSize(8).font('Helvetica').fillColor('#1e293b')
-       .text(declarationText, 45, yPos, { width: 500, align: 'justify' });
+    // Declaration header
+    doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e293b')
+       .text('I/We hereby solemnly declare and undertake that:', 45, yPos);
+    yPos += 18;
     
-    yPos += 75;
+    // Declaration points
+    declarationPoints.forEach((point) => {
+      checkPageBreak(25);
+      
+      // Highlight point 4 (liability clause) in different color
+      if (point.includes('SOLELY AND ENTIRELY RESPONSIBLE')) {
+        doc.fontSize(8).font('Helvetica').fillColor('#dc2626')
+           .text(point, 45, yPos, { width: 500, align: 'justify' });
+      } else {
+        doc.fontSize(8).font('Helvetica').fillColor('#1e293b')
+           .text(point, 45, yPos, { width: 500, align: 'justify' });
+      }
+      yPos += 30;
+    });
+    
+    checkPageBreak(50);
+    
+    // Declaration footer
+    doc.fontSize(8).font('Helvetica-Oblique').fillColor('#64748b')
+       .text(declarationFooter, 45, yPos, { width: 500, align: 'justify' });
+    yPos += 30;
     
     // Agreement checkbox representation
-    doc.rect(45, yPos, 12, 12).stroke('#1d4ed8');
-    doc.fontSize(10).font('Helvetica-Bold').fillColor('#1d4ed8').text('✓', 47, yPos);
-    doc.fontSize(9).font('Helvetica').fillColor('#1e293b').text('I Agree', 65, yPos + 1);
+    doc.rect(45, yPos, 14, 14).fill('#10b981');
+    doc.fontSize(11).font('Helvetica-Bold').fillColor('#ffffff').text('✓', 48, yPos + 1);
+    doc.fontSize(9).font('Helvetica-Bold').fillColor('#10b981').text('I Agree to the Declaration & Undertaking', 68, yPos + 2);
     
-    yPos += 25;
+    yPos += 30;
 
     // === SAFETY OFFICER REMARKS ===
     if (permit.safetyRemarks) {

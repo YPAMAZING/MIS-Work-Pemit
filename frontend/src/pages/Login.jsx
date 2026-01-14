@@ -16,13 +16,25 @@ const Login = () => {
     password: '',
   })
   const [showPassword, setShowPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(false)
   const [loading, setLoading] = useState(false)
   const [mounted, setMounted] = useState(false)
   const { login } = useAuth()
   const navigate = useNavigate()
 
+  // Load saved credentials on mount
   useEffect(() => {
     setMounted(true)
+    const savedCredentials = localStorage.getItem('savedLogin')
+    if (savedCredentials) {
+      try {
+        const { email, password } = JSON.parse(savedCredentials)
+        setFormData({ email: email || '', password: password || '' })
+        setRememberMe(true)
+      } catch (e) {
+        localStorage.removeItem('savedLogin')
+      }
+    }
   }, [])
 
   const handleSubmit = async (e) => {
@@ -31,6 +43,17 @@ const Login = () => {
 
     try {
       await login(formData.email, formData.password)
+      
+      // Save or remove credentials based on checkbox
+      if (rememberMe) {
+        localStorage.setItem('savedLogin', JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }))
+      } else {
+        localStorage.removeItem('savedLogin')
+      }
+      
       toast.success('Welcome back!')
       navigate('/dashboard')
     } catch (error) {
@@ -146,6 +169,34 @@ const Login = () => {
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+              </div>
+
+              {/* Remember Me Checkbox */}
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-2 cursor-pointer group">
+                  <div className="relative">
+                    <input
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="peer sr-only"
+                    />
+                    <div className="w-5 h-5 border-2 border-gray-300 rounded-md peer-checked:border-[#1e3a6e] peer-checked:bg-[#1e3a6e] transition-all duration-200 flex items-center justify-center group-hover:border-[#1e3a6e]/50">
+                      <svg
+                        className={`w-3 h-3 text-white transition-opacity duration-200 ${rememberMe ? 'opacity-100' : 'opacity-0'}`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={3}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  </div>
+                  <span className="text-sm text-gray-600 group-hover:text-gray-800 transition-colors">
+                    Remember me
+                  </span>
+                </label>
               </div>
 
               <button

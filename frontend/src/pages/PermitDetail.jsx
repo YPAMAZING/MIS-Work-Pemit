@@ -248,11 +248,25 @@ const PermitDetail = () => {
 
   const config = workTypeConfig[permit.workType] || workTypeConfig['GENERAL']
   const status = statusConfig[permit.status] || statusConfig['PENDING']
-  const workers = permit.workers ? JSON.parse(permit.workers) : []
-  const vendorDetails = permit.vendorDetails || {}
-  const hazards = permit.hazards || []
-  const precautions = permit.precautions || []
-  const equipment = permit.equipment || []
+  
+  // Handle both string and array formats (backend transforms to array, but handle string for safety)
+  const parseField = (field) => {
+    if (!field) return []
+    if (Array.isArray(field)) return field
+    try {
+      return JSON.parse(field)
+    } catch {
+      return []
+    }
+  }
+  
+  const workers = parseField(permit.workers)
+  const vendorDetails = typeof permit.vendorDetails === 'string' 
+    ? JSON.parse(permit.vendorDetails || '{}') 
+    : (permit.vendorDetails || {})
+  const hazards = parseField(permit.hazards)
+  const precautions = parseField(permit.precautions)
+  const equipment = parseField(permit.equipment)
 
   // Section component
   const Section = ({ icon: Icon, title, color = "slate", children }) => (

@@ -299,6 +299,10 @@ const CreatePermit = () => {
       toast.error('ID proof number is required')
       return
     }
+    if (!newWorker.idProofPreview) {
+      toast.error('ID proof document upload is mandatory')
+      return
+    }
     
     const workerToAdd = {
       id: Date.now(),
@@ -938,13 +942,21 @@ const CreatePermit = () => {
                 </div>
               </div>
               
-              {/* ID Proof Image Upload */}
+              {/* ID Proof Image Upload - MANDATORY */}
               <div className="mb-4">
-                <label className="block text-xs font-medium text-indigo-700 mb-1.5">Upload ID Proof (Optional)</label>
+                <label className="block text-xs font-medium text-indigo-700 mb-1.5">
+                  Upload ID Proof Document <span className="text-red-500">*</span>
+                </label>
                 <div className="flex items-center gap-4">
-                  <label className="flex-1 flex items-center justify-center gap-3 py-4 border-2 border-dashed border-indigo-300 rounded-xl cursor-pointer hover:border-indigo-400 hover:bg-indigo-100/50 transition-all">
-                    <Upload className="w-5 h-5 text-indigo-400" />
-                    <span className="text-sm text-indigo-600">Click to upload ID image</span>
+                  <label className={`flex-1 flex items-center justify-center gap-3 py-4 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
+                    newWorker.idProofPreview 
+                      ? 'border-green-400 bg-green-50 hover:border-green-500' 
+                      : 'border-indigo-300 hover:border-indigo-400 hover:bg-indigo-100/50'
+                  }`}>
+                    <Upload className={`w-5 h-5 ${newWorker.idProofPreview ? 'text-green-500' : 'text-indigo-400'}`} />
+                    <span className={`text-sm ${newWorker.idProofPreview ? 'text-green-600' : 'text-indigo-600'}`}>
+                      {newWorker.idProofPreview ? 'ID Proof Uploaded ✓' : 'Click to upload ID image (Required)'}
+                    </span>
                     <input
                       type="file"
                       accept="image/*"
@@ -953,7 +965,7 @@ const CreatePermit = () => {
                     />
                   </label>
                   {newWorker.idProofPreview && (
-                    <div className="relative w-20 h-20 border-2 border-indigo-300 rounded-xl overflow-hidden bg-white">
+                    <div className="relative w-20 h-20 border-2 border-green-400 rounded-xl overflow-hidden bg-white">
                       <img
                         src={newWorker.idProofPreview}
                         alt="ID Preview"
@@ -969,7 +981,7 @@ const CreatePermit = () => {
                     </div>
                   )}
                 </div>
-                <p className="text-xs text-indigo-500 mt-2">Accepted: JPG, PNG, GIF (Max 5MB)</p>
+                <p className="text-xs text-red-500 mt-2">* ID proof document upload is mandatory for each worker</p>
               </div>
               
               <button

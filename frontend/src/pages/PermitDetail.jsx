@@ -835,7 +835,7 @@ const PermitDetail = () => {
           <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden animate-slide-up">
             <div className="bg-gradient-to-r from-indigo-500 to-purple-500 px-6 py-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-white">Worker Registration QR</h3>
+                <h3 className="text-lg font-bold text-white">Permit QR Code</h3>
                 <button 
                   onClick={() => setShowQrModal(false)} 
                   className="text-white/80 hover:text-white transition-colors"
@@ -845,13 +845,27 @@ const PermitDetail = () => {
               </div>
             </div>
             <div className="p-6 text-center">
-              <div className="bg-white p-4 rounded-xl inline-block shadow-md mb-4">
+              <div className="bg-white p-4 rounded-xl inline-block shadow-md border-2 border-gray-100 mb-4">
                 <img src={qrCode.qrCode} alt="QR Code" className="w-48 h-48" />
               </div>
-              <p className="text-gray-600 mb-3">Scan to register workers for this permit</p>
-              <div className="bg-gray-50 rounded-xl p-3">
-                <p className="text-xs font-mono text-gray-500 break-all">{qrCode.registrationUrl}</p>
+              <div className="mb-4">
+                <p className="text-sm font-semibold text-gray-800 mb-1">Permit #{qrCode.permitNumber}</p>
+                <p className="text-gray-600 text-sm">Scan to download permit PDF</p>
               </div>
+              <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                <div className="flex items-center justify-center gap-2 text-blue-700 mb-2">
+                  <Download className="w-4 h-4" />
+                  <span className="text-sm font-semibold">Public PDF Download</span>
+                </div>
+                <p className="text-xs text-blue-600">Anyone with this QR code can download the permit details</p>
+              </div>
+              <button
+                onClick={() => window.open(qrCode.pdfUrl, '_blank')}
+                className="mt-4 w-full py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-medium hover:from-blue-700 hover:to-indigo-700 transition-all flex items-center justify-center gap-2"
+              >
+                <Download className="w-4 h-4" />
+                Download PDF Now
+              </button>
             </div>
           </div>
         </div>

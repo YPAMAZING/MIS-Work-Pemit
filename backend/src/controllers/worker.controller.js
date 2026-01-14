@@ -123,7 +123,7 @@ const deleteWorker = async (req, res) => {
   }
 };
 
-// Generate QR code for vendor to add workers
+// Generate QR code for public PDF download
 const generateWorkerQR = async (req, res) => {
   try {
     const { permitId } = req.params;
@@ -137,12 +137,12 @@ const generateWorkerQR = async (req, res) => {
       return res.status(404).json({ message: 'Permit not found' });
     }
 
-    // Generate URL for vendor worker registration
+    // Generate URL for public PDF download (no auth required)
     const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    const registrationUrl = `${baseUrl}/worker-register/${permitId}`;
+    const pdfDownloadUrl = `${baseUrl}/api/permits/${permitId}/public-pdf`;
 
     // Generate QR code as data URL
-    const qrCodeDataUrl = await QRCode.toDataURL(registrationUrl, {
+    const qrCodeDataUrl = await QRCode.toDataURL(pdfDownloadUrl, {
       width: 200,
       margin: 2,
       color: {
@@ -153,7 +153,7 @@ const generateWorkerQR = async (req, res) => {
 
     res.json({
       qrCode: qrCodeDataUrl,
-      registrationUrl,
+      pdfUrl: pdfDownloadUrl,
       permitNumber: permit.permitNumber,
     });
   } catch (error) {

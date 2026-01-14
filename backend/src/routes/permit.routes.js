@@ -33,6 +33,14 @@ router.get(
   getPublicPermitInfo
 );
 
+// Public PDF download (for QR code scanning - no auth required)
+router.get(
+  '/:id/public-pdf',
+  [param('id').isUUID().withMessage('Invalid permit ID')],
+  validate,
+  generatePermitPDF
+);
+
 // Register workers via QR code (public)
 router.post(
   '/:id/workers',

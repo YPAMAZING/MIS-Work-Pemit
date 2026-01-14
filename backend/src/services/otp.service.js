@@ -76,9 +76,9 @@ const sendEmailOTP = async (email, otp) => {
   return true;
 };
 
-// Send Welcome Email on Account Creation
+// Send Welcome Email on Account Creation with Login Credentials
 const sendWelcomeEmail = async (userData) => {
-  const { email, firstName, lastName, role, requiresApproval } = userData;
+  const { email, firstName, lastName, role, requiresApproval, password } = userData;
   const currentDate = new Date().toLocaleDateString('en-IN', {
     day: 'numeric',
     month: 'long',
@@ -87,11 +87,35 @@ const sendWelcomeEmail = async (userData) => {
     minute: '2-digit',
   });
 
-  console.log(`📧 Welcome email sent to ${email}`);
-  console.log(`   Name: ${firstName} ${lastName}`);
-  console.log(`   Role: ${role}`);
-  console.log(`   Date: ${currentDate}`);
-  console.log(`   Requires Approval: ${requiresApproval}`);
+  console.log(`\n${'='.repeat(70)}`);
+  console.log(`📧 WELCOME EMAIL - Account Created Successfully`);
+  console.log(`${'='.repeat(70)}`);
+  console.log(`   Dear ${firstName} ${lastName},`);
+  console.log(`   `);
+  console.log(`   Your account has been created on Reliable Group MEP - Work Permit System.`);
+  console.log(`   `);
+  console.log(`   📋 Account Details:`);
+  console.log(`   ─────────────────────────────────────────`);
+  console.log(`   Name:        ${firstName} ${lastName}`);
+  console.log(`   Email:       ${email}`);
+  console.log(`   Role:        ${role}`);
+  console.log(`   Created On:  ${currentDate}`);
+  console.log(`   Status:      ${requiresApproval ? '⏳ Pending Admin Approval' : '✅ Active - Ready to Login'}`);
+  console.log(`   `);
+  console.log(`   🔐 Your Login Credentials:`);
+  console.log(`   ─────────────────────────────────────────`);
+  console.log(`   Login Email:    ${email}`);
+  console.log(`   Login Password: ${password || '[Not Available]'}`);
+  console.log(`   `);
+  console.log(`   🌐 Login URL: http://mepreliable.cloud`);
+  console.log(`   `);
+  if (requiresApproval) {
+    console.log(`   ⚠️  Note: Your account requires admin approval before you can login.`);
+    console.log(`   You will be notified once your account is approved.`);
+  } else {
+    console.log(`   ⚠️  For security, please change your password after first login.`);
+  }
+  console.log(`${'='.repeat(70)}\n`);
 
   // In production, use nodemailer, SendGrid, etc.
   /*
@@ -138,16 +162,27 @@ const sendWelcomeEmail = async (userData) => {
         
         ${approvalMessage}
         
+        <div style="background-color: #1e3a6e; border-radius: 8px; padding: 20px; margin: 20px 0;">
+          <h3 style="color: #ffffff; margin-top: 0;">🔐 Your Login Credentials:</h3>
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 8px 0; color: #93c5fd;">Email:</td>
+              <td style="padding: 8px 0; color: #ffffff; font-weight: 600; font-family: monospace;">${email}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #93c5fd;">Password:</td>
+              <td style="padding: 8px 0; color: #ffffff; font-weight: 600; font-family: monospace;">${password}</td>
+            </tr>
+          </table>
+          <p style="color: #fcd34d; font-size: 12px; margin: 10px 0 0 0;">⚠️ Please change your password after first login for security.</p>
+        </div>
+        
         <div style="background-color: #f3f4f6; border-radius: 8px; padding: 20px; margin: 20px 0;">
           <h3 style="color: #1f2937; margin-top: 0;">Account Details:</h3>
           <table style="width: 100%; border-collapse: collapse;">
             <tr>
               <td style="padding: 8px 0; color: #6b7280;">Name:</td>
               <td style="padding: 8px 0; color: #1f2937; font-weight: 500;">${firstName} ${lastName}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px 0; color: #6b7280;">Email:</td>
-              <td style="padding: 8px 0; color: #1f2937; font-weight: 500;">${email}</td>
             </tr>
             <tr>
               <td style="padding: 8px 0; color: #6b7280;">Role:</td>

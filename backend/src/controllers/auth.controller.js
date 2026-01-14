@@ -249,7 +249,7 @@ const register = async (req, res) => {
       userAgent: req.headers['user-agent'],
     });
 
-    // Send welcome email notification
+    // Send welcome email with login credentials (using plain password before hashing)
     try {
       await sendWelcomeEmail({
         email: user.email,
@@ -257,6 +257,7 @@ const register = async (req, res) => {
         lastName: user.lastName,
         role: role,
         requiresApproval: needsApproval,
+        password: password, // Pass the plain text password for email
       });
     } catch (emailError) {
       console.error('Welcome email failed:', emailError);

@@ -121,10 +121,16 @@ const PermitDetail = () => {
       const permitData = response.data.permit
       setPermit(permitData)
       
-      // Parse measures or use defaults
-      const savedMeasures = permitData.measures ? JSON.parse(permitData.measures) : []
+      // Parse measures or use defaults (handle both string and array)
+      let savedMeasures = []
+      if (permitData.measures) {
+        savedMeasures = typeof permitData.measures === 'string' 
+          ? JSON.parse(permitData.measures) 
+          : permitData.measures
+      }
       setMeasures(savedMeasures.length > 0 ? savedMeasures : defaultMeasures)
     } catch (error) {
+      console.error('Error fetching permit:', error)
       toast.error('Error fetching permit details')
       navigate('/permits')
     } finally {

@@ -145,9 +145,11 @@ const generatePermitPDF = async (req, res) => {
     // Helper to draw styled section header (like in the reference images)
     const drawSectionHeader = (title, color = '#334155') => {
       checkPageBreak(80);
-      doc.fontSize(10).font('Helvetica-Bold').fillColor('#ffffff');
+      // Draw colored rectangle background
       doc.rect(40, yPos, 515, 22).fill(color);
-      doc.text(title, 50, yPos + 6);
+      // Set white text color AFTER filling rectangle and draw title
+      doc.fontSize(10).font('Helvetica-Bold').fillColor('#ffffff')
+         .text(title, 50, yPos + 6, { width: 500 });
       yPos += 30;
     };
 
@@ -155,6 +157,7 @@ const generatePermitPDF = async (req, res) => {
     const drawInfoBox = (x, y, width, height, headerText, headerColor = '#334155') => {
       doc.rect(x, y, width, height).stroke('#e2e8f0');
       doc.rect(x, y, width, 20).fill(headerColor);
+      // Set white text color AFTER filling rectangle
       doc.fontSize(9).font('Helvetica-Bold').fillColor('#ffffff')
          .text(headerText, x + 5, y + 5, { width: width - 10 });
     };

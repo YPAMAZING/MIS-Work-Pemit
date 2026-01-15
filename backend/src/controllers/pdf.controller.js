@@ -58,32 +58,30 @@ const sectionColors = {
   documents: '#0891b2',         // Cyan for Documents
 };
 
-// General Instructions
+// General Instructions (as per Reliable Group standards)
 const generalInstructions = [
-  '1. This permit must be displayed at the work site at all times during the work activity.',
-  '2. Work must not commence until this permit has been signed by all required parties.',
-  '3. All workers must be briefed on the hazards and safety requirements before starting work.',
-  '4. The permit holder is responsible for ensuring all safety measures are in place.',
-  '5. Any changes to the work scope or conditions require a new permit or amendment.',
-  '6. In case of emergency, stop all work immediately and evacuate the area.',
-  '7. Report all incidents, near misses, and unsafe conditions to the safety officer.',
-  '8. This permit is valid only for the duration and location specified.',
-  '9. Non-compliance with permit conditions may result in immediate revocation.',
-  '10. Keep emergency contact numbers accessible at the work site.',
+  '1. Only upon prior request from client, Reliable Group can provide 3-phase 440 volts electrical power at one point with MCB protection. All further distribution of power from this point, for the mentioned work/job/activity is in vendors\'/contractors\'/clients\'/tenants\' scope and responsibility. Wires/Cables of proper type and size with safety devices like MCCB/ELCB are to be used to avoid electrocution and related hazards. Providing these safety devices for such work is not in Reliable Group\'s scope. Reliable Group or its officers and employees are not responsible for providing the same. Any untoward incident due to not using the protection devices is solely the vendors\'/contractors\'/clients\'/tenants\' responsibility.',
+  '2. All instructions related to the mandatory use of safety equipment, information about potential hazardous/risky areas are given to the mentioned responsible person(s) by the Reliable Group\'s Safety Officer.',
+  '3. Following all safety related protocols & complying with safety standards as guided by the Reliable Group\'s Fire & Safety Team is mandatory. If found not using adhering to the same the Reliable Group\'s Fire & Safety Team has the authority to cease/discontinue the ongoing work/job/activity.',
+  '4. General working hours are: 9:30 AM - 6:30 PM',
+  '5. Special permission is mandatory for night work/job/activity.',
+  '6. Kindly take additional precautions while opening shaft doors as, all shafts are hollow. For this very reason all shaft doors are kept locked at all times. Thus, request you to close & lock shaft doors post completion of work/job/activity.',
+  '7. Report any issue/emergency on 24x7 Emergency Fire & Safety Duty Cell- Ph. No.: 9820336370',
+  '8. While working additional care has to be taken for not to disturb other clients\'/tenants\' existing setup.',
 ];
 
-// Enhanced Declaration & Undertaking text
+// Indemnity by Applicant - All liability on vendor/contractor/applicant side, Reliable Group fully indemnified
 const declarationPoints = [
-  '1. I/We have thoroughly read, comprehensively understood, and fully acknowledged all the safety requirements, protocols, procedures, and guidelines mentioned in this permit application.',
-  '2. All the above requirements have been clearly explained and communicated to us by Reliable Group\'s authorized site team, fireman, and designated officials.',
-  '3. I/We unconditionally agree to strictly comply with and faithfully abide by all the listed requirements, safety measures, emergency procedures, and standard operating procedures throughout the entire duration of this work permit.',
-  '4. I/We understand and accept that the vendor/contractor/person requesting this work permit shall be held SOLELY AND ENTIRELY RESPONSIBLE for any untoward incident, accident, injury, damage to property, equipment, machinery, or human life arising due to any unsafe act, negligence, violation of safety protocols, or non-compliance during this work/job/activity.',
-  '5. I/We acknowledge that verifying and ensuring the validity of all workers\' necessary licenses, certifications, competency certificates, training records, medical fitness certificates, and utility vehicle\'s compliance documents (including valid insurance, PUC, fitness certificate, registration, etc.) is SOLELY our (clients\'/tenants\'/contractors\') responsibility.',
-  '6. I/We confirm that all workers deployed for this activity are adequately trained, possess required skills, are medically fit, and are equipped with all the required Personal Protective Equipment (PPE) as specified in this permit.',
-  '7. I/We agree to immediately report any unsafe conditions, near-miss incidents, accidents, or emergencies to the site safety team and follow all emergency evacuation procedures as directed.',
+  '1. I/We (the vendor/contractor/applicant) have thoroughly read, comprehensively understood, and fully acknowledged all the safety requirements, protocols, procedures, and guidelines mentioned in this permit application. I/We accept COMPLETE AND SOLE RESPONSIBILITY for understanding and compliance.',
+  '2. I/We (the vendor/contractor/applicant) unconditionally agree to strictly comply with and faithfully abide by all the listed requirements, safety measures, emergency procedures, and standard operating procedures throughout the entire duration of this work permit. Any failure to comply is SOLELY OUR RESPONSIBILITY.',
+  '3. I/We (the vendor/contractor/applicant) understand and accept that we shall be held SOLELY AND ENTIRELY RESPONSIBLE for any untoward incident, accident, injury, damage to property, equipment, machinery, or human life arising due to any unsafe act, negligence, violation of safety protocols, or non-compliance during this work/job/activity. Reliable Group, its officers, employees, and representatives shall bear NO LIABILITY WHATSOEVER.',
+  '4. I/We (the vendor/contractor/applicant) acknowledge that verifying and ensuring the validity of all workers\' necessary licenses, certifications, competency certificates, training records, medical fitness certificates, and utility vehicle\'s compliance documents (including valid insurance, PUC, fitness certificate, registration, etc.) is SOLELY AND ENTIRELY our (clients\'/tenants\'/contractors\'/vendors\') responsibility. Reliable Group has no obligation to verify these documents.',
+  '5. I/We (the vendor/contractor/applicant) confirm that all workers deployed for this activity are adequately trained, possess required skills, are medically fit, and are equipped with all the required Personal Protective Equipment (PPE) as specified in this permit. Any injury or incident due to inadequate training, skills, or PPE is SOLELY OUR RESPONSIBILITY.',
+  '6. I/We (the vendor/contractor/applicant) agree to immediately report any unsafe conditions, near-miss incidents, accidents, or emergencies to the site safety team and follow all emergency evacuation procedures as directed. Failure to report shall not create any liability for Reliable Group.',
+  '7. I/We (the vendor/contractor/applicant) hereby FULLY INDEMNIFY AND HOLD HARMLESS Reliable Group, its directors, officers, employees, agents, and representatives from and against any and all claims, damages, losses, costs, liabilities, and expenses (including legal fees) arising out of or in connection with this work permit, the work performed, or any incident occurring during the work activity.',
 ];
 
-const declarationFooter = 'By checking the box below, I/We confirm that this declaration has been read, understood, and agreed upon by all parties involved in this work permit application. This constitutes a legally binding undertaking.';
+const declarationFooter = 'By checking the box below, I/We (the vendor/contractor/applicant) confirm that this declaration has been read, understood, and agreed upon. This constitutes a legally binding undertaking and indemnity in favor of Reliable Group. The applicant/vendor/contractor accepts FULL AND SOLE LIABILITY for all activities under this permit.';
 
 // Generate permit PDF
 const generatePermitPDF = async (req, res) => {
@@ -278,7 +276,7 @@ const generatePermitPDF = async (req, res) => {
 
     // === HAZARDS SECTION ===
     if (hazards.length > 0) {
-      drawSectionHeader('ANTICIPATED RISKS', sectionColors.hazards);
+      drawSectionHeader('HAZARDS IDENTIFIED BY APPLICANT', sectionColors.hazards);
       doc.fontSize(9).font('Helvetica').fillColor('#1e293b');
       hazards.forEach((hazard) => {
         checkPageBreak(15);

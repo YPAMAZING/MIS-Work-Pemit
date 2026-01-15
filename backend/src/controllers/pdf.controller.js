@@ -193,16 +193,16 @@ const generatePermitPDF = async (req, res) => {
 
     yPos += 25;
 
-    // === PERMIT REQUESTED BY (VENDOR DETAILS) SECTION ===
-    drawSectionHeader('PERMIT REQUESTED BY', sectionColors.vendorDetails);
+    // === BASIC PERMIT DETAILS SECTION ===
+    drawSectionHeader('BASIC PERMIT DETAILS', sectionColors.vendorDetails);
     
     doc.fontSize(9).fillColor('#1e293b');
     
-    // Row 1: Vendor Name and Phone
-    doc.font('Helvetica-Bold').text('Vendor Name:', 45, yPos);
+    // Row 1: Name and Phone
+    doc.font('Helvetica-Bold').text('Name:', 45, yPos);
     doc.font('Helvetica').text(vendorDetails?.vendorName || permit.contractorName || '-', 130, yPos);
     
-    doc.font('Helvetica-Bold').text('Vendor Phone:', 310, yPos);
+    doc.font('Helvetica-Bold').text('Phone:', 310, yPos);
     doc.font('Helvetica').text(vendorDetails?.vendorPhone || permit.contractorPhone || '-', 400, yPos);
     yPos += 18;
     
@@ -210,12 +210,12 @@ const generatePermitPDF = async (req, res) => {
     doc.font('Helvetica-Bold').text('Company:', 45, yPos);
     doc.font('Helvetica').text(vendorDetails?.vendorCompany || permit.companyName || '-', 130, yPos);
     
-    doc.font('Helvetica-Bold').text('Vendor Email:', 310, yPos);
+    doc.font('Helvetica-Bold').text('Email:', 310, yPos);
     doc.font('Helvetica').text(vendorDetails?.vendorEmail || '-', 400, yPos);
     yPos += 25;
 
     // === WORKERS SECTION ===
-    drawSectionHeader('DETAILS OF WORK TEAM WORKING', sectionColors.workers);
+    drawSectionHeader('DETAILS OF WORKFORCE INVOLVED', sectionColors.workers);
 
     if (workers.length > 0) {
       // Table header
@@ -253,14 +253,14 @@ const generatePermitPDF = async (req, res) => {
     
     // Location box
     const locationBoxY = yPos;
-    drawInfoBox(40, yPos, 250, 75, 'PLACE / LOCATION', sectionColors.location);
+    drawInfoBox(40, yPos, 250, 75, 'WORK LOCATION', sectionColors.location);
     doc.fontSize(9).font('Helvetica').fillColor('#1e293b')
        .text(permit.location, 50, yPos + 30, { width: 230 });
     doc.fontSize(8).fillColor('#64748b')
        .text(`Timezone: ${permit.timezone || 'Asia/Calcutta'}`, 50, yPos + 58);
 
     // Duration box
-    drawInfoBox(305, locationBoxY, 250, 75, 'DATE, TIME & DURATION OF WORK', sectionColors.duration);
+    drawInfoBox(305, locationBoxY, 250, 75, 'PERMIT VALIDITY', sectionColors.duration);
     
     doc.fontSize(8).font('Helvetica-Bold').fillColor('#64748b');
     doc.text('Start Date & Time', 315, locationBoxY + 28);
@@ -290,7 +290,7 @@ const generatePermitPDF = async (req, res) => {
 
     // === PPE & EQUIPMENT SECTION ===
     if (equipment.length > 0) {
-      drawSectionHeader('PPE PROVIDED', sectionColors.ppe);
+      drawSectionHeader('LIST OF MANDATORY PPE & TOOLS', sectionColors.ppe);
       
       // Grid layout for equipment (3 columns)
       let col = 0;

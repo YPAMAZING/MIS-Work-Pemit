@@ -140,24 +140,24 @@ const generatePermitPDF = async (req, res) => {
       return false;
     };
 
-    // Helper to draw styled section header (like in the reference images)
+    // Helper to draw styled section header (CENTERED text)
     const drawSectionHeader = (title, color = '#334155') => {
       checkPageBreak(80);
       // Draw colored rectangle background
       doc.rect(40, yPos, 515, 22).fill(color);
-      // Set white text color AFTER filling rectangle and draw title
+      // Set white text color AFTER filling rectangle and draw title CENTERED
       doc.fontSize(10).font('Helvetica-Bold').fillColor('#ffffff')
-         .text(title, 50, yPos + 6, { width: 500 });
+         .text(title, 40, yPos + 6, { width: 515, align: 'center' });
       yPos += 30;
     };
 
-    // Helper to draw a bordered info box
+    // Helper to draw a bordered info box (CENTERED header text)
     const drawInfoBox = (x, y, width, height, headerText, headerColor = '#334155') => {
       doc.rect(x, y, width, height).stroke('#e2e8f0');
       doc.rect(x, y, width, 20).fill(headerColor);
-      // Set white text color AFTER filling rectangle
+      // Set white text color AFTER filling rectangle - CENTERED
       doc.fontSize(9).font('Helvetica-Bold').fillColor('#ffffff')
-         .text(headerText, x + 5, y + 5, { width: width - 10 });
+         .text(headerText, x, y + 5, { width: width, align: 'center' });
     };
 
     // === HEADER ===
@@ -360,10 +360,11 @@ const generatePermitPDF = async (req, res) => {
     drawSectionHeader('GENERAL INSTRUCTIONS', sectionColors.generalInstructions);
     
     generalInstructions.forEach((instruction) => {
-      checkPageBreak(18);
-      doc.fontSize(8).font('Helvetica').fillColor('#1e293b')
-         .text(instruction, 50, yPos, { width: 490 });
-      yPos += 14;
+      checkPageBreak(50);
+      doc.fontSize(8).font('Helvetica').fillColor('#1e293b');
+      const textHeight = doc.heightOfString(instruction, { width: 490 });
+      doc.text(instruction, 50, yPos, { width: 490 });
+      yPos += textHeight + 8; // Add proper spacing after each instruction
     });
     
     yPos += 10;
@@ -377,34 +378,43 @@ const generatePermitPDF = async (req, res) => {
     // Declaration header
     doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e293b')
        .text('I/We hereby solemnly declare and undertake that:', 50, yPos);
-    yPos += 18;
+    yPos += 20;
     
-    // Declaration points
+    // Declaration points with proper line spacing
     declarationPoints.forEach((point) => {
-      checkPageBreak(35);
+      checkPageBreak(60);
       
-      // Highlight point 4 (liability clause) in different color
-      if (point.includes('SOLELY AND ENTIRELY RESPONSIBLE')) {
-        doc.fontSize(8).font('Helvetica').fillColor('#dc2626')
+      doc.fontSize(8).font('Helvetica');
+      const textHeight = doc.heightOfString(point, { width: 490 });
+      
+      // Highlight point 3 (liability clause) in different color
+      if (point.includes('SOLELY AND ENTIRELY RESPONSIBLE') && point.startsWith('3.')) {
+        doc.fillColor('#dc2626')
            .text(point, 50, yPos, { width: 490, align: 'justify' });
       } else {
-        doc.fontSize(8).font('Helvetica').fillColor('#1e293b')
+        doc.fillColor('#1e293b')
            .text(point, 50, yPos, { width: 490, align: 'justify' });
       }
-      yPos += 32;
+      yPos += textHeight + 10; // Add proper spacing after each point
     });
     
-    checkPageBreak(60);
+    checkPageBreak(80);
     
     // Declaration footer
-    doc.fontSize(8).font('Helvetica-Oblique').fillColor('#64748b')
-       .text(declarationFooter, 50, yPos, { width: 490, align: 'justify' });
-    yPos += 30;
+    doc.fontSize(8).font('Helvetica-Oblique').fillColor('#64748b');
+    const footerHeight = doc.heightOfString(declarationFooter, { width: 490 });
+    doc.text(declarationFooter, 50, yPos, { width: 490, align: 'justify' });
+    yPos += footerHeight + 15;
     
     // Agreement checkbox representation with clear tick mark
-    doc.rect(50, yPos, 16, 16).stroke('#10b981');
+    // Draw green filled box
     doc.rect(50, yPos, 16, 16).fill('#10b981');
-    doc.fontSize(12).font('Helvetica-Bold').fillColor('#ffffff').text('✓', 53, yPos + 2);
+    // Draw checkmark using lines instead of unicode character
+    doc.strokeColor('#ffffff').lineWidth(2);
+    doc.moveTo(54, yPos + 9).lineTo(57, yPos + 12).lineTo(63, yPos + 5).stroke();
+    // Reset stroke color
+    doc.strokeColor('#000000').lineWidth(1);
+    // Draw text
     doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e293b')
        .text('I Agree to the Declaration & Undertaking', 75, yPos + 3);
     

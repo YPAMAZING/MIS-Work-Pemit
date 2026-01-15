@@ -8,6 +8,36 @@ const prisma = new PrismaClient();
 // Helper to transform multiple permits
 const transformPermits = (permits) => permits.map(transformPermitResponse);
 
+// Month abbreviations for permit number
+const monthAbbreviations = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+
+// Generate permit number in format: RGDGTLWP JAN - 0001
+const generatePermitNumber = async (tx) => {
+  const now = new Date();
+  const month = monthAbbreviations[now.getMonth()];
+  const year = now.getFullYear();
+  
+  // Get start and end of current month
+  const startOfMonth = new Date(year, now.getMonth(), 1);
+  const endOfMonth = new Date(year, now.getMonth() + 1, 0, 23, 59, 59, 999);
+  
+  // Count permits created this month
+  const countThisMonth = await tx.permitRequest.count({
+    where: {
+      createdAt: {
+        gte: startOfMonth,
+        lte: endOfMonth,
+      },
+    },
+  });
+  
+  // Generate sequential number (padded to 4 digits)
+  const sequentialNumber = String(countThisMonth + 1).padStart(4, '0');
+  
+  // Format: RGDGTLWP JAN - 0001
+  return `RGDGTLWP ${month} - ${sequentialNumber}`;
+};
+
 // Get all permits
 const getAllPermits = async (req, res) => {
   try {
@@ -191,9 +221,15 @@ const createPermit = async (req, res) => {
 
     // Create permit with automatic approval record
     const permit = await prisma.$transaction(async (tx) => {
-      // Create permit request
+      // Generate custom permit number
+      const permitNumber = await generatePermitNumber(tx);
+      
+      // Create permit request with custom permit number
       const newPermit = await tx.permitRequest.create({
-        data: permitData,
+        data: {
+          ...permitData,
+          permitNumber,
+        },
       });
 
       // Automatically create approval record

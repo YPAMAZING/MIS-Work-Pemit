@@ -142,7 +142,7 @@ const Permits = () => {
           <h1 className="text-2xl font-bold text-gray-900">Permit Requests</h1>
           <p className="text-gray-500 mt-1">Manage and track all permit requests</p>
         </div>
-        <Link to="/permits/new" className="btn btn-primary">
+        <Link to="/workpermit/permits/new" className="btn btn-primary">
           <Plus className="w-5 h-5 mr-2" />
           New Permit
         </Link>
@@ -224,7 +224,7 @@ const Permits = () => {
             <FileText className="w-16 h-16 text-gray-300 mb-4" />
             <p className="text-lg font-medium">No permits found</p>
             <p className="text-sm mt-1">Create a new permit to get started</p>
-            <Link to="/permits/new" className="btn btn-primary mt-4">
+            <Link to="/workpermit/permits/new" className="btn btn-primary mt-4">
               <Plus className="w-5 h-5 mr-2" />
               Create Permit
             </Link>
@@ -255,7 +255,7 @@ const Permits = () => {
                           </div>
                           <div>
                             <Link
-                              to={`/permits/${permit.id}`}
+                              to={`/workpermit/permits/${permit.id}`}
                               className="font-medium text-gray-900 hover:text-primary-600"
                             >
                               {permit.title}
@@ -297,7 +297,7 @@ const Permits = () => {
                       <td className="px-4 py-4">
                         <div className="flex items-center justify-end gap-2">
                           <Link
-                            to={`/permits/${permit.id}`}
+                            to={`/workpermit/permits/${permit.id}`}
                             className="p-2 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg"
                             title="View"
                           >

@@ -73,28 +73,28 @@ const Dashboard = () => {
       value: stats?.stats?.totalPermits || 0,
       icon: <FileText className="w-6 h-6" />,
       color: 'bg-primary-500',
-      link: '/permits',
+      link: '/workpermit/permits',
     },
     {
       title: 'Pending',
       value: stats?.stats?.pendingPermits || 0,
       icon: <Clock className="w-6 h-6" />,
       color: 'bg-amber-500',
-      link: '/permits?status=PENDING',
+      link: '/workpermit/permits?status=PENDING',
     },
     {
       title: 'Approved',
       value: stats?.stats?.approvedPermits || 0,
       icon: <CheckCircle className="w-6 h-6" />,
       color: 'bg-green-500',
-      link: '/permits?status=APPROVED',
+      link: '/workpermit/permits?status=APPROVED',
     },
     {
       title: 'Rejected',
       value: stats?.stats?.rejectedPermits || 0,
       icon: <XCircle className="w-6 h-6" />,
       color: 'bg-red-500',
-      link: '/permits?status=REJECTED',
+      link: '/workpermit/permits?status=REJECTED',
     },
   ]
 
@@ -132,7 +132,7 @@ const Dashboard = () => {
             Here's an overview of your permit management system
           </p>
         </div>
-        <Link to="/permits/new" className="btn btn-primary">
+        <Link to="/workpermit/permits/new" className="btn btn-primary">
           <Plus className="w-5 h-5 mr-2" />
           New Permit
         </Link>
@@ -165,7 +165,7 @@ const Dashboard = () => {
         <div className="lg:col-span-2 card">
           <div className="card-header flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900">Recent Permits</h2>
-            <Link to="/permits" className="text-sm text-primary-600 hover:text-primary-700">
+            <Link to="/workpermit/permits" className="text-sm text-primary-600 hover:text-primary-700">
               View all
             </Link>
           </div>
@@ -199,7 +199,7 @@ const Dashboard = () => {
               <div className="p-8 text-center text-gray-500">
                 <FileText className="w-12 h-12 mx-auto text-gray-300 mb-3" />
                 <p>No permits yet</p>
-                <Link to="/permits/new" className="text-primary-600 hover:text-primary-700 text-sm">
+                <Link to="/workpermit/permits/new" className="text-primary-600 hover:text-primary-700 text-sm">
                   Create your first permit
                 </Link>
               </div>

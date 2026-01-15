@@ -1,5 +1,21 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useParams } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
+
+// Legacy redirect components to preserve IDs
+const LegacyPermitRedirect = () => {
+  const { id } = useParams()
+  return <Navigate to={`/workpermit/permits/${id}`} replace />
+}
+
+const LegacyPermitEditRedirect = () => {
+  const { id } = useParams()
+  return <Navigate to={`/workpermit/permits/${id}/edit`} replace />
+}
+
+const LegacyApprovalRedirect = () => {
+  const { id } = useParams()
+  return <Navigate to={`/workpermit/approvals/${id}`} replace />
+}
 import Layout from './components/Layout'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -213,9 +229,12 @@ function App() {
       {/* Legacy routes - redirect to new structure */}
       <Route path="/dashboard" element={<Navigate to="/workpermit/dashboard" replace />} />
       <Route path="/permits" element={<Navigate to="/workpermit/permits" replace />} />
-      <Route path="/permits/*" element={<Navigate to="/workpermit/permits" replace />} />
+      <Route path="/permits/new" element={<Navigate to="/workpermit/permits/new" replace />} />
+      <Route path="/permits/create" element={<Navigate to="/workpermit/permits/create" replace />} />
+      <Route path="/permits/:id" element={<LegacyPermitRedirect />} />
+      <Route path="/permits/:id/edit" element={<LegacyPermitEditRedirect />} />
       <Route path="/approvals" element={<Navigate to="/workpermit/approvals" replace />} />
-      <Route path="/approvals/*" element={<Navigate to="/workpermit/approvals" replace />} />
+      <Route path="/approvals/:id" element={<LegacyApprovalRedirect />} />
       <Route path="/users" element={<Navigate to="/workpermit/users" replace />} />
       <Route path="/roles" element={<Navigate to="/workpermit/roles" replace />} />
       <Route path="/settings" element={<Navigate to="/workpermit/settings" replace />} />

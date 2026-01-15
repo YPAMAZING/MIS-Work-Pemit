@@ -243,7 +243,7 @@ const CreatePermit = () => {
       }
     } catch (error) {
       toast.error('Error fetching permit')
-      navigate('/permits')
+      navigate('/workpermit/permits')
     } finally {
       setFetchLoading(false)
     }
@@ -457,7 +457,7 @@ const CreatePermit = () => {
         await permitsAPI.create(submitData)
         toast.success('Permit created successfully')
       }
-      navigate('/permits')
+      navigate('/workpermit/permits')
     } catch (error) {
       toast.error(error.response?.data?.message || `Error ${isEdit ? 'updating' : 'creating'} permit`)
     } finally {
@@ -491,7 +491,7 @@ const CreatePermit = () => {
       {/* Header */}
       <div className="mb-8">
         <button
-          onClick={() => navigate('/permits')}
+          onClick={() => navigate('/workpermit/permits')}
           className="flex items-center gap-2 text-gray-500 hover:text-gray-700 transition-colors mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -1364,7 +1364,7 @@ const CreatePermit = () => {
         <div className="flex items-center justify-between bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
           <button
             type="button"
-            onClick={() => navigate('/permits')}
+            onClick={() => navigate('/workpermit/permits')}
             className="px-6 py-3 text-gray-700 bg-gray-100 rounded-xl font-medium hover:bg-gray-200 transition-colors flex items-center gap-2"
           >
             <X className="w-5 h-5" />

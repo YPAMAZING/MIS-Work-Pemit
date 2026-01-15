@@ -129,7 +129,7 @@ const PermitDetail = () => {
     } catch (error) {
       console.error('Error fetching permit:', error)
       toast.error('Error fetching permit details')
-      navigate('/permits')
+      navigate('/workpermit/permits')
     } finally {
       setLoading(false)
     }
@@ -271,7 +271,7 @@ const PermitDetail = () => {
       {/* Top Actions Bar */}
       <div className="flex items-center justify-between mb-6">
         <button
-          onClick={() => navigate('/permits')}
+          onClick={() => navigate('/workpermit/permits')}
           className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />

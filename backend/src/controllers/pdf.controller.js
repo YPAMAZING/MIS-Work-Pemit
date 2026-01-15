@@ -198,9 +198,10 @@ const generatePermitPDF = async (req, res) => {
 
     yPos += 20;
     
-    // Requested by info (same font size as permit number)
-    doc.fontSize(9).font('Helvetica').fillColor('#1e293b')
-       .text(`Requested by ${permit.user.firstName} ${permit.user.lastName} on ${new Date(permit.createdAt).toLocaleDateString()}`, 40, yPos);
+    // Requested by info (BOLD like permit number)
+    doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e293b')
+       .text(`Requested by: ${permit.user.firstName} ${permit.user.lastName}`, 40, yPos);
+    doc.font('Helvetica').text(` on ${new Date(permit.createdAt).toLocaleDateString()}`, 40 + doc.widthOfString(`Requested by: ${permit.user.firstName} ${permit.user.lastName}`), yPos);
 
     yPos += 16;
     
@@ -245,10 +246,6 @@ const generatePermitPDF = async (req, res) => {
     
     doc.font('Helvetica-Bold').text('Requester Email:', 310, yPos);
     doc.font('Helvetica').text(permit.user.email || '-', 400, yPos);
-    yPos += 18;
-    
-    doc.font('Helvetica-Bold').text('Department:', 45, yPos);
-    doc.font('Helvetica').text(permit.user.department || '-', 130, yPos);
     yPos += 25;
 
     // === WORKERS SECTION ===
@@ -398,28 +395,59 @@ const generatePermitPDF = async (req, res) => {
     
     drawSectionHeader('GENERAL INSTRUCTIONS', sectionColors.generalInstructions);
     
-    // Helper function to render text with bold parts
-    const renderTextWithBold = (fullText, boldParts, x, currentY, width) => {
+    // Render general instructions with inline bold parts
+    generalInstructions.forEach((instruction) => {
+      checkPageBreak(60);
+      
+      const text = instruction.text;
+      const boldParts = instruction.boldParts || [];
+      
       if (boldParts.length === 0) {
         // No bold parts, render normally
         doc.fontSize(8).font('Helvetica').fillColor('#1e293b');
-        const height = doc.heightOfString(fullText, { width });
-        doc.text(fullText, x, currentY, { width });
-        return height;
+        const height = doc.heightOfString(text, { width: 490 });
+        doc.text(text, 50, yPos, { width: 490 });
+        yPos += height + 8;
+      } else {
+        // Split text and render with bold parts
+        let remainingText = text;
+        let currentX = 50;
+        let startY = yPos;
+        let maxHeight = 0;
+        
+        // Process each bold part
+        boldParts.forEach((boldPart) => {
+          const boldIndex = remainingText.indexOf(boldPart);
+          if (boldIndex !== -1) {
+            // Text before bold part
+            const beforeBold = remainingText.substring(0, boldIndex);
+            if (beforeBold) {
+              doc.fontSize(8).font('Helvetica').fillColor('#1e293b');
+              doc.text(beforeBold, 50, yPos, { width: 490, continued: true });
+            }
+            
+            // Bold part
+            doc.fontSize(8).font('Helvetica-Bold').fillColor('#1e293b');
+            doc.text(boldPart, { continued: true });
+            
+            // Update remaining text
+            remainingText = remainingText.substring(boldIndex + boldPart.length);
+          }
+        });
+        
+        // Remaining text after all bold parts
+        if (remainingText) {
+          doc.fontSize(8).font('Helvetica').fillColor('#1e293b');
+          doc.text(remainingText, { continued: false });
+        } else {
+          doc.text('', { continued: false }); // End the continued text
+        }
+        
+        // Calculate height for spacing
+        doc.fontSize(8).font('Helvetica');
+        const totalHeight = doc.heightOfString(text, { width: 490 });
+        yPos += totalHeight + 8;
       }
-      
-      // For simplicity, render full text normally first, then we'll use underline for bold parts
-      // PDFKit doesn't easily support inline bold, so we render the full text
-      doc.fontSize(8).font('Helvetica').fillColor('#1e293b');
-      const height = doc.heightOfString(fullText, { width });
-      doc.text(fullText, x, currentY, { width });
-      return height;
-    };
-    
-    generalInstructions.forEach((instruction) => {
-      checkPageBreak(60);
-      const textHeight = renderTextWithBold(instruction.text, instruction.boldParts, 50, yPos, 490);
-      yPos += textHeight + 8; // Add proper spacing after each instruction
     });
     
     yPos += 10;

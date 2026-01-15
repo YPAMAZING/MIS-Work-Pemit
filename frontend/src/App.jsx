@@ -1,5 +1,4 @@
-import { Routes, Route, Navigate, useSearchParams } from 'react-router-dom'
-import { useEffect } from 'react'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 import Layout from './components/Layout'
 import Login from './pages/Login'
@@ -19,6 +18,10 @@ import RoleManagement from './pages/RoleManagement'
 import SSOCallback from './pages/SSOCallback'
 import LoadingSpinner from './components/LoadingSpinner'
 
+// New System Selector and MIS pages
+import SystemSelector from './pages/SystemSelector'
+import MISDashboard from './pages/mis/MISDashboard'
+
 // Protected route wrapper
 const ProtectedRoute = ({ children, roles }) => {
   const { user, loading } = useAuth()
@@ -36,7 +39,7 @@ const ProtectedRoute = ({ children, roles }) => {
   }
 
   if (roles && !roles.includes(user.role)) {
-    return <Navigate to="/dashboard" replace />
+    return <Navigate to="/select-system" replace />
   }
 
   return children
@@ -55,7 +58,36 @@ const PublicRoute = ({ children }) => {
   }
 
   if (user) {
-    return <Navigate to="/dashboard" replace />
+    // Requestors go directly to Work Permit dashboard
+    if (user.role === 'REQUESTOR') {
+      return <Navigate to="/workpermit/dashboard" replace />
+    }
+    // Other roles see the system selector
+    return <Navigate to="/select-system" replace />
+  }
+
+  return children
+}
+
+// System Selector Route (only for non-Requestor roles)
+const SystemSelectorRoute = ({ children }) => {
+  const { user, loading } = useAuth()
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner size="lg" />
+      </div>
+    )
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />
+  }
+
+  // Requestors go directly to Work Permit
+  if (user.role === 'REQUESTOR') {
+    return <Navigate to="/workpermit/dashboard" replace />
   }
 
   return children
@@ -88,16 +120,28 @@ function App() {
       {/* SSO Callback route */}
       <Route path="/auth/sso/callback" element={<SSOCallback />} />
 
-      {/* Protected routes */}
+      {/* System Selector (for Admin, Fireman, Site Engineer) */}
       <Route
-        path="/"
+        path="/select-system"
+        element={
+          <SystemSelectorRoute>
+            <SystemSelector />
+          </SystemSelectorRoute>
+        }
+      />
+
+      {/* ======================= */}
+      {/* WORK PERMIT SYSTEM ROUTES */}
+      {/* ======================= */}
+      <Route
+        path="/workpermit"
         element={
           <ProtectedRoute>
-            <Layout />
+            <Layout systemType="workpermit" />
           </ProtectedRoute>
         }
       >
-        <Route index element={<Navigate to="/dashboard" replace />} />
+        <Route index element={<Navigate to="/workpermit/dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="permits" element={<Permits />} />
         <Route path="permits/new" element={<SelectPermitType />} />
@@ -141,21 +185,47 @@ function App() {
           }
         />
 
-        {/* Site Engineer - Meter Readings */}
-        <Route
-          path="meters"
-          element={
-            <ProtectedRoute roles={['SITE_ENGINEER', 'ADMIN']}>
-              <MeterReadings />
-            </ProtectedRoute>
-          }
-        />
-
         <Route path="settings" element={<Settings />} />
       </Route>
 
+      {/* ======================= */}
+      {/* MIS SYSTEM ROUTES */}
+      {/* ======================= */}
+      <Route
+        path="/mis"
+        element={
+          <ProtectedRoute roles={['ADMIN', 'SAFETY_OFFICER', 'SITE_ENGINEER']}>
+            <MISDashboard />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<Navigate to="/mis/dashboard" replace />} />
+      </Route>
+      <Route
+        path="/mis/dashboard"
+        element={
+          <ProtectedRoute roles={['ADMIN', 'SAFETY_OFFICER', 'SITE_ENGINEER']}>
+            <MISDashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Legacy routes - redirect to new structure */}
+      <Route path="/dashboard" element={<Navigate to="/workpermit/dashboard" replace />} />
+      <Route path="/permits" element={<Navigate to="/workpermit/permits" replace />} />
+      <Route path="/permits/*" element={<Navigate to="/workpermit/permits" replace />} />
+      <Route path="/approvals" element={<Navigate to="/workpermit/approvals" replace />} />
+      <Route path="/approvals/*" element={<Navigate to="/workpermit/approvals" replace />} />
+      <Route path="/users" element={<Navigate to="/workpermit/users" replace />} />
+      <Route path="/roles" element={<Navigate to="/workpermit/roles" replace />} />
+      <Route path="/settings" element={<Navigate to="/workpermit/settings" replace />} />
+      <Route path="/meters" element={<Navigate to="/mis/dashboard" replace />} />
+
+      {/* Root redirect */}
+      <Route path="/" element={<Navigate to="/select-system" replace />} />
+
       {/* 404 */}
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      <Route path="*" element={<Navigate to="/select-system" replace />} />
     </Routes>
   )
 }

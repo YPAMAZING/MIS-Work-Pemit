@@ -16,9 +16,11 @@ import {
   ChevronDown,
   Gauge,
   ShieldCheck,
+  ArrowLeftRight,
+  Home,
 } from 'lucide-react'
 
-const Layout = () => {
+const Layout = ({ systemType = 'workpermit' }) => {
   const { user, logout, isAdmin, isSafetyOfficer } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
@@ -42,51 +44,54 @@ const Layout = () => {
   }
 
   const handleLogout = () => {
+    localStorage.removeItem('selectedSystem')
     logout()
     navigate('/login')
   }
 
+  const handleSwitchSystem = () => {
+    localStorage.removeItem('selectedSystem')
+    navigate('/select-system')
+  }
+
+  // Base path for current system
+  const basePath = systemType === 'workpermit' ? '/workpermit' : '/mis'
+
   const navItems = [
     {
       name: 'Dashboard',
-      path: '/dashboard',
+      path: `${basePath}/dashboard`,
       icon: LayoutDashboard,
-      roles: ['ADMIN', 'SAFETY_OFFICER', 'REQUESTOR'],
+      roles: ['ADMIN', 'SAFETY_OFFICER', 'REQUESTOR', 'SITE_ENGINEER'],
     },
     {
       name: 'Permits',
-      path: '/permits',
+      path: `${basePath}/permits`,
       icon: FileText,
       roles: ['ADMIN', 'SAFETY_OFFICER', 'REQUESTOR'],
     },
     {
       name: 'Approvals',
-      path: '/approvals',
+      path: `${basePath}/approvals`,
       icon: CheckSquare,
       roles: ['ADMIN', 'SAFETY_OFFICER'],
       badge: pendingCount > 0 ? pendingCount : null,
     },
     {
-      name: 'Meter Readings',
-      path: '/meters',
-      icon: Gauge,
-      roles: ['ADMIN', 'SITE_ENGINEER'],
-    },
-    {
       name: 'Users',
-      path: '/users',
+      path: `${basePath}/users`,
       icon: Users,
       roles: ['ADMIN'],
     },
     {
       name: 'Roles',
-      path: '/roles',
+      path: `${basePath}/roles`,
       icon: ShieldCheck,
       roles: ['ADMIN'],
     },
     {
       name: 'Settings',
-      path: '/settings',
+      path: `${basePath}/settings`,
       icon: Settings,
       roles: ['ADMIN', 'SAFETY_OFFICER', 'REQUESTOR', 'SITE_ENGINEER'],
     },
@@ -107,6 +112,9 @@ const Layout = () => {
   }
 
   const roleBadge = getRoleBadge(user?.role)
+
+  // Check if user can switch systems (non-Requestor)
+  const canSwitchSystem = user?.role !== 'REQUESTOR'
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -144,6 +152,20 @@ const Layout = () => {
             <X className="w-5 h-5 text-slate-400" />
           </button>
         </div>
+
+        {/* Switch System Button (for non-Requestor) */}
+        {canSwitchSystem && (
+          <div className="px-4 pt-4">
+            <button
+              onClick={handleSwitchSystem}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-purple-600/20 to-indigo-600/20 border border-purple-500/30 text-purple-300 hover:from-purple-600/30 hover:to-indigo-600/30 transition-all"
+            >
+              <Home className="w-5 h-5" />
+              <span className="flex-1 text-left font-medium text-sm">Switch System</span>
+              <ArrowLeftRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
         {/* Navigation */}
         <nav className="p-4 space-y-1">
@@ -221,7 +243,7 @@ const Layout = () => {
               {/* Notifications */}
               {(isSafetyOfficer || isAdmin) && pendingCount > 0 && (
                 <button
-                  onClick={() => navigate('/approvals')}
+                  onClick={() => navigate(`${basePath}/approvals`)}
                   className="relative p-2 rounded-lg hover:bg-gray-100"
                 >
                   <Bell className="w-5 h-5 text-gray-600" />
@@ -281,8 +303,20 @@ const Layout = () => {
                       </div>
                       {/* Menu Items */}
                       <div className="py-2">
+                        {canSwitchSystem && (
+                          <button
+                            onClick={() => {
+                              setUserMenuOpen(false)
+                              handleSwitchSystem()
+                            }}
+                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 w-full transition-colors"
+                          >
+                            <ArrowLeftRight className="w-4 h-4 text-gray-400" />
+                            <span>Switch System</span>
+                          </button>
+                        )}
                         <NavLink
-                          to="/settings"
+                          to={`${basePath}/settings`}
                           onClick={() => setUserMenuOpen(false)}
                           className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                         >

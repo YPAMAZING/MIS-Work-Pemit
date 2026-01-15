@@ -1,6 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
 const PDFDocument = require('pdfkit');
-const QRCode = require('qrcode');
 
 const prisma = new PrismaClient();
 
@@ -42,6 +41,36 @@ const idProofLabels = {
   'passport': 'Passport',
   'other': 'Other ID',
 };
+
+// Section colors for headers
+const sectionColors = {
+  vendorDetails: '#f59e0b',     // Orange/Yellow for Vendor/Contractor
+  workers: '#334155',           // Dark slate for Workers
+  location: '#7c3aed',          // Purple for Location
+  duration: '#334155',          // Dark slate for Duration
+  hazards: '#dc2626',           // Red for Hazards
+  ppe: '#16a34a',               // Green for PPE
+  measures: '#334155',          // Dark slate for Measures
+  generalInstructions: '#2563eb', // Blue for General Instructions
+  declaration: '#1e3a8a',       // Dark blue for Declaration
+  approvals: '#334155',         // Dark slate for Approvals
+  firemanRemarks: '#7c3aed',    // Purple for Fireman Remarks
+  documents: '#0891b2',         // Cyan for Documents
+};
+
+// General Instructions
+const generalInstructions = [
+  '1. This permit must be displayed at the work site at all times during the work activity.',
+  '2. Work must not commence until this permit has been signed by all required parties.',
+  '3. All workers must be briefed on the hazards and safety requirements before starting work.',
+  '4. The permit holder is responsible for ensuring all safety measures are in place.',
+  '5. Any changes to the work scope or conditions require a new permit or amendment.',
+  '6. In case of emergency, stop all work immediately and evacuate the area.',
+  '7. Report all incidents, near misses, and unsafe conditions to the safety officer.',
+  '8. This permit is valid only for the duration and location specified.',
+  '9. Non-compliance with permit conditions may result in immediate revocation.',
+  '10. Keep emergency contact numbers accessible at the work site.',
+];
 
 // Enhanced Declaration & Undertaking text
 const declarationPoints = [
@@ -89,14 +118,6 @@ const generatePermitPDF = async (req, res) => {
     const equipment = JSON.parse(permit.equipment || '[]');
     const vendorDetails = permit.vendorDetails ? JSON.parse(permit.vendorDetails) : null;
 
-    // Generate QR code
-    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    const permitUrl = `${baseUrl}/permits/${permit.id}`;
-    const qrCodeBuffer = await QRCode.toBuffer(permitUrl, {
-      width: 100,
-      margin: 1,
-    });
-
     // Create PDF document
     const doc = new PDFDocument({
       size: 'A4',
@@ -111,6 +132,7 @@ const generatePermitPDF = async (req, res) => {
     doc.pipe(res);
 
     // Helper function to check and add new page
+    let yPos = 40;
     const checkPageBreak = (requiredSpace = 100) => {
       if (yPos > 750 - requiredSpace) {
         doc.addPage();
@@ -120,84 +142,87 @@ const generatePermitPDF = async (req, res) => {
       return false;
     };
 
-    // Helper to draw section header
+    // Helper to draw styled section header (like in the reference images)
     const drawSectionHeader = (title, color = '#334155') => {
       checkPageBreak(80);
       doc.fontSize(10).font('Helvetica-Bold').fillColor('#ffffff');
-      doc.rect(40, yPos, 515, 20).fill(color);
-      doc.text(title, 45, yPos + 5);
-      yPos += 28;
+      doc.rect(40, yPos, 515, 22).fill(color);
+      doc.text(title, 50, yPos + 6);
+      yPos += 30;
     };
 
-    let yPos = 40;
+    // Helper to draw a bordered info box
+    const drawInfoBox = (x, y, width, height, headerText, headerColor = '#334155') => {
+      doc.rect(x, y, width, height).stroke('#e2e8f0');
+      doc.rect(x, y, width, 20).fill(headerColor);
+      doc.fontSize(9).font('Helvetica-Bold').fillColor('#ffffff')
+         .text(headerText, x + 5, y + 5, { width: width - 10 });
+    };
 
     // === HEADER ===
-    // Company name and permit type
+    // Company name with checkmark
     doc.fontSize(16).font('Helvetica-Bold').fillColor('#1e293b')
-       .text(permit.companyName || 'RELIABLE GROUP MEP', 40, yPos);
+       .text('✓ ' + (permit.companyName || 'RELIABLE GROUP MEP'), 40, yPos);
     
-    yPos += 22;
-    doc.fontSize(14).font('Helvetica-Bold').fillColor('#334155')
-       .text(workTypeLabels[permit.workType] || 'WORK PERMIT', 40, yPos);
-
-    // QR Code (right side)
-    doc.image(qrCodeBuffer, 475, 40, { width: 70, height: 70 });
+    yPos += 24;
+    
+    // Permit type with checkmark
+    doc.fontSize(13).font('Helvetica-Bold').fillColor('#334155')
+       .text('✓ ' + (workTypeLabels[permit.workType] || 'WORK PERMIT'), 40, yPos);
 
     yPos += 20;
+    
+    // Requested by info
     doc.fontSize(9).font('Helvetica').fillColor('#64748b')
-       .text(`Requested by ${permit.user.firstName} ${permit.user.lastName} on ${new Date(permit.createdAt).toLocaleDateString()}`, 40, yPos);
+       .text(`✓ Requested by ${permit.user.firstName} ${permit.user.lastName} on ${new Date(permit.createdAt).toLocaleDateString()}`, 40, yPos);
 
     yPos += 18;
+    
     // Permit number
     doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e293b')
        .text(`Permit No: ${permit.permitNumber}`, 40, yPos);
 
-    // Status badge
+    // Status badge (top right)
     const statusColor = statusColors[permit.status] || '#6b7280';
-    doc.roundedRect(475, 115, 70, 18, 3).fill(statusColor);
-    doc.fontSize(8).font('Helvetica-Bold').fillColor('#ffffff')
-       .text(permit.status, 475, 119, { width: 70, align: 'center' });
+    doc.roundedRect(475, 40, 70, 20, 3).fill(statusColor);
+    doc.fontSize(9).font('Helvetica-Bold').fillColor('#ffffff')
+       .text(permit.status, 475, 45, { width: 70, align: 'center' });
 
-    // Horizontal line
-    yPos += 20;
-    doc.moveTo(40, yPos).lineTo(555, yPos).stroke('#e2e8f0');
-    yPos += 15;
+    yPos += 25;
 
-    // === VENDOR DETAILS SECTION ===
-    if (vendorDetails) {
-      drawSectionHeader('VENDOR / CONTRACTOR DETAILS', '#7c3aed');
-      
-      doc.fontSize(9).font('Helvetica').fillColor('#1e293b');
-      
-      // Row 1: Name and Phone
-      doc.font('Helvetica-Bold').text('Vendor Name:', 45, yPos);
-      doc.font('Helvetica').text(vendorDetails.vendorName || '-', 130, yPos);
-      
-      doc.font('Helvetica-Bold').text('Phone:', 300, yPos);
-      doc.font('Helvetica').text(vendorDetails.vendorPhone || '-', 350, yPos);
-      yPos += 18;
-      
-      // Row 2: Company and Email
-      doc.font('Helvetica-Bold').text('Company:', 45, yPos);
-      doc.font('Helvetica').text(vendorDetails.vendorCompany || '-', 130, yPos);
-      
-      doc.font('Helvetica-Bold').text('Email:', 300, yPos);
-      doc.font('Helvetica').text(vendorDetails.vendorEmail || '-', 350, yPos);
-      yPos += 25;
-    }
+    // === PERMIT REQUESTED BY (VENDOR DETAILS) SECTION ===
+    drawSectionHeader('PERMIT REQUESTED BY', sectionColors.vendorDetails);
+    
+    doc.fontSize(9).fillColor('#1e293b');
+    
+    // Row 1: Vendor Name and Phone
+    doc.font('Helvetica-Bold').text('Vendor Name:', 45, yPos);
+    doc.font('Helvetica').text(vendorDetails?.vendorName || permit.contractorName || '-', 130, yPos);
+    
+    doc.font('Helvetica-Bold').text('Vendor Phone:', 310, yPos);
+    doc.font('Helvetica').text(vendorDetails?.vendorPhone || permit.contractorPhone || '-', 400, yPos);
+    yPos += 18;
+    
+    // Row 2: Company and Email
+    doc.font('Helvetica-Bold').text('Company:', 45, yPos);
+    doc.font('Helvetica').text(vendorDetails?.vendorCompany || permit.companyName || '-', 130, yPos);
+    
+    doc.font('Helvetica-Bold').text('Vendor Email:', 310, yPos);
+    doc.font('Helvetica').text(vendorDetails?.vendorEmail || '-', 400, yPos);
+    yPos += 25;
 
     // === WORKERS SECTION ===
-    drawSectionHeader('WORKERS DETAILS', '#334155');
+    drawSectionHeader('DETAILS OF WORK TEAM WORKING', sectionColors.workers);
 
     if (workers.length > 0) {
       // Table header
       doc.fontSize(8).font('Helvetica-Bold').fillColor('#64748b');
-      doc.text('S.No', 45, yPos);
-      doc.text('Worker Name', 75, yPos);
+      doc.text('S.No', 50, yPos);
+      doc.text('Worker Name', 85, yPos);
       doc.text('Phone', 200, yPos);
-      doc.text('ID Type', 290, yPos);
-      doc.text('ID Number', 380, yPos);
-      yPos += 12;
+      doc.text('ID Type', 300, yPos);
+      doc.text('ID Number', 400, yPos);
+      yPos += 14;
       doc.moveTo(40, yPos).lineTo(555, yPos).stroke('#e2e8f0');
       yPos += 8;
 
@@ -205,78 +230,73 @@ const generatePermitPDF = async (req, res) => {
       workers.forEach((worker, index) => {
         checkPageBreak(20);
         doc.fontSize(8).font('Helvetica').fillColor('#1e293b');
-        doc.text((index + 1).toString(), 45, yPos);
-        doc.text(worker.name || '-', 75, yPos, { width: 120 });
-        doc.text(worker.phone || '-', 200, yPos, { width: 85 });
-        doc.text(idProofLabels[worker.idProofType] || worker.idProofType || '-', 290, yPos, { width: 85 });
-        doc.text(worker.idProofNumber || '-', 380, yPos, { width: 120 });
+        doc.text((index + 1).toString(), 55, yPos);
+        doc.text(worker.name || '-', 85, yPos, { width: 110 });
+        doc.text(worker.phone || '-', 200, yPos, { width: 95 });
+        doc.text(idProofLabels[worker.idProofType] || worker.idProofType || '-', 300, yPos, { width: 95 });
+        doc.text(worker.idProofNumber || '-', 400, yPos, { width: 140 });
         yPos += 16;
       });
     } else {
       doc.fontSize(9).font('Helvetica').fillColor('#64748b')
-         .text('No workers assigned', 45, yPos);
+         .text('No workers assigned', 50, yPos);
       yPos += 18;
     }
 
     yPos += 10;
 
     // === LOCATION & DURATION ===
-    checkPageBreak(90);
+    checkPageBreak(100);
     
     // Location box
-    doc.rect(40, yPos, 250, 70).stroke('#e2e8f0');
-    doc.fontSize(9).font('Helvetica-Bold').fillColor('#ffffff');
-    doc.rect(40, yPos, 250, 18).fill('#334155');
-    doc.text('LOCATION OF WORK', 45, yPos + 4);
+    const locationBoxY = yPos;
+    drawInfoBox(40, yPos, 250, 75, 'PLACE / LOCATION', sectionColors.location);
     doc.fontSize(9).font('Helvetica').fillColor('#1e293b')
-       .text(permit.location, 45, yPos + 25, { width: 240 });
+       .text(permit.location, 50, yPos + 30, { width: 230 });
     doc.fontSize(8).fillColor('#64748b')
-       .text(`Timezone: ${permit.timezone || 'UTC'}`, 45, yPos + 55);
+       .text(`Timezone: ${permit.timezone || 'Asia/Calcutta'}`, 50, yPos + 58);
 
     // Duration box
-    doc.rect(305, yPos, 250, 70).stroke('#e2e8f0');
-    doc.fontSize(9).font('Helvetica-Bold').fillColor('#ffffff');
-    doc.rect(305, yPos, 250, 18).fill('#334155');
-    doc.text('DURATION OF WORK', 310, yPos + 4);
+    drawInfoBox(305, locationBoxY, 250, 75, 'DATE, TIME & DURATION OF WORK', sectionColors.duration);
     
     doc.fontSize(8).font('Helvetica-Bold').fillColor('#64748b');
-    doc.text('Start Date & Time', 310, yPos + 25);
-    doc.text('End Date & Time', 430, yPos + 25);
+    doc.text('Start Date & Time', 315, locationBoxY + 28);
+    doc.text('End Date & Time', 435, locationBoxY + 28);
     
     doc.fontSize(8).font('Helvetica').fillColor('#1e293b');
-    doc.text(new Date(permit.startDate).toLocaleString(), 310, yPos + 38, { width: 115 });
-    doc.text(new Date(permit.endDate).toLocaleString(), 430, yPos + 38, { width: 115 });
+    doc.text(new Date(permit.startDate).toLocaleString(), 315, locationBoxY + 42, { width: 115 });
+    doc.text(new Date(permit.endDate).toLocaleString(), 435, locationBoxY + 42, { width: 115 });
     
-    doc.fontSize(8).font('Helvetica-Bold').fillColor('#64748b').text('Extended:', 310, yPos + 55);
+    doc.fontSize(8).font('Helvetica-Bold').fillColor('#64748b').text('Extended:', 315, locationBoxY + 58);
     doc.font('Helvetica').fillColor(permit.isExtended ? '#3b82f6' : '#1e293b')
-       .text(permit.isExtended ? 'YES' : 'NO', 360, yPos + 55);
+       .text(permit.isExtended ? 'YES' : 'NO', 365, locationBoxY + 58);
 
-    yPos += 85;
+    yPos = locationBoxY + 90;
 
     // === HAZARDS SECTION ===
     if (hazards.length > 0) {
-      drawSectionHeader('HAZARDS IDENTIFIED', '#dc2626');
+      drawSectionHeader('ANTICIPATED RISKS', sectionColors.hazards);
       doc.fontSize(9).font('Helvetica').fillColor('#1e293b');
       hazards.forEach((hazard) => {
         checkPageBreak(15);
-        doc.text(`• ${hazard}`, 45, yPos, { width: 500 });
+        doc.text(`• ${hazard}`, 50, yPos, { width: 490 });
         yPos += 14;
       });
       yPos += 5;
     }
 
-    // === SAFETY PRECAUTIONS / PPE SECTION ===
+    // === PPE & EQUIPMENT SECTION ===
     if (equipment.length > 0) {
-      drawSectionHeader('SAFETY PRECAUTIONS - LIST OF MANDATORY PPE & TOOLS', '#16a34a');
+      drawSectionHeader('PPE PROVIDED', sectionColors.ppe);
       
-      // Grid layout for equipment
+      // Grid layout for equipment (3 columns)
       let col = 0;
       let rowY = yPos;
       equipment.forEach((item, index) => {
         checkPageBreak(15);
-        const xPos = 45 + (col * 170);
+        const xPos = 50 + (col * 170);
         doc.fontSize(8).font('Helvetica').fillColor('#1e293b');
-        doc.text(`✓ ${item}`, xPos, rowY, { width: 165 });
+        doc.text(`✓ ${item}`, xPos, rowY, { width: 160 });
         col++;
         if (col >= 3) {
           col = 0;
@@ -288,29 +308,29 @@ const generatePermitPDF = async (req, res) => {
       yPos += 10;
     }
 
-    // === MEASURES SECTION ===
+    // === SAFETY MEASURES CHECKLIST ===
     const defaultMeasures = [
-      { question: 'Instruction to Personnel regarding hazards involved and working procedure.', answer: null },
-      { question: 'Are Other Contractors working nearby notified?', answer: null },
-      { question: 'Is there any other work permit obtained?', answer: null },
-      { question: 'Are escape routes to be provided and kept clear?', answer: null },
-      { question: 'Is combustible material to be removed / covered from and nearby site (up to 5mtr min.)', answer: null },
-      { question: 'Is the area immediately below the work spot been cleared?', answer: null },
-      { question: 'Has gas connection been tested in case there is gas valve / gas line nearby?', answer: null },
-      { question: 'Is fire extinguisher been kept handy at site?', answer: null },
-      { question: 'Has tin sheet / fire retardant cloth been placed to contain hot spatters?', answer: null },
-      { question: 'Have all drain inlets been closed?', answer: null },
+      { id: 1, question: 'Instruction to Personnel regarding hazards involved and working procedure.', answer: null },
+      { id: 2, question: 'Are Other Contractors working nearby notified?', answer: null },
+      { id: 3, question: 'Is there any other work permit obtained?', answer: null },
+      { id: 4, question: 'Are escape routes to be provided and kept clear?', answer: null },
+      { id: 5, question: 'Is combustible material to be removed / covered from and nearby site (up to 5mtr min.)', answer: null },
+      { id: 6, question: 'Is the area immediately below the work spot been cleared / removed of oil, grease & waste cotton etc...?', answer: null },
+      { id: 7, question: 'Has gas connection been tested in case there is gas valve / gas line nearby?', answer: null },
+      { id: 8, question: 'Is fire extinguisher been kept handy at site?', answer: null },
+      { id: 9, question: 'Has tin sheet / fire retardant cloth/ sheet been placed to contain hot spatters of welding / gas cutting?', answer: null },
+      { id: 10, question: 'Have all drain inlets been closed?', answer: null },
     ];
 
     const displayMeasures = measures.length > 0 ? measures : defaultMeasures;
 
-    drawSectionHeader('SAFETY MEASURES CHECKLIST', '#334155');
+    drawSectionHeader('SAFETY MEASURES CHECKLIST', sectionColors.measures);
 
     displayMeasures.forEach((measure, index) => {
       checkPageBreak(22);
 
       doc.fontSize(8).font('Helvetica').fillColor('#1e293b')
-         .text(`${index + 1}. ${measure.question}`, 45, yPos, { width: 380 });
+         .text(`${index + 1}. ${measure.question}`, 50, yPos, { width: 370 });
 
       // Answer badges
       const answers = ['YES', 'NO', 'N/A'];
@@ -323,68 +343,111 @@ const generatePermitPDF = async (req, res) => {
           '#e2e8f0';
         const textColor = isSelected ? '#ffffff' : '#64748b';
         
-        doc.roundedRect(badgeX, yPos - 2, 28, 14, 2).fill(bgColor);
+        doc.roundedRect(badgeX, yPos - 2, 30, 14, 2).fill(bgColor);
         doc.fontSize(7).font('Helvetica-Bold').fillColor(textColor)
-           .text(ans, badgeX, yPos + 1, { width: 28, align: 'center' });
-        badgeX += 32;
+           .text(ans, badgeX, yPos + 1, { width: 30, align: 'center' });
+        badgeX += 34;
       });
 
       yPos += 20;
     });
 
-    // === DECLARATION & UNDERTAKING ===
-    checkPageBreak(200);
+    // === GENERAL INSTRUCTIONS SECTION ===
+    checkPageBreak(180);
     yPos += 5;
     
-    drawSectionHeader('DECLARATION & UNDERTAKING', '#1d4ed8');
+    drawSectionHeader('GENERAL INSTRUCTIONS', sectionColors.generalInstructions);
+    
+    generalInstructions.forEach((instruction) => {
+      checkPageBreak(18);
+      doc.fontSize(8).font('Helvetica').fillColor('#1e293b')
+         .text(instruction, 50, yPos, { width: 490 });
+      yPos += 14;
+    });
+    
+    yPos += 10;
+
+    // === DECLARATION & UNDERTAKING (INDEMNITY BY APPLICANT) ===
+    checkPageBreak(250);
+    yPos += 5;
+    
+    drawSectionHeader('INDEMNITY BY APPLICANT', sectionColors.declaration);
     
     // Declaration header
     doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e293b')
-       .text('I/We hereby solemnly declare and undertake that:', 45, yPos);
+       .text('I/We hereby solemnly declare and undertake that:', 50, yPos);
     yPos += 18;
     
     // Declaration points
     declarationPoints.forEach((point) => {
-      checkPageBreak(25);
+      checkPageBreak(35);
       
       // Highlight point 4 (liability clause) in different color
       if (point.includes('SOLELY AND ENTIRELY RESPONSIBLE')) {
         doc.fontSize(8).font('Helvetica').fillColor('#dc2626')
-           .text(point, 45, yPos, { width: 500, align: 'justify' });
+           .text(point, 50, yPos, { width: 490, align: 'justify' });
       } else {
         doc.fontSize(8).font('Helvetica').fillColor('#1e293b')
-           .text(point, 45, yPos, { width: 500, align: 'justify' });
+           .text(point, 50, yPos, { width: 490, align: 'justify' });
       }
-      yPos += 30;
+      yPos += 32;
     });
     
-    checkPageBreak(50);
+    checkPageBreak(60);
     
     // Declaration footer
     doc.fontSize(8).font('Helvetica-Oblique').fillColor('#64748b')
-       .text(declarationFooter, 45, yPos, { width: 500, align: 'justify' });
+       .text(declarationFooter, 50, yPos, { width: 490, align: 'justify' });
     yPos += 30;
     
-    // Agreement checkbox representation
-    doc.rect(45, yPos, 14, 14).fill('#10b981');
-    doc.fontSize(11).font('Helvetica-Bold').fillColor('#ffffff').text('✓', 48, yPos + 1);
-    doc.fontSize(9).font('Helvetica-Bold').fillColor('#10b981').text('I Agree to the Declaration & Undertaking', 68, yPos + 2);
+    // Agreement checkbox representation with clear tick mark
+    doc.rect(50, yPos, 16, 16).stroke('#10b981');
+    doc.rect(50, yPos, 16, 16).fill('#10b981');
+    doc.fontSize(12).font('Helvetica-Bold').fillColor('#ffffff').text('✓', 53, yPos + 2);
+    doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e293b')
+       .text('I Agree to the Declaration & Undertaking', 75, yPos + 3);
     
-    yPos += 30;
+    yPos += 35;
+
+    // === DOCUMENTS UPLOADED (ID PROOFS) ===
+    const workersWithDocs = workers.filter(w => w.idProofImage);
+    if (workersWithDocs.length > 0) {
+      checkPageBreak(120);
+      
+      drawSectionHeader('DOCUMENTS UPLOADED BY REQUESTOR', sectionColors.documents);
+      
+      doc.fontSize(8).font('Helvetica').fillColor('#64748b')
+         .text('The following ID proof documents have been uploaded for verification:', 50, yPos);
+      yPos += 16;
+      
+      workersWithDocs.forEach((worker, index) => {
+        checkPageBreak(20);
+        doc.fontSize(8).font('Helvetica').fillColor('#1e293b');
+        doc.text(`${index + 1}. ${worker.name} - ${idProofLabels[worker.idProofType] || worker.idProofType}: ${worker.idProofNumber}`, 55, yPos);
+        
+        // Add document reference indicator
+        doc.fontSize(7).fillColor('#0891b2')
+           .text('[Document Attached]', 400, yPos);
+        
+        yPos += 16;
+      });
+      
+      yPos += 10;
+    }
 
     // === FIREMAN REMARKS ===
     if (permit.safetyRemarks) {
       checkPageBreak(80);
-      drawSectionHeader('FIREMAN REMARKS', '#7c3aed');
+      drawSectionHeader('FIREMAN REMARKS', sectionColors.firemanRemarks);
       
       doc.fontSize(9).font('Helvetica').fillColor('#1e293b')
-         .text(permit.safetyRemarks, 45, yPos, { width: 500 });
+         .text(permit.safetyRemarks, 50, yPos, { width: 490 });
       
       yPos += 30;
       
       if (permit.remarksAddedBy) {
         doc.fontSize(8).fillColor('#64748b')
-           .text(`Added by: ${permit.remarksAddedBy}`, 45, yPos);
+           .text(`Added by: ${permit.remarksAddedBy}`, 50, yPos);
         if (permit.remarksAddedAt) {
           doc.text(` on ${new Date(permit.remarksAddedAt).toLocaleString()}`, 180, yPos);
         }
@@ -393,49 +456,59 @@ const generatePermitPDF = async (req, res) => {
     }
 
     // === APPROVAL SIGNATURES ===
-    checkPageBreak(120);
+    checkPageBreak(130);
     yPos += 5;
     
-    drawSectionHeader('APPROVALS & SIGNATURES', '#334155');
+    drawSectionHeader('APPROVAL GIVEN BY', sectionColors.approvals);
 
-    const approvalBoxWidth = 160;
+    const approvalBoxWidth = 165;
+    let approvalX = 40;
+    
     permit.approvals.forEach((approval, index) => {
-      const boxX = 40 + (index * (approvalBoxWidth + 10));
-      if (boxX + approvalBoxWidth > 555) return; // Max 3 boxes per row
+      if (approvalX + approvalBoxWidth > 555) {
+        approvalX = 40;
+        yPos += 85;
+        checkPageBreak(85);
+      }
       
-      doc.rect(boxX, yPos, approvalBoxWidth, 75).stroke('#e2e8f0');
+      doc.rect(approvalX, yPos, approvalBoxWidth, 80).stroke('#e2e8f0');
       
+      // Role header
       doc.fontSize(8).font('Helvetica-Bold').fillColor('#64748b')
-         .text(approval.approverRole.replace('_', ' '), boxX + 5, yPos + 5);
+         .text(approval.approverRole.replace('_', ' '), approvalX + 8, yPos + 8);
       
+      // Approver name
       doc.fontSize(9).font('Helvetica').fillColor('#1e293b')
-         .text(approval.approverName || 'Pending', boxX + 5, yPos + 20);
+         .text(approval.approverName || 'Pending', approvalX + 8, yPos + 24);
       
       // Decision badge
       const decisionColor = approval.decision === 'APPROVED' ? '#10b981' : 
                            approval.decision === 'REJECTED' ? '#ef4444' : '#f59e0b';
-      doc.roundedRect(boxX + 5, yPos + 35, 55, 14, 2).fill(decisionColor);
-      doc.fontSize(7).font('Helvetica-Bold').fillColor('#ffffff')
-         .text(approval.decision, boxX + 5, yPos + 38, { width: 55, align: 'center' });
+      doc.roundedRect(approvalX + 8, yPos + 42, 60, 16, 2).fill(decisionColor);
+      doc.fontSize(8).font('Helvetica-Bold').fillColor('#ffffff')
+         .text(approval.decision, approvalX + 8, yPos + 46, { width: 60, align: 'center' });
       
+      // Approval date
       if (approval.approvedAt) {
         doc.fontSize(7).fillColor('#64748b')
-           .text(new Date(approval.approvedAt).toLocaleString(), boxX + 5, yPos + 55, { width: 150 });
+           .text(new Date(approval.approvedAt).toLocaleString(), approvalX + 8, yPos + 64, { width: 150 });
       }
+      
+      approvalX += approvalBoxWidth + 10;
     });
 
-    yPos += 90;
+    yPos += 95;
 
     // === AUTO-CLOSE INFO ===
     if (permit.autoClosedAt) {
       checkPageBreak(30);
       doc.fontSize(8).fillColor('#64748b')
-         .text(`Auto-closed on: ${new Date(permit.autoClosedAt).toLocaleString()}`, 45, yPos);
+         .text(`Auto-closed on: ${new Date(permit.autoClosedAt).toLocaleString()}`, 50, yPos);
       yPos += 20;
     }
 
-    // === FOOTER - COMPUTER GENERATED NOTICE ===
-    // Add new page if near bottom
+    // === FOOTER ===
+    // Ensure footer is at the bottom
     if (yPos > 700) {
       doc.addPage();
       yPos = 40;

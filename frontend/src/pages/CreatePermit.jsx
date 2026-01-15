@@ -1134,7 +1134,7 @@ const CreatePermit = () => {
             {/* Mandatory PPE */}
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-sm font-semibold text-amber-700">Mandatory Items</span>
+                <span className="text-sm font-semibold text-amber-700">Mandatory PPE</span>
                 <span className="text-xs text-amber-600">(All must be selected)</span>
               </div>
               <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
@@ -1174,7 +1174,7 @@ const CreatePermit = () => {
 
             {/* Optional PPE */}
             <div className="mb-6">
-              <p className="text-sm font-semibold text-gray-700 mb-3">Additional Equipment (Optional)</p>
+              <p className="text-sm font-semibold text-gray-700 mb-3">Additional PPE (Optional)</p>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {optionalPPE.map((item) => (
                   <label

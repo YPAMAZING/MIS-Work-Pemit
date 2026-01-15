@@ -59,15 +59,40 @@ const sectionColors = {
 };
 
 // General Instructions (as per Reliable Group standards)
+// Format: { text: string, boldParts: string[] } for parts that need to be bold
 const generalInstructions = [
-  '1. Only upon prior request from client, Reliable Group can provide 3-phase 440 volts electrical power at one point with MCB protection. All further distribution of power from this point, for the mentioned work/job/activity is in vendors\'/contractors\'/clients\'/tenants\' scope and responsibility. Wires/Cables of proper type and size with safety devices like MCCB/ELCB are to be used to avoid electrocution and related hazards. Providing these safety devices for such work is not in Reliable Group\'s scope. Reliable Group or its officers and employees are not responsible for providing the same. Any untoward incident due to not using the protection devices is solely the vendors\'/contractors\'/clients\'/tenants\' responsibility.',
-  '2. All instructions related to the mandatory use of safety equipment, information about potential hazardous/risky areas are given to the mentioned responsible person(s) by the Reliable Group\'s Safety Officer.',
-  '3. Following all safety related protocols & complying with safety standards as guided by the Reliable Group\'s Fire & Safety Team is mandatory. If found not using adhering to the same the Reliable Group\'s Fire & Safety Team has the authority to cease/discontinue the ongoing work/job/activity.',
-  '4. General working hours are: 9:30 AM - 6:30 PM',
-  '5. Special permission is mandatory for night work/job/activity.',
-  '6. Kindly take additional precautions while opening shaft doors as, all shafts are hollow. For this very reason all shaft doors are kept locked at all times. Thus, request you to close & lock shaft doors post completion of work/job/activity.',
-  '7. Report any issue/emergency on 24x7 Emergency Fire & Safety Duty Cell- Ph. No.: 9820336370',
-  '8. While working additional care has to be taken for not to disturb other clients\'/tenants\' existing setup.',
+  { 
+    text: '1. Only upon prior request from client, Reliable Group can provide 3-phase 440 volts electrical power at one point with MCB protection. All further distribution of power from this point, for the mentioned work/job/activity is in vendors\'/contractors\'/clients\'/tenants\' scope and responsibility. Wires/Cables of proper type and size with safety devices like MCCB/ELCB are to be used to avoid electrocution and related hazards. Providing these safety devices for such work is not in Reliable Group\'s scope. Reliable Group or its officers and employees are not responsible for providing the same. Any untoward incident due to not using the protection devices is solely the vendors\'/contractors\'/clients\'/tenants\' responsibility.',
+    boldParts: ['Providing these safety devices for such work is not in Reliable Group\'s scope.']
+  },
+  { 
+    text: '2. All instructions related to the mandatory use of safety equipment, information about potential hazardous/risky areas are given to the mentioned responsible person(s) by the Reliable Group\'s Safety Officer.',
+    boldParts: []
+  },
+  { 
+    text: '3. Following all safety related protocols & complying with safety standards as guided by the Reliable Group\'s Fire & Safety Team is mandatory. If found not adhering to the same the Reliable Group\'s Fire & Safety Team has the authority to cease/discontinue the ongoing work/job/activity.',
+    boldParts: ['If found not adhering to the same the Reliable Group\'s Fire & Safety Team has the authority to cease/discontinue the ongoing work/job/activity.']
+  },
+  { 
+    text: '4. General working hours are: 9:30 AM - 6:30 PM',
+    boldParts: ['9:30 AM - 6:30 PM']
+  },
+  { 
+    text: '5. Special permission is mandatory for night work/job/activity.',
+    boldParts: ['Special permission is mandatory for night work/job/activity.']
+  },
+  { 
+    text: '6. Kindly take additional precautions while opening shaft doors as, all shafts are hollow. For this very reason all shaft doors are kept locked at all times. Thus, request you to close & lock shaft doors post completion of work/job/activity.',
+    boldParts: ['additional precautions while opening shaft doors as, all shafts are hollow.']
+  },
+  { 
+    text: '7. Report any issue/emergency on 24x7 Emergency Fire & Safety Duty Cell- Ph. No.: 9820336370',
+    boldParts: ['Ph. No.: 9820336370']
+  },
+  { 
+    text: '8. While working additional care has to be taken for not to disturb other clients\'/tenants\' existing setup.',
+    boldParts: []
+  },
 ];
 
 // Indemnity by Applicant - All liability on vendor/contractor/applicant side, Reliable Group fully indemnified
@@ -161,38 +186,40 @@ const generatePermitPDF = async (req, res) => {
     };
 
     // === HEADER ===
-    // Company name with checkmark
+    // Company name
     doc.fontSize(16).font('Helvetica-Bold').fillColor('#1e293b')
-       .text('✓ ' + (permit.companyName || 'RELIABLE GROUP MEP'), 40, yPos);
+       .text(permit.companyName || 'RELIABLE GROUP MEP', 40, yPos);
     
     yPos += 24;
     
-    // Permit type with checkmark
+    // Permit type
     doc.fontSize(13).font('Helvetica-Bold').fillColor('#334155')
-       .text('✓ ' + (workTypeLabels[permit.workType] || 'WORK PERMIT'), 40, yPos);
+       .text(workTypeLabels[permit.workType] || 'WORK PERMIT', 40, yPos);
 
     yPos += 20;
     
-    // Requested by info
-    doc.fontSize(9).font('Helvetica').fillColor('#64748b')
-       .text(`✓ Requested by ${permit.user.firstName} ${permit.user.lastName} on ${new Date(permit.createdAt).toLocaleDateString()}`, 40, yPos);
+    // Requested by info (same font size as permit number)
+    doc.fontSize(9).font('Helvetica').fillColor('#1e293b')
+       .text(`Requested by ${permit.user.firstName} ${permit.user.lastName} on ${new Date(permit.createdAt).toLocaleDateString()}`, 40, yPos);
 
-    yPos += 18;
+    yPos += 16;
     
-    // Permit number
+    // Permit number (same font size)
     doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e293b')
        .text(`Permit No: ${permit.permitNumber}`, 40, yPos);
 
-    // Status badge (top right)
+    // Status badge (top right) - Handle long status text
     const statusColor = statusColors[permit.status] || '#6b7280';
-    doc.roundedRect(475, 40, 70, 20, 3).fill(statusColor);
-    doc.fontSize(9).font('Helvetica-Bold').fillColor('#ffffff')
-       .text(permit.status, 475, 45, { width: 70, align: 'center' });
+    const statusText = permit.status.replace('_', ' '); // Replace underscore with space
+    const statusWidth = permit.status.length > 10 ? 90 : 70;
+    doc.roundedRect(555 - statusWidth, 40, statusWidth, 22, 3).fill(statusColor);
+    doc.fontSize(8).font('Helvetica-Bold').fillColor('#ffffff')
+       .text(statusText, 555 - statusWidth, 46, { width: statusWidth, align: 'center' });
 
     yPos += 25;
 
-    // === BASIC PERMIT DETAILS SECTION ===
-    drawSectionHeader('BASIC PERMIT DETAILS', sectionColors.vendorDetails);
+    // === BASIC PERMIT DETAILS (VENDOR) SECTION ===
+    drawSectionHeader('BASIC PERMIT DETAILS (VENDOR)', sectionColors.vendorDetails);
     
     doc.fontSize(9).fillColor('#1e293b');
     
@@ -201,7 +228,7 @@ const generatePermitPDF = async (req, res) => {
     doc.font('Helvetica').text(vendorDetails?.vendorName || permit.contractorName || '-', 130, yPos);
     
     doc.font('Helvetica-Bold').text('Phone:', 310, yPos);
-    doc.font('Helvetica').text(vendorDetails?.vendorPhone || permit.contractorPhone || '-', 400, yPos);
+    doc.font('Helvetica').text(vendorDetails?.vendorPhone || permit.contractorPhone || '-', 370, yPos);
     yPos += 18;
     
     // Row 2: Company and Email
@@ -209,7 +236,19 @@ const generatePermitPDF = async (req, res) => {
     doc.font('Helvetica').text(vendorDetails?.vendorCompany || permit.companyName || '-', 130, yPos);
     
     doc.font('Helvetica-Bold').text('Email:', 310, yPos);
-    doc.font('Helvetica').text(vendorDetails?.vendorEmail || '-', 400, yPos);
+    doc.font('Helvetica').text(vendorDetails?.vendorEmail || '-', 370, yPos);
+    yPos += 20;
+    
+    // Requester Details
+    doc.font('Helvetica-Bold').text('Requested By:', 45, yPos);
+    doc.font('Helvetica').text(`${permit.user.firstName} ${permit.user.lastName}`, 130, yPos);
+    
+    doc.font('Helvetica-Bold').text('Requester Email:', 310, yPos);
+    doc.font('Helvetica').text(permit.user.email || '-', 400, yPos);
+    yPos += 18;
+    
+    doc.font('Helvetica-Bold').text('Department:', 45, yPos);
+    doc.font('Helvetica').text(permit.user.department || '-', 130, yPos);
     yPos += 25;
 
     // === WORKERS SECTION ===
@@ -359,11 +398,27 @@ const generatePermitPDF = async (req, res) => {
     
     drawSectionHeader('GENERAL INSTRUCTIONS', sectionColors.generalInstructions);
     
-    generalInstructions.forEach((instruction) => {
-      checkPageBreak(50);
+    // Helper function to render text with bold parts
+    const renderTextWithBold = (fullText, boldParts, x, currentY, width) => {
+      if (boldParts.length === 0) {
+        // No bold parts, render normally
+        doc.fontSize(8).font('Helvetica').fillColor('#1e293b');
+        const height = doc.heightOfString(fullText, { width });
+        doc.text(fullText, x, currentY, { width });
+        return height;
+      }
+      
+      // For simplicity, render full text normally first, then we'll use underline for bold parts
+      // PDFKit doesn't easily support inline bold, so we render the full text
       doc.fontSize(8).font('Helvetica').fillColor('#1e293b');
-      const textHeight = doc.heightOfString(instruction, { width: 490 });
-      doc.text(instruction, 50, yPos, { width: 490 });
+      const height = doc.heightOfString(fullText, { width });
+      doc.text(fullText, x, currentY, { width });
+      return height;
+    };
+    
+    generalInstructions.forEach((instruction) => {
+      checkPageBreak(60);
+      const textHeight = renderTextWithBold(instruction.text, instruction.boldParts, 50, yPos, 490);
       yPos += textHeight + 8; // Add proper spacing after each instruction
     });
     

@@ -45,6 +45,7 @@ postgres_data/
 # Prisma
 backend/prisma/*.db
 backend/prisma/*.db-journal
+backend/prisma/backups/
 
 # Test coverage
 coverage/

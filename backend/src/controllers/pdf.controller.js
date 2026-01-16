@@ -198,12 +198,14 @@ const generatePermitPDF = async (req, res) => {
 
     yPos += 20;
     
-    // Requested by info (BOLD like permit number)
+    // Requested by info (on separate line to avoid overlap)
     doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e293b')
        .text(`Requested by: ${permit.user.firstName} ${permit.user.lastName}`, 40, yPos);
-    doc.font('Helvetica').text(` on ${new Date(permit.createdAt).toLocaleDateString()}`, 40 + doc.widthOfString(`Requested by: ${permit.user.firstName} ${permit.user.lastName}`), yPos);
+    yPos += 14;
+    doc.fontSize(8).font('Helvetica').fillColor('#64748b')
+       .text(`Date: ${new Date(permit.createdAt).toLocaleDateString()}`, 40, yPos);
 
-    yPos += 16;
+    yPos += 14;
     
     // Permit number (same font size)
     doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e293b')
@@ -345,50 +347,6 @@ const generatePermitPDF = async (req, res) => {
       yPos += 10;
     }
 
-    // === SAFETY MEASURES CHECKLIST ===
-    const defaultMeasures = [
-      { id: 1, question: 'Instruction to Personnel regarding hazards involved and working procedure.', answer: null },
-      { id: 2, question: 'Are Other Contractors working nearby notified?', answer: null },
-      { id: 3, question: 'Is there any other work permit obtained?', answer: null },
-      { id: 4, question: 'Are escape routes to be provided and kept clear?', answer: null },
-      { id: 5, question: 'Is combustible material to be removed / covered from and nearby site (up to 5mtr min.)', answer: null },
-      { id: 6, question: 'Is the area immediately below the work spot been cleared / removed of oil, grease & waste cotton etc...?', answer: null },
-      { id: 7, question: 'Has gas connection been tested in case there is gas valve / gas line nearby?', answer: null },
-      { id: 8, question: 'Is fire extinguisher been kept handy at site?', answer: null },
-      { id: 9, question: 'Has tin sheet / fire retardant cloth/ sheet been placed to contain hot spatters of welding / gas cutting?', answer: null },
-      { id: 10, question: 'Have all drain inlets been closed?', answer: null },
-    ];
-
-    const displayMeasures = measures.length > 0 ? measures : defaultMeasures;
-
-    drawSectionHeader('SAFETY MEASURES CHECKLIST', sectionColors.measures);
-
-    displayMeasures.forEach((measure, index) => {
-      checkPageBreak(22);
-
-      doc.fontSize(8).font('Helvetica').fillColor('#1e293b')
-         .text(`${index + 1}. ${measure.question}`, 50, yPos, { width: 370 });
-
-      // Answer badges
-      const answers = ['YES', 'NO', 'N/A'];
-      let badgeX = 440;
-      
-      answers.forEach((ans) => {
-        const isSelected = measure.answer === ans;
-        const bgColor = isSelected ? 
-          (ans === 'YES' ? '#10b981' : ans === 'NO' ? '#ef4444' : '#6b7280') : 
-          '#e2e8f0';
-        const textColor = isSelected ? '#ffffff' : '#64748b';
-        
-        doc.roundedRect(badgeX, yPos - 2, 30, 14, 2).fill(bgColor);
-        doc.fontSize(7).font('Helvetica-Bold').fillColor(textColor)
-           .text(ans, badgeX, yPos + 1, { width: 30, align: 'center' });
-        badgeX += 34;
-      });
-
-      yPos += 20;
-    });
-
     // === GENERAL INSTRUCTIONS SECTION ===
     checkPageBreak(180);
     yPos += 5;
@@ -452,11 +410,11 @@ const generatePermitPDF = async (req, res) => {
     
     yPos += 10;
 
-    // === DECLARATION & UNDERTAKING (INDEMNITY BY APPLICANT) ===
+    // === DECLARATION AND UNDERTAKING BY THE APPLICANT ===
     checkPageBreak(250);
     yPos += 5;
     
-    drawSectionHeader('INDEMNITY BY APPLICANT', sectionColors.declaration);
+    drawSectionHeader('DECLARATION AND UNDERTAKING BY THE APPLICANT', sectionColors.declaration);
     
     // Declaration header
     doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e293b')

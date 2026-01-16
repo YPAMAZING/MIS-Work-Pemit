@@ -204,11 +204,11 @@ const Layout = ({ systemType = 'workpermit' }) => {
                   {user?.firstName?.[0]}{user?.lastName?.[0]}
                 </span>
               </div>
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 overflow-hidden">
                 <p className="text-sm font-medium text-white truncate">
                   {user?.firstName} {user?.lastName}
                 </p>
-                <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full ${
+                <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full max-w-full truncate ${
                   user?.role === 'ADMIN' ? 'bg-purple-500/20 text-purple-300' :
                   user?.role === 'SAFETY_OFFICER' ? 'bg-emerald-500/20 text-emerald-300' :
                   'bg-blue-500/20 text-blue-300'
@@ -290,12 +290,12 @@ const Layout = ({ systemType = 'workpermit' }) => {
                               </span>
                             )}
                           </div>
-                          <div className="flex-1 min-w-0">
+                          <div className="flex-1 min-w-0 overflow-hidden">
                             <p className="text-sm font-semibold text-gray-900 truncate">
                               {user?.firstName} {user?.lastName}
                             </p>
                             <p className="text-xs text-gray-500 truncate">{user?.email}</p>
-                            <span className={`inline-flex items-center mt-1 px-2 py-0.5 text-xs font-medium rounded-full ${roleBadge.bg} ${roleBadge.text}`}>
+                            <span className={`inline-flex items-center mt-1 px-2 py-0.5 text-xs font-medium rounded-full max-w-full truncate ${roleBadge.bg} ${roleBadge.text}`}>
                               {roleBadge.label}
                             </span>
                           </div>

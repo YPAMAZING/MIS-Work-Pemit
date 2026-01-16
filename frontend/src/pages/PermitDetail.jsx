@@ -521,52 +521,6 @@ const PermitDetail = () => {
         )}
       </Section>
 
-      {/* Safety Measures Checklist */}
-      <div className="mt-6">
-        <Section icon={ClipboardCheck} title="SAFETY MEASURES CHECKLIST">
-          <div className="space-y-3">
-            {measures.map((measure, idx) => (
-              <div 
-                key={measure.id} 
-                className={`flex items-center justify-between p-4 rounded-xl border transition-all ${
-                  measure.answer === 'YES' ? 'bg-green-50 border-green-200' :
-                  measure.answer === 'NO' ? 'bg-red-50 border-red-200' :
-                  measure.answer === 'N/A' ? 'bg-gray-50 border-gray-200' :
-                  'bg-white border-gray-200 hover:bg-gray-50'
-                }`}
-              >
-                <div className="flex items-start gap-3 flex-1">
-                  <span className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-xs font-bold">
-                    {idx + 1}
-                  </span>
-                  <p className="text-sm text-gray-700">{measure.question}</p>
-                </div>
-                <div className="flex items-center gap-2 ml-4">
-                  {['YES', 'NO', 'N/A'].map((option) => (
-                    <button
-                      key={option}
-                      onClick={() => handleMeasureChange(measure.id, option)}
-                      disabled={permit.status === 'CLOSED' || permit.status === 'REVOKED'}
-                      className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                        measure.answer === option
-                          ? option === 'YES'
-                            ? 'bg-green-500 text-white shadow-md'
-                            : option === 'NO'
-                            ? 'bg-red-500 text-white shadow-md'
-                            : 'bg-gray-500 text-white shadow-md'
-                          : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                      } ${(permit.status === 'CLOSED' || permit.status === 'REVOKED') ? 'cursor-not-allowed opacity-60' : ''}`}
-                    >
-                      {option}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </Section>
-      </div>
-
       {/* Hazards, Precautions, Equipment */}
       <div className="grid md:grid-cols-3 gap-6 mt-6">
         {/* Hazards */}

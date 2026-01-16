@@ -136,7 +136,7 @@ function App() {
       {/* SSO Callback route */}
       <Route path="/auth/sso/callback" element={<SSOCallback />} />
 
-      {/* System Selector (for Admin, Authorized Person, Site Engineer) */}
+      {/* System Selector (for Admin, Fireman, Site Engineer) */}
       <Route
         path="/select-system"
         element={
@@ -165,7 +165,7 @@ function App() {
         <Route path="permits/:id" element={<PermitDetail />} />
         <Route path="permits/:id/edit" element={<CreatePermit />} />
         
-        {/* Authorized Person & Admin only */}
+        {/* Fireman & Admin only */}
         <Route
           path="approvals"
           element={

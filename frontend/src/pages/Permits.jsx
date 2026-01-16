@@ -303,7 +303,7 @@ const Permits = () => {
                           >
                             <Eye className="w-4 h-4" />
                           </Link>
-                          {/* Admin and Authorized Person can delete any permit, Requestor can delete their own pending permits */}
+                          {/* Admin and Fireman can delete any permit, Requestor can delete their own pending permits */}
                           {(isAdmin || isSafetyOfficer || (permit.status === 'PENDING' && permit.createdBy === user?.id)) && (
                             <button
                               onClick={() => setDeleteModal({ open: true, permit })}

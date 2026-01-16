@@ -104,7 +104,7 @@ const Layout = ({ systemType = 'workpermit' }) => {
   const getRoleBadge = (role) => {
     const badges = {
       ADMIN: { bg: 'bg-purple-100', text: 'text-purple-700', label: 'Admin' },
-      SAFETY_OFFICER: { bg: 'bg-green-100', text: 'text-green-700', label: 'Authorized Person' },
+      SAFETY_OFFICER: { bg: 'bg-green-100', text: 'text-green-700', label: 'Fireman' },
       REQUESTOR: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Requestor' },
       SITE_ENGINEER: { bg: 'bg-orange-100', text: 'text-orange-700', label: 'Site Engineer' },
     }

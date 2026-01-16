@@ -98,7 +98,7 @@ const Dashboard = () => {
     },
   ]
 
-  // Add pending approvals for Authorized Person and Admin
+  // Add pending approvals for Fireman and Admin
   if (isSafetyOfficer || isAdmin) {
     statCards.push({
       title: 'Pending Approvals',

@@ -557,27 +557,31 @@ const generatePermitPDF = async (req, res) => {
     if (approvedApproval) {
       // Approval box - wider to accommodate remarks
       const approvalBoxWidth = 515;
-      doc.rect(40, yPos, approvalBoxWidth, 100).stroke('#e2e8f0');
+      doc.rect(40, yPos, approvalBoxWidth, 115).stroke('#e2e8f0');
+      
+      // "Authorized Person" label (where role was shown)
+      doc.fontSize(9).font('Helvetica').fillColor('#64748b')
+         .text('Authorized Person', 50, yPos + 8);
       
       // Approver name (NO role shown)
       doc.fontSize(11).font('Helvetica-Bold').fillColor('#1e293b')
-         .text(`Approved by: ${approvedApproval.approverName || 'Safety Officer'}`, 50, yPos + 10);
+         .text(approvedApproval.approverName || 'Safety Officer', 50, yPos + 22);
       
       // Approval date
       if (approvedApproval.approvedAt) {
         doc.fontSize(9).font('Helvetica').fillColor('#64748b')
-           .text(`Date: ${new Date(approvedApproval.approvedAt).toLocaleString()}`, 50, yPos + 28);
+           .text(`Date: ${new Date(approvedApproval.approvedAt).toLocaleString()}`, 50, yPos + 40);
       }
       
       // Remarks/Comment (if any)
       if (approvedApproval.comment) {
         doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e293b')
-           .text('Remarks:', 50, yPos + 48);
+           .text('Remarks:', 50, yPos + 58);
         doc.fontSize(9).font('Helvetica').fillColor('#334155')
-           .text(approvedApproval.comment, 50, yPos + 62, { width: 490 });
+           .text(approvedApproval.comment, 50, yPos + 72, { width: 490 });
       }
       
-      yPos += 110;
+      yPos += 125;
       
       // Enhanced approval statement
       checkPageBreak(50);

@@ -172,14 +172,14 @@ const PermitDetail = () => {
 
   const handleSubmitRemarks = async () => {
     if (!safetyRemarks.trim()) {
-      toast.error('Please enter fireman remarks')
+      toast.error('Please enter authorized person remarks')
       return
     }
     
     setRemarksLoading(true)
     try {
       await approvalsAPI.addRemarks(id, safetyRemarks.trim())
-      toast.success('Fireman remarks added successfully')
+      toast.success('Authorized person remarks added successfully')
       setSafetyRemarks('')
       fetchPermit() // Refresh permit data
     } catch (error) {
@@ -610,7 +610,7 @@ const PermitDetail = () => {
                 }`}
               >
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-                  {approval.approverRole?.replace('_', ' ')}
+                  Authorized Person
                 </p>
                 <p className="font-semibold text-gray-900">
                   {approval.approverName || 'Pending Approval'}
@@ -640,9 +640,9 @@ const PermitDetail = () => {
         </Section>
       </div>
 
-      {/* Fireman Remarks */}
+      {/* Authorized Person Remarks */}
       <div className="mt-6">
-        <Section icon={MessageSquare} title="FIREMAN REMARKS">
+        <Section icon={MessageSquare} title="AUTHORIZED PERSON REMARKS">
           {/* Existing Remarks */}
           {permit.safetyRemarks ? (
             <div className="bg-purple-50 border border-purple-200 rounded-xl p-5 mb-4">
@@ -662,7 +662,7 @@ const PermitDetail = () => {
           ) : (
             <div className="text-center py-6 text-gray-500 bg-gray-50 rounded-xl mb-4">
               <MessageSquare className="w-10 h-10 mx-auto mb-2 text-gray-300" />
-              <p>No fireman remarks added yet</p>
+              <p>No authorized person remarks added yet</p>
             </div>
           )}
           
@@ -679,12 +679,12 @@ const PermitDetail = () => {
                   {permit.status === 'CLOSED' ? (
                     <p className="text-blue-700">
                       <strong>Note:</strong> This permit has been auto-closed. 
-                      You can still add fireman remarks for record keeping.
+                      You can still add authorized person remarks for record keeping.
                     </p>
                   ) : (
                     <p className="text-amber-700">
                       <strong>Note:</strong> The permit will auto-close at the end time. 
-                      Please add your fireman remarks and observations.
+                      Please add your authorized person remarks and observations.
                     </p>
                   )}
                 </div>
@@ -693,7 +693,7 @@ const PermitDetail = () => {
               <textarea
                 value={safetyRemarks}
                 onChange={(e) => setSafetyRemarks(e.target.value)}
-                placeholder="Enter fireman remarks, observations, and any concerns regarding this permit..."
+                placeholder="Enter authorized person remarks, observations, and any concerns regarding this permit..."
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-200 focus:border-purple-500 transition-all resize-none"
                 rows={4}
               />
@@ -715,7 +715,7 @@ const PermitDetail = () => {
                 ) : (
                   <>
                     <Send className="w-5 h-5" />
-                    Submit Fireman Remarks
+                    Submit Authorized Person Remarks
                   </>
                 )}
               </button>
@@ -771,9 +771,9 @@ const PermitDetail = () => {
               <MessageSquare className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <p className="font-semibold text-blue-800">Permit Closed - Fireman Remarks Pending</p>
+              <p className="font-semibold text-blue-800">Permit Closed - Authorized Person Remarks Pending</p>
               <p className="text-sm text-blue-600 mt-1">
-                This permit has been auto-closed. Please add your fireman remarks above for record keeping.
+                This permit has been auto-closed. Please add your authorized person remarks above for record keeping.
               </p>
             </div>
           </div>

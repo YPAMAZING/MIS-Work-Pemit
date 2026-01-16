@@ -712,7 +712,7 @@ const CreatePermit = () => {
               <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
               <div className="text-sm text-blue-700">
                 <strong>Auto-Close Feature:</strong> The permit will automatically close at the specified end date and time. 
-                Fireman can add remarks before or after closure for record keeping.
+                Authorized person can add remarks before or after closure for record keeping.
               </div>
             </div>
           </div>

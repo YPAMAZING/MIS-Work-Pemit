@@ -316,7 +316,7 @@ const ApprovalDetail = () => {
                   </div>
                   <div className="flex-1">
                     <p className="font-semibold text-gray-900">
-                      {approval.decision} by {approval.approverName || 'Fireman'}
+                      {approval.decision} by {approval.approverName || 'Authorized Person'}
                     </p>
                     {approval.approvedAt && (
                       <p className="text-sm text-gray-500">

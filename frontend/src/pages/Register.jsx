@@ -57,7 +57,7 @@ const Register = () => {
     },
     {
       id: 'SAFETY_OFFICER',
-      name: 'Fireman',
+      name: 'Authorized Person',
       description: 'Review and approve permits',
       icon: HardHat,
       color: 'blue',

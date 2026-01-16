@@ -588,48 +588,65 @@ const generatePermitPDF = async (req, res) => {
     }
 
     // === APPROVAL SIGNATURES ===
-    checkPageBreak(130);
+    checkPageBreak(180);
     yPos += 5;
     
     drawSectionHeader('APPROVAL GIVEN BY', sectionColors.approvals);
 
-    const approvalBoxWidth = 165;
-    let approvalX = 40;
+    // Find the approved approval (if any)
+    const approvedApproval = permit.approvals.find(a => a.decision === 'APPROVED');
     
-    permit.approvals.forEach((approval, index) => {
-      if (approvalX + approvalBoxWidth > 555) {
-        approvalX = 40;
-        yPos += 85;
-        checkPageBreak(85);
-      }
+    if (approvedApproval) {
+      // Approval box - wider to accommodate remarks
+      const approvalBoxWidth = 515;
+      doc.rect(40, yPos, approvalBoxWidth, 100).stroke('#e2e8f0');
       
-      doc.rect(approvalX, yPos, approvalBoxWidth, 80).stroke('#e2e8f0');
-      
-      // Role header
-      doc.fontSize(8).font('Helvetica-Bold').fillColor('#64748b')
-         .text(approval.approverRole.replace('_', ' '), approvalX + 8, yPos + 8);
-      
-      // Approver name
-      doc.fontSize(9).font('Helvetica').fillColor('#1e293b')
-         .text(approval.approverName || 'Pending', approvalX + 8, yPos + 24);
-      
-      // Decision badge
-      const decisionColor = approval.decision === 'APPROVED' ? '#10b981' : 
-                           approval.decision === 'REJECTED' ? '#ef4444' : '#f59e0b';
-      doc.roundedRect(approvalX + 8, yPos + 42, 60, 16, 2).fill(decisionColor);
-      doc.fontSize(8).font('Helvetica-Bold').fillColor('#ffffff')
-         .text(approval.decision, approvalX + 8, yPos + 46, { width: 60, align: 'center' });
+      // Approver name (NO role shown)
+      doc.fontSize(11).font('Helvetica-Bold').fillColor('#1e293b')
+         .text(`Approved by: ${approvedApproval.approverName || 'Safety Officer'}`, 50, yPos + 10);
       
       // Approval date
-      if (approval.approvedAt) {
-        doc.fontSize(7).fillColor('#64748b')
-           .text(new Date(approval.approvedAt).toLocaleString(), approvalX + 8, yPos + 64, { width: 150 });
+      if (approvedApproval.approvedAt) {
+        doc.fontSize(9).font('Helvetica').fillColor('#64748b')
+           .text(`Date: ${new Date(approvedApproval.approvedAt).toLocaleString()}`, 50, yPos + 28);
       }
       
-      approvalX += approvalBoxWidth + 10;
-    });
+      // Remarks/Comment (if any)
+      if (approvedApproval.comment) {
+        doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e293b')
+           .text('Remarks:', 50, yPos + 48);
+        doc.fontSize(9).font('Helvetica').fillColor('#334155')
+           .text(approvedApproval.comment, 50, yPos + 62, { width: 490 });
+      }
+      
+      yPos += 110;
+      
+      // Enhanced approval statement
+      checkPageBreak(50);
+      doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e3a8a')
+         .text('Considering the above undertaking given by the applicant, approval is hereby granted for the above-mentioned work/job/activity. The applicant is required to strictly adhere to all safety protocols and guidelines specified therein.', 
+               50, yPos, { width: 490, align: 'justify' });
+      
+      yPos += 45;
+    } else {
+      // Show pending or rejected status
+      permit.approvals.forEach((approval) => {
+        doc.rect(40, yPos, 200, 60).stroke('#e2e8f0');
+        
+        doc.fontSize(10).font('Helvetica-Bold').fillColor('#1e293b')
+           .text(approval.approverName || 'Pending Approval', 50, yPos + 10);
+        
+        // Decision badge
+        const decisionColor = approval.decision === 'REJECTED' ? '#ef4444' : '#f59e0b';
+        doc.roundedRect(50, yPos + 32, 70, 18, 2).fill(decisionColor);
+        doc.fontSize(9).font('Helvetica-Bold').fillColor('#ffffff')
+           .text(approval.decision, 50, yPos + 36, { width: 70, align: 'center' });
+        
+        yPos += 70;
+      });
+    }
 
-    yPos += 95;
+    yPos += 10;
 
     // === AUTO-CLOSE INFO ===
     if (permit.autoClosedAt) {

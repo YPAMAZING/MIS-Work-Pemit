@@ -15,6 +15,7 @@ import {
   Phone,
   HardHat,
   ClipboardCheck,
+  Wrench,
   Clock,
   Shield
 } from 'lucide-react'
@@ -26,7 +27,7 @@ const Register = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    department: '',
+    department: '', // Used as Company Name for Requestor
     companyName: '',
     phone: '',
     requestedRole: 'REQUESTOR',
@@ -37,7 +38,6 @@ const Register = () => {
   const [registrationSuccess, setRegistrationSuccess] = useState(false)
   const [pendingApproval, setPendingApproval] = useState(false)
   const [consentChecked, setConsentChecked] = useState(false)
-  const [focusedField, setFocusedField] = useState(null)
   const { register } = useAuth()
   const navigate = useNavigate()
 
@@ -53,7 +53,7 @@ const Register = () => {
       icon: ClipboardCheck,
       color: 'emerald',
       requiresApproval: true,
-      showCompanyName: true,
+      showCompanyName: true, // Show Company Name field instead of Department
     },
     {
       id: 'SAFETY_OFFICER',
@@ -83,6 +83,7 @@ const Register = () => {
       return
     }
 
+    // Require company name for Requestor
     if (selectedRole?.showCompanyName && !formData.department.trim()) {
       toast.error('Company name is required for Requestor')
       return
@@ -124,74 +125,6 @@ const Register = () => {
   }
 
   const selectedRole = roles.find(r => r.id === formData.requestedRole)
-
-  // Floating Label Input Component
-  const FloatingInput = ({ 
-    label, 
-    name, 
-    type = 'text', 
-    icon: Icon, 
-    value, 
-    showPasswordToggle = false,
-    required = false 
-  }) => {
-    const isFocused = focusedField === name
-    const hasValue = value && value.length > 0
-    const isFloating = isFocused || hasValue
-
-    return (
-      <div className="relative">
-        <div className={`relative border-2 rounded-xl transition-all duration-300 ${
-          isFocused 
-            ? 'border-[#1e3a6e] shadow-lg shadow-[#1e3a6e]/10' 
-            : 'border-gray-200 hover:border-gray-300'
-        }`}>
-          {/* Icon */}
-          <div className={`absolute left-3 top-1/2 -translate-y-1/2 transition-colors duration-300 ${
-            isFocused ? 'text-[#1e3a6e]' : 'text-gray-400'
-          }`}>
-            <Icon className="w-4 h-4" />
-          </div>
-          
-          {/* Input */}
-          <input
-            type={showPasswordToggle ? (showPassword ? 'text' : 'password') : type}
-            name={name}
-            id={name}
-            value={value}
-            onChange={handleChange}
-            onFocus={() => setFocusedField(name)}
-            onBlur={() => setFocusedField(null)}
-            className="w-full pl-10 pr-3 pt-5 pb-1.5 bg-transparent text-gray-900 focus:outline-none text-sm rounded-xl"
-            required={required}
-          />
-          
-          {/* Floating Label */}
-          <label
-            htmlFor={name}
-            className={`absolute left-10 transition-all duration-300 pointer-events-none ${
-              isFloating
-                ? 'top-1 text-[10px] font-medium text-[#1e3a6e]'
-                : 'top-1/2 -translate-y-1/2 text-sm text-gray-400'
-            }`}
-          >
-            {label}
-          </label>
-          
-          {/* Password Toggle */}
-          {showPasswordToggle && (
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            </button>
-          )}
-        </div>
-      </div>
-    )
-  }
 
   // Success screen for pending approval
   if (registrationSuccess && pendingApproval) {
@@ -368,68 +301,130 @@ const Register = () => {
 
             <form onSubmit={handleSubmit} className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
-                <FloatingInput
-                  label="First Name"
-                  name="firstName"
-                  icon={User}
-                  value={formData.firstName}
-                  required
-                />
-                <FloatingInput
-                  label="Last Name"
-                  name="lastName"
-                  icon={User}
-                  value={formData.lastName}
-                  required
-                />
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">First Name</label>
+                  <div className="relative group">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-[#1e3a6e] transition-colors" />
+                    <input
+                      type="text"
+                      name="firstName"
+                      value={formData.firstName}
+                      onChange={handleChange}
+                      className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:bg-white focus:border-[#1e3a6e] focus:ring-2 focus:ring-[#1e3a6e]/20 transition-all duration-200 outline-none text-sm"
+                      placeholder="John"
+                      required
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Last Name</label>
+                  <div className="relative group">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-[#1e3a6e] transition-colors" />
+                    <input
+                      type="text"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleChange}
+                      className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:bg-white focus:border-[#1e3a6e] focus:ring-2 focus:ring-[#1e3a6e]/20 transition-all duration-200 outline-none text-sm"
+                      placeholder="Doe"
+                      required
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <FloatingInput
-                  label="Email Address"
-                  name="email"
-                  type="email"
-                  icon={Mail}
-                  value={formData.email}
-                  required
-                />
-                <FloatingInput
-                  label="Phone Number"
-                  name="phone"
-                  type="tel"
-                  icon={Phone}
-                  value={formData.phone}
-                />
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Email Address</label>
+                  <div className="relative group">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-[#1e3a6e] transition-colors" />
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:bg-white focus:border-[#1e3a6e] focus:ring-2 focus:ring-[#1e3a6e]/20 transition-all duration-200 outline-none text-sm"
+                      placeholder="john@company.com"
+                      required
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Phone Number</label>
+                  <div className="relative group">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-[#1e3a6e] transition-colors" />
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:bg-white focus:border-[#1e3a6e] focus:ring-2 focus:ring-[#1e3a6e]/20 transition-all duration-200 outline-none text-sm"
+                      placeholder="+91 98765 43210"
+                    />
+                  </div>
+                </div>
               </div>
 
-              <FloatingInput
-                label={selectedRole?.showCompanyName ? 'Company Name *' : 'Department'}
-                name="department"
-                icon={Building}
-                value={formData.department}
-                required={selectedRole?.showCompanyName}
-              />
-              {selectedRole?.showCompanyName && (
-                <p className="text-xs text-gray-500 -mt-1">This will be used as your company/contractor name for permits</p>
-              )}
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  {selectedRole?.showCompanyName ? 'Company Name' : 'Department'}
+                  {selectedRole?.showCompanyName && <span className="text-red-500 ml-1">*</span>}
+                </label>
+                <div className="relative group">
+                  <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-[#1e3a6e] transition-colors" />
+                  <input
+                    type="text"
+                    name="department"
+                    value={formData.department}
+                    onChange={handleChange}
+                    className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:bg-white focus:border-[#1e3a6e] focus:ring-2 focus:ring-[#1e3a6e]/20 transition-all duration-200 outline-none text-sm"
+                    placeholder={selectedRole?.showCompanyName ? "Enter your company name" : "Operations / MEP / Engineering"}
+                    required={selectedRole?.showCompanyName}
+                  />
+                </div>
+                {selectedRole?.showCompanyName && (
+                  <p className="text-xs text-gray-500 mt-1">This will be used as your company/contractor name for permits</p>
+                )}
+              </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <FloatingInput
-                  label="Password"
-                  name="password"
-                  icon={Lock}
-                  value={formData.password}
-                  showPasswordToggle
-                  required
-                />
-                <FloatingInput
-                  label="Confirm Password"
-                  name="confirmPassword"
-                  icon={Lock}
-                  value={formData.confirmPassword}
-                  showPasswordToggle
-                  required
-                />
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Password</label>
+                  <div className="relative group">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-[#1e3a6e] transition-colors" />
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      name="password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      className="w-full pl-9 pr-9 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:bg-white focus:border-[#1e3a6e] focus:ring-2 focus:ring-[#1e3a6e]/20 transition-all duration-200 outline-none text-sm"
+                      placeholder="Min. 6 chars"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Confirm Password</label>
+                  <div className="relative group">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-[#1e3a6e] transition-colors" />
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      name="confirmPassword"
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                      className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:bg-white focus:border-[#1e3a6e] focus:ring-2 focus:ring-[#1e3a6e]/20 transition-all duration-200 outline-none text-sm"
+                      placeholder="Confirm"
+                      required
+                    />
+                  </div>
+                </div>
               </div>
 
               {/* Consent Checkbox */}
@@ -442,15 +437,9 @@ const Register = () => {
                       onChange={(e) => setConsentChecked(e.target.checked)}
                       className="peer sr-only"
                     />
-                    <div className={`w-5 h-5 border-2 rounded-md transition-all duration-300 flex items-center justify-center ${
-                      consentChecked 
-                        ? 'border-[#1e3a6e] bg-[#1e3a6e]' 
-                        : 'border-gray-300 group-hover:border-[#1e3a6e]/50'
-                    }`}>
+                    <div className="w-5 h-5 border-2 border-gray-300 rounded-md peer-checked:border-[#1e3a6e] peer-checked:bg-[#1e3a6e] transition-all duration-200 flex items-center justify-center group-hover:border-[#1e3a6e]/50">
                       <svg
-                        className={`w-3 h-3 text-white transition-all duration-300 ${
-                          consentChecked ? 'opacity-100 scale-100' : 'opacity-0 scale-50'
-                        }`}
+                        className={`w-3 h-3 text-white transition-opacity duration-200 ${consentChecked ? 'opacity-100' : 'opacity-0'}`}
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -491,7 +480,7 @@ const Register = () => {
             <div className="mt-4 text-center">
               <p className="text-gray-500 text-sm">
                 Already have an account?{' '}
-                <Link to="/login" className="text-[#1e3a6e] font-semibold hover:text-[#162d57] transition-colors underline">
+                <Link to="/login" className="text-[#1e3a6e] font-semibold hover:text-[#162d57] transition-colors">
                   Sign in
                 </Link>
               </p>

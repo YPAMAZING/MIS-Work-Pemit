@@ -19,7 +19,6 @@ const Login = () => {
   const [rememberMe, setRememberMe] = useState(false)
   const [loading, setLoading] = useState(false)
   const [mounted, setMounted] = useState(false)
-  const [focusedField, setFocusedField] = useState(null)
   const { login } = useAuth()
   const navigate = useNavigate()
 
@@ -66,76 +65,6 @@ const Login = () => {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
-  }
-
-  // Floating Label Input Component
-  const FloatingInput = ({ 
-    label, 
-    name, 
-    type = 'text', 
-    icon: Icon, 
-    value, 
-    onChange, 
-    showPasswordToggle = false,
-    required = true 
-  }) => {
-    const isFocused = focusedField === name
-    const hasValue = value && value.length > 0
-    const isFloating = isFocused || hasValue
-
-    return (
-      <div className="relative">
-        <div className={`relative border-2 rounded-xl transition-all duration-300 ${
-          isFocused 
-            ? 'border-[#1e3a6e] shadow-lg shadow-[#1e3a6e]/10' 
-            : 'border-gray-200 hover:border-gray-300'
-        }`}>
-          {/* Icon */}
-          <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300 ${
-            isFocused ? 'text-[#1e3a6e]' : 'text-gray-400'
-          }`}>
-            <Icon className="w-5 h-5" />
-          </div>
-          
-          {/* Input */}
-          <input
-            type={showPasswordToggle ? (showPassword ? 'text' : 'password') : type}
-            name={name}
-            id={name}
-            value={value}
-            onChange={onChange}
-            onFocus={() => setFocusedField(name)}
-            onBlur={() => setFocusedField(null)}
-            className="w-full pl-12 pr-4 pt-6 pb-2 bg-transparent text-gray-900 focus:outline-none text-sm rounded-xl"
-            required={required}
-            autoComplete={type === 'email' ? 'email' : type === 'password' ? 'current-password' : 'off'}
-          />
-          
-          {/* Floating Label */}
-          <label
-            htmlFor={name}
-            className={`absolute left-12 transition-all duration-300 pointer-events-none ${
-              isFloating
-                ? 'top-2 text-xs font-medium text-[#1e3a6e]'
-                : 'top-1/2 -translate-y-1/2 text-sm text-gray-400'
-            }`}
-          >
-            {label}
-          </label>
-          
-          {/* Password Toggle */}
-          {showPasswordToggle && (
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-            </button>
-          )}
-        </div>
-      </div>
-    )
   }
 
   return (
@@ -197,36 +126,54 @@ const Login = () => {
 
           {/* Login card */}
           <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 p-6 sm:p-8">
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-1">Welcome back</h2>
+            <div className="mb-6">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">Welcome back</h2>
               <p className="text-gray-500 text-sm">Sign in to access your dashboard</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
-              {/* Email Field with Floating Label */}
-              <FloatingInput
-                label="Email"
-                name="email"
-                type="email"
-                icon={Mail}
-                value={formData.email}
-                onChange={handleChange}
-              />
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
+                <div className="relative group">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-[#1e3a6e] transition-colors" />
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:bg-white focus:border-[#1e3a6e] focus:ring-2 focus:ring-[#1e3a6e]/20 transition-all duration-200 outline-none text-sm"
+                    placeholder="Enter your email"
+                    required
+                  />
+                </div>
+              </div>
 
-              {/* Password Field with Floating Label */}
-              <FloatingInput
-                label="Password"
-                name="password"
-                type="password"
-                icon={Lock}
-                value={formData.password}
-                onChange={handleChange}
-                showPasswordToggle
-              />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
+                <div className="relative group">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-[#1e3a6e] transition-colors" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    className="w-full pl-10 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:bg-white focus:border-[#1e3a6e] focus:ring-2 focus:ring-[#1e3a6e]/20 transition-all duration-200 outline-none text-sm"
+                    placeholder="Enter your password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
 
               {/* Remember Me Checkbox */}
               <div className="flex items-center justify-between">
-                <label className="flex items-center gap-3 cursor-pointer group">
+                <label className="flex items-center gap-2 cursor-pointer group">
                   <div className="relative">
                     <input
                       type="checkbox"
@@ -234,15 +181,9 @@ const Login = () => {
                       onChange={(e) => setRememberMe(e.target.checked)}
                       className="peer sr-only"
                     />
-                    <div className={`w-5 h-5 border-2 rounded-md transition-all duration-300 flex items-center justify-center ${
-                      rememberMe 
-                        ? 'border-[#1e3a6e] bg-[#1e3a6e]' 
-                        : 'border-gray-300 group-hover:border-[#1e3a6e]/50'
-                    }`}>
+                    <div className="w-5 h-5 border-2 border-gray-300 rounded-md peer-checked:border-[#1e3a6e] peer-checked:bg-[#1e3a6e] transition-all duration-200 flex items-center justify-center group-hover:border-[#1e3a6e]/50">
                       <svg
-                        className={`w-3 h-3 text-white transition-all duration-300 ${
-                          rememberMe ? 'opacity-100 scale-100' : 'opacity-0 scale-50'
-                        }`}
+                        className={`w-3 h-3 text-white transition-opacity duration-200 ${rememberMe ? 'opacity-100' : 'opacity-0'}`}
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -261,11 +202,11 @@ const Login = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3.5 bg-gradient-to-r from-[#1e3a6e] to-[#2a4a80] hover:from-[#162d57] hover:to-[#1e3a6e] text-white font-semibold rounded-xl shadow-lg shadow-[#1e3a6e]/25 hover:shadow-xl hover:shadow-[#1e3a6e]/30 transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 group text-sm"
+                className="w-full py-3 bg-gradient-to-r from-[#1e3a6e] to-[#2a4a80] hover:from-[#162d57] hover:to-[#1e3a6e] text-white font-semibold rounded-xl shadow-lg shadow-[#1e3a6e]/25 hover:shadow-xl hover:shadow-[#1e3a6e]/30 transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 group text-sm"
               >
                 {loading ? (
                   <>
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     <span>Signing in...</span>
                   </>
                 ) : (
@@ -277,10 +218,10 @@ const Login = () => {
               </button>
             </form>
 
-            <div className="mt-6 text-center">
+            <div className="mt-4 text-center">
               <p className="text-gray-500 text-sm">
                 Don't have an account?{' '}
-                <Link to="/register" className="text-[#1e3a6e] font-semibold hover:text-[#162d57] transition-colors underline">
+                <Link to="/register" className="text-[#1e3a6e] font-semibold hover:text-[#162d57] transition-colors">
                   Sign up
                 </Link>
               </p>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { usersAPI } from '../services/api'
+import { usersAPI, rolesAPI } from '../services/api'
 import toast from 'react-hot-toast'
 import {
   Search,
@@ -60,6 +60,7 @@ const Users = () => {
   const [rejectReason, setRejectReason] = useState('')
   const [userStats, setUserStats] = useState(null)
   const [searchTimeout, setSearchTimeout] = useState(null)
+  const [roles, setRoles] = useState([])
 
   // Debounced search
   const handleSearchChange = useCallback((value) => {
@@ -73,6 +74,17 @@ const Users = () => {
   useEffect(() => {
     fetchPendingUsers()
     fetchUserStats()
+    fetchRoles()
+  }, [])
+
+  // Fetch all roles from database
+  const fetchRoles = useCallback(async () => {
+    try {
+      const response = await rolesAPI.getAll()
+      setRoles(response.data.roles || response.data || [])
+    } catch (error) {
+      console.error('Error fetching roles:', error)
+    }
   }, [])
 
   useEffect(() => {
@@ -260,8 +272,19 @@ const Users = () => {
       REQUESTOR: { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Requestor', icon: ClipboardCheck },
       SITE_ENGINEER: { bg: 'bg-orange-100', text: 'text-orange-700', label: 'Site Engineer', icon: Wrench },
     }
-    return badges[role] || badges.REQUESTOR
-  }, [])
+    // Check if role exists in predefined badges, otherwise create a custom badge
+    if (badges[role]) {
+      return badges[role]
+    }
+    // For custom roles, find from fetched roles or create default
+    const customRole = roles.find(r => r.name === role)
+    return {
+      bg: 'bg-gray-100',
+      text: 'text-gray-700',
+      label: customRole?.displayName || role,
+      icon: Shield
+    }
+  }, [roles])
 
   // Loading skeleton component
   const TableSkeleton = () => (
@@ -467,10 +490,20 @@ const Users = () => {
               className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:border-[#1e3a6e] outline-none"
             >
               <option value="">All Roles</option>
-              <option value="ADMIN">Admin</option>
-              <option value="SAFETY_OFFICER">Fireman</option>
-              <option value="SITE_ENGINEER">Site Engineer</option>
-              <option value="REQUESTOR">Requestor</option>
+              {roles.length > 0 ? (
+                roles.map((role) => (
+                  <option key={role.id} value={role.name}>
+                    {role.displayName || role.name}
+                  </option>
+                ))
+              ) : (
+                <>
+                  <option value="ADMIN">Admin</option>
+                  <option value="SAFETY_OFFICER">Fireman</option>
+                  <option value="SITE_ENGINEER">Site Engineer</option>
+                  <option value="REQUESTOR">Requestor</option>
+                </>
+              )}
             </select>
           </div>
 
@@ -804,10 +837,20 @@ const Users = () => {
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-[#1e3a6e] outline-none"
                     required
                   >
-                    <option value="REQUESTOR">Requestor</option>
-                    <option value="SAFETY_OFFICER">Fireman</option>
-                    <option value="SITE_ENGINEER">Site Engineer</option>
-                    <option value="ADMIN">Admin</option>
+                    {roles.length > 0 ? (
+                      roles.map((role) => (
+                        <option key={role.id} value={role.name}>
+                          {role.displayName || role.name}
+                        </option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="REQUESTOR">Requestor</option>
+                        <option value="SAFETY_OFFICER">Fireman</option>
+                        <option value="SITE_ENGINEER">Site Engineer</option>
+                        <option value="ADMIN">Admin</option>
+                      </>
+                    )}
                   </select>
                 </div>
                 <div>

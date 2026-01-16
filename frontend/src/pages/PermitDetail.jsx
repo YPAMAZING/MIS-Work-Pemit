@@ -15,28 +15,17 @@ import {
   Wrench,
   CheckCircle2,
   XCircle,
-  MinusCircle,
   Calendar,
   Building,
   Phone,
-  Printer,
-  Share2,
-  Edit,
   Play,
-  Pause,
   RotateCcw,
   X,
-  Plus,
-  FileText,
   MessageSquare,
-  Send,
   User,
   Mail,
   CreditCard,
-  ClipboardCheck,
   Timer,
-  Info,
-  Clipboard,
   Hash,
 } from 'lucide-react'
 
@@ -105,8 +94,6 @@ const PermitDetail = () => {
   const [workflowAction, setWorkflowAction] = useState(null)
   const [workflowData, setWorkflowData] = useState({})
   const [actionLoading, setActionLoading] = useState(false)
-  const [safetyRemarks, setSafetyRemarks] = useState('')
-  const [remarksLoading, setRemarksLoading] = useState(false)
 
   useEffect(() => {
     fetchPermit()
@@ -168,25 +155,6 @@ const PermitDetail = () => {
     setWorkflowAction(action)
     setWorkflowData({})
     setShowWorkflowModal(true)
-  }
-
-  const handleSubmitRemarks = async () => {
-    if (!safetyRemarks.trim()) {
-      toast.error('Please enter authorized person remarks')
-      return
-    }
-    
-    setRemarksLoading(true)
-    try {
-      await approvalsAPI.addRemarks(id, safetyRemarks.trim())
-      toast.success('Authorized person remarks added successfully')
-      setSafetyRemarks('')
-      fetchPermit() // Refresh permit data
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Error adding remarks')
-    } finally {
-      setRemarksLoading(false)
-    }
   }
 
   const executeWorkflowAction = async () => {
@@ -640,85 +608,44 @@ const PermitDetail = () => {
         </Section>
       </div>
 
-      {/* Authorized Person Remarks */}
+      {/* Authorized Person's Remarks - Shows approval/rejection comments */}
       <div className="mt-6">
-        <Section icon={MessageSquare} title="AUTHORIZED PERSON REMARKS">
-          {/* Existing Remarks */}
-          {permit.safetyRemarks ? (
-            <div className="bg-purple-50 border border-purple-200 rounded-xl p-5 mb-4">
-              <p className="text-gray-800 whitespace-pre-wrap leading-relaxed">{permit.safetyRemarks}</p>
-              <div className="mt-4 pt-4 border-t border-purple-200 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm text-purple-600">
-                  <User className="w-4 h-4" />
-                  <span>{permit.remarksAddedBy}</span>
+        <Section icon={MessageSquare} title="AUTHORIZED PERSON'S REMARKS">
+          {/* Show remarks from approvals (comments added during approval/rejection) */}
+          {permit.approvals?.some(a => a.comment) ? (
+            <div className="space-y-4">
+              {permit.approvals?.filter(a => a.comment).map((approval, idx) => (
+                <div key={idx} className={`rounded-xl p-5 border ${
+                  approval.decision === 'APPROVED' ? 'bg-emerald-50 border-emerald-200' :
+                  approval.decision === 'REJECTED' ? 'bg-red-50 border-red-200' :
+                  'bg-purple-50 border-purple-200'
+                }`}>
+                  <p className="text-gray-800 whitespace-pre-wrap leading-relaxed">{approval.comment}</p>
+                  <div className="mt-4 pt-4 border-t border-gray-200 flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <User className="w-4 h-4" />
+                      <span className="font-medium">{approval.approverName || 'Authorized Person'}</span>
+                      <span className={`px-2 py-0.5 rounded text-xs font-bold ${
+                        approval.decision === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' :
+                        approval.decision === 'REJECTED' ? 'bg-red-100 text-red-700' :
+                        'bg-amber-100 text-amber-700'
+                      }`}>
+                        {approval.decision}
+                      </span>
+                    </div>
+                    {approval.signedAt && (
+                      <span className="text-sm text-gray-500">
+                        {new Date(approval.signedAt).toLocaleString()}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                {permit.remarksAddedAt && (
-                  <span className="text-sm text-purple-500">
-                    {new Date(permit.remarksAddedAt).toLocaleString()}
-                  </span>
-                )}
-              </div>
+              ))}
             </div>
           ) : (
-            <div className="text-center py-6 text-gray-500 bg-gray-50 rounded-xl mb-4">
+            <div className="text-center py-6 text-gray-500 bg-gray-50 rounded-xl">
               <MessageSquare className="w-10 h-10 mx-auto mb-2 text-gray-300" />
-              <p>No authorized person remarks added yet</p>
-            </div>
-          )}
-          
-          {/* Add Remarks Form */}
-          {(isAdmin || isSafetyOfficer) && ['APPROVED', 'PENDING_REMARKS', 'EXTENDED', 'CLOSED'].includes(permit.status) && !permit.safetyRemarks && (
-            <div className="space-y-4">
-              <div className={`p-4 rounded-xl flex items-start gap-3 ${
-                permit.status === 'CLOSED' 
-                  ? 'bg-blue-50 border border-blue-200' 
-                  : 'bg-amber-50 border border-amber-200'
-              }`}>
-                <Info className={`w-5 h-5 flex-shrink-0 mt-0.5 ${permit.status === 'CLOSED' ? 'text-blue-500' : 'text-amber-500'}`} />
-                <div className="text-sm">
-                  {permit.status === 'CLOSED' ? (
-                    <p className="text-blue-700">
-                      <strong>Note:</strong> This permit has been auto-closed. 
-                      You can still add authorized person remarks for record keeping.
-                    </p>
-                  ) : (
-                    <p className="text-amber-700">
-                      <strong>Note:</strong> The permit will auto-close at the end time. 
-                      Please add your authorized person remarks and observations.
-                    </p>
-                  )}
-                </div>
-              </div>
-              
-              <textarea
-                value={safetyRemarks}
-                onChange={(e) => setSafetyRemarks(e.target.value)}
-                placeholder="Enter authorized person remarks, observations, and any concerns regarding this permit..."
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-200 focus:border-purple-500 transition-all resize-none"
-                rows={4}
-              />
-              
-              <button
-                onClick={handleSubmitRemarks}
-                disabled={remarksLoading || !safetyRemarks.trim()}
-                className={`w-full py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all ${
-                  remarksLoading || !safetyRemarks.trim()
-                    ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white hover:from-purple-600 hover:to-indigo-600 shadow-lg hover:shadow-xl'
-                }`}
-              >
-                {remarksLoading ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Submitting Remarks...
-                  </>
-                ) : (
-                  <>
-                    <Send className="w-5 h-5" />
-                    Submit Authorized Person Remarks
-                  </>
-                )}
-              </button>
+              <p>No remarks added yet</p>
             </div>
           )}
 
@@ -763,23 +690,6 @@ const PermitDetail = () => {
         </div>
       )}
       
-      {/* Closed Without Remarks Alert */}
-      {permit.status === 'CLOSED' && !permit.safetyRemarks && (isAdmin || isSafetyOfficer) && (
-        <div className="mt-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-5">
-          <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
-              <MessageSquare className="w-5 h-5 text-blue-600" />
-            </div>
-            <div>
-              <p className="font-semibold text-blue-800">Permit Closed - Authorized Person Remarks Pending</p>
-              <p className="text-sm text-blue-600 mt-1">
-                This permit has been auto-closed. Please add your authorized person remarks above for record keeping.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Workflow Action Modal */}
       {showWorkflowModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">

@@ -467,7 +467,7 @@ const PermitDetail = () => {
                 key={idx}
                 className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:shadow-md transition-shadow"
               >
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-3 mb-3">
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center flex-shrink-0 overflow-hidden border border-indigo-200">
                     {worker.idProofImage ? (
                       <img src={worker.idProofImage} alt={worker.name} className="w-full h-full object-cover" />
@@ -490,6 +490,26 @@ const PermitDetail = () => {
                     )}
                   </div>
                 </div>
+                {/* Large ID Proof Image */}
+                {worker.idProofImage && (
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <p className="text-sm font-medium text-gray-700 mb-2">ID Proof Document:</p>
+                    <a 
+                      href={worker.idProofImage} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="block"
+                    >
+                      <img 
+                        src={worker.idProofImage} 
+                        alt={`${worker.name}'s ID Proof`}
+                        className="max-w-full h-auto max-h-80 border border-gray-300 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                        style={{ minHeight: '150px', objectFit: 'contain', backgroundColor: '#f9fafb' }}
+                      />
+                    </a>
+                    <p className="text-xs text-gray-500 mt-1">Click image to open in full size</p>
+                  </div>
+                )}
               </div>
             ))}
           </div>

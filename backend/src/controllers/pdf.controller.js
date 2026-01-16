@@ -503,28 +503,66 @@ const generatePermitPDF = async (req, res) => {
     
     yPos += 35;
 
-    // === DOCUMENTS UPLOADED (ID PROOFS) ===
+    // === DOCUMENTS UPLOADED (ID PROOFS) - WITH EMBEDDED IMAGES ===
     const workersWithDocs = workers.filter(w => w.idProofImage);
     if (workersWithDocs.length > 0) {
-      checkPageBreak(120);
+      checkPageBreak(150);
       
       drawSectionHeader('DOCUMENTS UPLOADED BY REQUESTOR', sectionColors.documents);
       
       doc.fontSize(8).font('Helvetica').fillColor('#64748b')
-         .text('The following ID proof documents have been uploaded for verification:', 50, yPos);
+         .text('ID proof documents uploaded for verification:', 50, yPos);
       yPos += 16;
       
-      workersWithDocs.forEach((worker, index) => {
-        checkPageBreak(20);
-        doc.fontSize(8).font('Helvetica').fillColor('#1e293b');
-        doc.text(`${index + 1}. ${worker.name} - ${idProofLabels[worker.idProofType] || worker.idProofType}: ${worker.idProofNumber}`, 55, yPos);
+      // Display each worker's document with large image
+      for (let i = 0; i < workersWithDocs.length; i++) {
+        const worker = workersWithDocs[i];
         
-        // Add document reference indicator
-        doc.fontSize(7).fillColor('#0891b2')
-           .text('[Document Attached]', 400, yPos);
+        // Check if we need a new page for the image (image height ~200 + text ~40)
+        checkPageBreak(260);
         
+        // Worker info header
+        doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e293b');
+        doc.text(`${i + 1}. ${worker.name}`, 50, yPos);
+        yPos += 14;
+        
+        doc.fontSize(8).font('Helvetica').fillColor('#64748b');
+        doc.text(`${idProofLabels[worker.idProofType] || worker.idProofType}: ${worker.idProofNumber}`, 50, yPos);
         yPos += 16;
-      });
+        
+        // Embed the image if it's base64
+        if (worker.idProofImage && worker.idProofImage.startsWith('data:image')) {
+          try {
+            // Extract base64 data from data URL
+            const base64Data = worker.idProofImage.split(',')[1];
+            const imageBuffer = Buffer.from(base64Data, 'base64');
+            
+            // Add bordered frame around image
+            doc.rect(50, yPos, 220, 180).stroke('#e2e8f0');
+            
+            // Embed image - large size (200x160)
+            doc.image(imageBuffer, 60, yPos + 10, { 
+              fit: [200, 160],
+              align: 'center',
+              valign: 'center'
+            });
+            
+            yPos += 190;
+          } catch (imgError) {
+            console.error('Error embedding image:', imgError);
+            doc.fontSize(8).fillColor('#ef4444')
+               .text('[Image could not be loaded]', 50, yPos);
+            yPos += 20;
+          }
+        } else if (worker.idProofImage) {
+          // If it's a URL, show the link
+          doc.fontSize(8).fillColor('#0891b2')
+             .text(`Document: ${worker.idProofImage}`, 50, yPos, { width: 490 });
+          yPos += 20;
+        }
+        
+        yPos += 15; // Spacing between workers
+      }
       
       yPos += 10;
     }

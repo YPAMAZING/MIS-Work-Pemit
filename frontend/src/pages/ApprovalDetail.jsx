@@ -251,6 +251,52 @@ const ApprovalDetail = () => {
             </div>
           )}
 
+          {/* Workers & ID Documents */}
+          {permit?.workers?.length > 0 && (
+            <div className="card">
+              <div className="card-header flex items-center gap-2">
+                <User className="w-5 h-5 text-blue-500" />
+                <h2 className="text-lg font-semibold text-gray-900">Workers & ID Documents</h2>
+              </div>
+              <div className="card-body">
+                <div className="space-y-6">
+                  {permit.workers.map((worker, index) => (
+                    <div key={index} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <h4 className="font-semibold text-gray-900">{index + 1}. {worker.name}</h4>
+                          <p className="text-sm text-gray-500">{worker.phone}</p>
+                          <p className="text-sm text-gray-600">
+                            <span className="font-medium">{worker.idProofType?.replace('_', ' ').toUpperCase() || 'ID'}:</span> {worker.idProofNumber}
+                          </p>
+                        </div>
+                      </div>
+                      {worker.idProofImage && (
+                        <div className="mt-3">
+                          <p className="text-sm font-medium text-gray-700 mb-2">ID Proof Document:</p>
+                          <a 
+                            href={worker.idProofImage} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="block"
+                          >
+                            <img 
+                              src={worker.idProofImage} 
+                              alt={`${worker.name}'s ID Proof`}
+                              className="max-w-full h-auto max-h-96 border border-gray-300 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                              style={{ minHeight: '200px', objectFit: 'contain', backgroundColor: '#f9fafb' }}
+                            />
+                          </a>
+                          <p className="text-xs text-gray-500 mt-1">Click image to open in full size</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Previous Decision (if already processed) */}
           {!isPending && (
             <div className="card">

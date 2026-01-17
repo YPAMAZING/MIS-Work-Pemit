@@ -21,9 +21,13 @@ import {
 import { format } from 'date-fns'
 
 const Dashboard = () => {
-  const { user, isAdmin, isSafetyOfficer } = useAuth()
+  const { user, isAdmin, isSafetyOfficer, hasPermission, canApprove } = useAuth()
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
+  
+  // Permission-based checks for custom roles
+  const userCanApprove = canApprove()
+  const userCanViewUsers = isAdmin || hasPermission('users.view')
 
   useEffect(() => {
     fetchDashboardData()
@@ -98,8 +102,8 @@ const Dashboard = () => {
     },
   ]
 
-  // Add pending approvals for Fireman and Admin
-  if (isSafetyOfficer || isAdmin) {
+  // Add pending approvals for users who can approve (Fireman, Admin, or custom roles with approval permission)
+  if (userCanApprove) {
     statCards.push({
       title: 'Pending Approvals',
       value: stats?.stats?.pendingApprovals || 0,
@@ -109,8 +113,8 @@ const Dashboard = () => {
     })
   }
 
-  // Add total users for Admin
-  if (isAdmin) {
+  // Add total users for Admin or users with user view permission
+  if (userCanViewUsers) {
     statCards.push({
       title: 'Total Users',
       value: stats?.stats?.totalUsers || 0,
@@ -280,7 +284,7 @@ const Dashboard = () => {
       )}
 
       {/* Approval Rate */}
-      {(isSafetyOfficer || isAdmin) && (
+      {userCanApprove && (
         <div className="card p-6">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-green-100 rounded-xl">

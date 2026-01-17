@@ -138,11 +138,84 @@ const authorize = (...roles) => {
   };
 };
 
-// Check if user is Admin
-const isAdmin = authorize('ADMIN');
+// Check if user is Admin (now also supports custom roles with admin-level permissions)
+const isAdmin = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ message: 'Authentication required' });
+  }
 
-// Check if user is Safety Officer
-const isSafetyOfficer = authorize('SAFETY_OFFICER', 'ADMIN');
+  // Admin role has all permissions
+  if (req.user.role === 'ADMIN') {
+    return next();
+  }
+
+  // Check if custom role has user management permissions
+  if (req.user.permissions && (
+    req.user.permissions.includes('users.manage') ||
+    req.user.permissions.includes('users.edit') ||
+    req.user.permissions.includes('users.assign_role')
+  )) {
+    return next();
+  }
+
+  return res.status(403).json({ 
+    message: 'Access denied. Admin privileges required.',
+    current: req.user.role,
+  });
+};
+
+// Check if user is Safety Officer (now also supports custom roles with approval permission)
+const isSafetyOfficer = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ message: 'Authentication required' });
+  }
+
+  // Admin has all permissions
+  if (req.user.role === 'ADMIN') {
+    return next();
+  }
+
+  // Safety Officer has approval access
+  if (req.user.role === 'SAFETY_OFFICER') {
+    return next();
+  }
+
+  // Check if custom role has approval permission
+  if (req.user.permissions && (
+    req.user.permissions.includes('approvals.view') ||
+    req.user.permissions.includes('approvals.approve')
+  )) {
+    return next();
+  }
+
+  return res.status(403).json({ 
+    message: 'Access denied. Insufficient permissions.',
+    required: ['SAFETY_OFFICER', 'ADMIN', 'or approvals.view permission'],
+    current: req.user.role,
+  });
+};
+
+// Check if user can approve permits
+const canApprove = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ message: 'Authentication required' });
+  }
+
+  // Admin and Safety Officer can approve
+  if (req.user.role === 'ADMIN' || req.user.role === 'SAFETY_OFFICER') {
+    return next();
+  }
+
+  // Check if custom role has approve permission
+  if (req.user.permissions && req.user.permissions.includes('approvals.approve')) {
+    return next();
+  }
+
+  return res.status(403).json({ 
+    message: 'Access denied. You do not have permission to approve permits.',
+    required: 'approvals.approve',
+  });
+};
 
 // Check if user is Requestor
 const isRequestor = authorize('REQUESTOR', 'SAFETY_OFFICER', 'ADMIN');
@@ -154,5 +227,6 @@ module.exports = {
   checkAnyPermission,
   isAdmin,
   isSafetyOfficer,
+  canApprove,
   isRequestor,
 };

@@ -21,18 +21,21 @@ import {
 } from 'lucide-react'
 
 const Layout = ({ systemType = 'workpermit' }) => {
-  const { user, logout, isAdmin, isSafetyOfficer } = useAuth()
+  const { user, logout, isAdmin, isSafetyOfficer, hasPermission, canApprove } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [pendingCount, setPendingCount] = useState(0)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
 
+  // Check if user can approve (system roles or custom roles with permission)
+  const userCanApprove = canApprove()
+
   useEffect(() => {
-    if (isSafetyOfficer || isAdmin) {
+    if (userCanApprove) {
       fetchPendingCount()
     }
-  }, [isSafetyOfficer, isAdmin])
+  }, [userCanApprove])
 
   const fetchPendingCount = async () => {
     try {
@@ -62,44 +65,53 @@ const Layout = ({ systemType = 'workpermit' }) => {
       name: 'Dashboard',
       path: `${basePath}/dashboard`,
       icon: LayoutDashboard,
-      roles: ['ADMIN', 'SAFETY_OFFICER', 'REQUESTOR', 'SITE_ENGINEER'],
+      permission: 'dashboard.view',
+      showAlways: true, // Everyone can see dashboard
     },
     {
       name: 'Permits',
       path: `${basePath}/permits`,
       icon: FileText,
-      roles: ['ADMIN', 'SAFETY_OFFICER', 'REQUESTOR'],
+      permission: 'permits.view',
+      showAlways: true, // Everyone can see permits (own or all based on permission)
     },
     {
       name: 'Approvals',
       path: `${basePath}/approvals`,
       icon: CheckSquare,
-      roles: ['ADMIN', 'SAFETY_OFFICER'],
+      permission: 'approvals.view',
       badge: pendingCount > 0 ? pendingCount : null,
     },
     {
       name: 'Users',
       path: `${basePath}/users`,
       icon: Users,
-      roles: ['ADMIN'],
+      permission: 'users.view',
     },
     {
       name: 'Roles',
       path: `${basePath}/roles`,
       icon: ShieldCheck,
-      roles: ['ADMIN'],
+      permission: 'roles.view',
     },
     {
       name: 'Settings',
       path: `${basePath}/settings`,
       icon: Settings,
-      roles: ['ADMIN', 'SAFETY_OFFICER', 'REQUESTOR', 'SITE_ENGINEER'],
+      permission: 'settings.view',
+      showAlways: true, // Everyone can see settings
     },
   ]
 
-  const filteredNavItems = navItems.filter((item) =>
-    item.roles.includes(user?.role)
-  )
+  // Filter nav items based on permissions
+  const filteredNavItems = navItems.filter((item) => {
+    // Always show items marked as showAlways
+    if (item.showAlways) return true
+    // Admin sees everything
+    if (isAdmin) return true
+    // Check if user has the required permission
+    return hasPermission(item.permission)
+  })
 
   const getRoleBadge = (role) => {
     const badges = {
@@ -108,7 +120,16 @@ const Layout = ({ systemType = 'workpermit' }) => {
       REQUESTOR: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Requestor' },
       SITE_ENGINEER: { bg: 'bg-orange-100', text: 'text-orange-700', label: 'Site Engineer' },
     }
-    return badges[role] || badges.REQUESTOR
+    // For custom roles, use roleName from user object or format the role name
+    if (badges[role]) {
+      return badges[role]
+    }
+    // Custom role - use user's roleName or format the role
+    return {
+      bg: 'bg-gray-100',
+      text: 'text-gray-700',
+      label: user?.roleName || role?.replace(/_/g, ' ') || 'User'
+    }
   }
 
   const roleBadge = getRoleBadge(user?.role)
@@ -241,7 +262,7 @@ const Layout = ({ systemType = 'workpermit' }) => {
 
             <div className="flex items-center gap-3">
               {/* Notifications */}
-              {(isSafetyOfficer || isAdmin) && pendingCount > 0 && (
+              {userCanApprove && pendingCount > 0 && (
                 <button
                   onClick={() => navigate(`${basePath}/approvals`)}
                   className="relative p-2 rounded-lg hover:bg-gray-100"

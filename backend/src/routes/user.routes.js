@@ -58,7 +58,7 @@ router.get(
   getUserById
 );
 
-// Create user (Admin only)
+// Create user (Admin or users with user management permission)
 router.post(
   '/',
   isAdmin,
@@ -69,10 +69,8 @@ router.post(
       .withMessage('Password must be at least 6 characters'),
     body('firstName').notEmpty().trim().withMessage('First name is required'),
     body('lastName').notEmpty().trim().withMessage('Last name is required'),
-    body('role')
-      .optional()
-      .isIn(['ADMIN', 'REQUESTOR', 'SAFETY_OFFICER', 'SITE_ENGINEER'])
-      .withMessage('Invalid role'),
+    // Role can now be any custom role name, validation happens in controller
+    body('role').optional().trim(),
   ],
   validate,
   createUser
@@ -85,10 +83,8 @@ router.put(
     param('id').isUUID().withMessage('Invalid user ID'),
     body('firstName').optional().trim(),
     body('lastName').optional().trim(),
-    body('role')
-      .optional()
-      .isIn(['ADMIN', 'REQUESTOR', 'SAFETY_OFFICER', 'SITE_ENGINEER'])
-      .withMessage('Invalid role'),
+    // Role can now be any custom role name, validation happens in controller
+    body('role').optional().trim(),
   ],
   validate,
   updateUser

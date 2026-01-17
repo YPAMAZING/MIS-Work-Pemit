@@ -27,7 +27,10 @@ import {
 import { format } from 'date-fns'
 
 const Permits = () => {
-  const { user, isAdmin, isSafetyOfficer } = useAuth()
+  const { user, isAdmin, isSafetyOfficer, hasPermission, canApprove } = useAuth()
+  
+  // Permission-based checks - works with both system roles and custom roles
+  const userCanDelete = isAdmin || isSafetyOfficer || hasPermission('permits.delete')
   const [searchParams, setSearchParams] = useSearchParams()
   const [permits, setPermits] = useState([])
   const [loading, setLoading] = useState(true)
@@ -303,8 +306,8 @@ const Permits = () => {
                           >
                             <Eye className="w-4 h-4" />
                           </Link>
-                          {/* Admin and Fireman can delete any permit, Requestor can delete their own pending permits */}
-                          {(isAdmin || isSafetyOfficer || (permit.status === 'PENDING' && permit.createdBy === user?.id)) && (
+                          {/* Users with delete permission can delete any permit, Requestor can delete their own pending permits */}
+                          {(userCanDelete || (permit.status === 'PENDING' && permit.createdBy === user?.id)) && (
                             <button
                               onClick={() => setDeleteModal({ open: true, permit })}
                               className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg"

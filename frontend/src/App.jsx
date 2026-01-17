@@ -38,9 +38,9 @@ import LoadingSpinner from './components/LoadingSpinner'
 import SystemSelector from './pages/SystemSelector'
 import MISDashboard from './pages/mis/MISDashboard'
 
-// Protected route wrapper
-const ProtectedRoute = ({ children, roles }) => {
-  const { user, loading } = useAuth()
+// Protected route wrapper with role and permission support
+const ProtectedRoute = ({ children, roles, permission }) => {
+  const { user, loading, hasPermission, isAdmin } = useAuth()
 
   if (loading) {
     return (
@@ -54,7 +54,26 @@ const ProtectedRoute = ({ children, roles }) => {
     return <Navigate to="/login" replace />
   }
 
-  if (roles && !roles.includes(user.role)) {
+  // Admin can access everything
+  if (isAdmin) {
+    return children
+  }
+
+  // Check role-based access (for backward compatibility)
+  if (roles && roles.length > 0) {
+    if (roles.includes(user.role)) {
+      return children
+    }
+    // Also check if user has the related permission
+    // This allows custom roles with appropriate permissions to access the route
+    if (permission && hasPermission(permission)) {
+      return children
+    }
+    return <Navigate to="/select-system" replace />
+  }
+
+  // Check permission-based access
+  if (permission && !hasPermission(permission)) {
     return <Navigate to="/select-system" replace />
   }
 
@@ -165,11 +184,11 @@ function App() {
         <Route path="permits/:id" element={<PermitDetail />} />
         <Route path="permits/:id/edit" element={<CreatePermit />} />
         
-        {/* Fireman & Admin only */}
+        {/* Users with approval permission (Fireman, Admin, or custom roles with approvals.view) */}
         <Route
           path="approvals"
           element={
-            <ProtectedRoute roles={['SAFETY_OFFICER', 'ADMIN']}>
+            <ProtectedRoute roles={['SAFETY_OFFICER', 'ADMIN']} permission="approvals.view">
               <Approvals />
             </ProtectedRoute>
           }
@@ -177,25 +196,26 @@ function App() {
         <Route
           path="approvals/:id"
           element={
-            <ProtectedRoute roles={['SAFETY_OFFICER', 'ADMIN']}>
+            <ProtectedRoute roles={['SAFETY_OFFICER', 'ADMIN']} permission="approvals.view">
               <ApprovalDetail />
             </ProtectedRoute>
           }
         />
 
-        {/* Admin only */}
+        {/* Users with user management permission (Admin or custom roles with users.view) */}
         <Route
           path="users"
           element={
-            <ProtectedRoute roles={['ADMIN']}>
+            <ProtectedRoute roles={['ADMIN']} permission="users.view">
               <Users />
             </ProtectedRoute>
           }
         />
+        {/* Roles management (Admin or custom roles with roles.view) */}
         <Route
           path="roles"
           element={
-            <ProtectedRoute roles={['ADMIN']}>
+            <ProtectedRoute roles={['ADMIN']} permission="roles.view">
               <RoleManagement />
             </ProtectedRoute>
           }

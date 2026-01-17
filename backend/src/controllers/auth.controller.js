@@ -385,6 +385,10 @@ const login = async (req, res) => {
       userAgent: req.headers['user-agent'],
     });
 
+    // Parse permissions from role
+    const permissions = user.role ? JSON.parse(user.role.permissions || '[]') : [];
+    const uiConfig = user.role ? JSON.parse(user.role.uiConfig || '{}') : {};
+
     res.json({
       message: 'Login successful',
       user: {
@@ -393,9 +397,13 @@ const login = async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         role: userRole,
+        roleId: user.roleId,
+        roleName: user.role?.displayName || 'User',
         department: user.department,
         phone: user.phone,
         profilePicture: user.profilePicture,
+        permissions,
+        uiConfig,
       },
       token,
     });

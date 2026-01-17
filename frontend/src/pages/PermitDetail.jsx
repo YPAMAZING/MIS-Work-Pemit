@@ -85,7 +85,12 @@ const idProofTypes = {
 const PermitDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { user, isAdmin, isSafetyOfficer } = useAuth()
+  const { user, isAdmin, isSafetyOfficer, hasPermission, canApprove } = useAuth()
+  
+  // Permission-based checks for custom roles
+  const userCanApprove = canApprove()
+  const userCanExtend = isAdmin || isSafetyOfficer || hasPermission('permits.extend')
+  const userCanRevoke = isAdmin || isSafetyOfficer || hasPermission('permits.revoke')
   
   const [permit, setPermit] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -662,8 +667,8 @@ const PermitDetail = () => {
         </Section>
       </div>
 
-      {/* Workflow Actions */}
-      {(isAdmin || isSafetyOfficer) && ['APPROVED', 'EXTENDED'].includes(permit.status) && (
+      {/* Workflow Actions - Permission based */}
+      {(userCanExtend || userCanRevoke) && ['APPROVED', 'EXTENDED'].includes(permit.status) && (
         <div className="mt-6 bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-2">
@@ -671,20 +676,24 @@ const PermitDetail = () => {
               <span className="font-semibold text-gray-700">Workflow Actions</span>
             </div>
             <div className="flex items-center gap-3">
-              <button
-                onClick={() => handleWorkflowAction('extend')}
-                className="flex items-center gap-2 px-4 py-2.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-xl font-medium hover:bg-blue-100 transition-colors"
-              >
-                <Play className="w-4 h-4" />
-                Extend Permit
-              </button>
-              <button
-                onClick={() => handleWorkflowAction('revoke')}
-                className="flex items-center gap-2 px-4 py-2.5 bg-red-50 text-red-700 border border-red-200 rounded-xl font-medium hover:bg-red-100 transition-colors"
-              >
-                <RotateCcw className="w-4 h-4" />
-                Revoke Permit
-              </button>
+              {userCanExtend && (
+                <button
+                  onClick={() => handleWorkflowAction('extend')}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-xl font-medium hover:bg-blue-100 transition-colors"
+                >
+                  <Play className="w-4 h-4" />
+                  Extend Permit
+                </button>
+              )}
+              {userCanRevoke && (
+                <button
+                  onClick={() => handleWorkflowAction('revoke')}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-red-50 text-red-700 border border-red-200 rounded-xl font-medium hover:bg-red-100 transition-colors"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  Revoke Permit
+                </button>
+              )}
             </div>
           </div>
         </div>

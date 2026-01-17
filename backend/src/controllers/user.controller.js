@@ -24,6 +24,13 @@ const getAllUsers = async (req, res) => {
       ];
     }
     
+    // Filter by role name
+    if (role) {
+      where.role = {
+        name: role,
+      };
+    }
+    
     if (status === 'pending') {
       where.isApproved = false;
     } else if (status === 'all') {

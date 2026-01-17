@@ -73,6 +73,39 @@ export const AuthProvider = ({ children }) => {
     setUser((prev) => ({ ...prev, ...userData }))
   }
 
+  // Check if user has a specific permission
+  const hasPermission = (permission) => {
+    if (!user) return false
+    // Admin has all permissions
+    if (user.role === 'ADMIN') return true
+    // Check user's permissions array
+    return user.permissions?.includes(permission) || false
+  }
+
+  // Check if user can approve permits (Admin or any role with approval permission)
+  const canApprove = () => {
+    if (!user) return false
+    if (user.role === 'ADMIN') return true
+    if (user.role === 'SAFETY_OFFICER') return true
+    // Check for approval permission in custom roles
+    return hasPermission('approvals.approve')
+  }
+
+  // Check if user can manage users
+  const canManageUsers = () => {
+    if (!user) return false
+    if (user.role === 'ADMIN') return true
+    return hasPermission('users.view') || hasPermission('users.edit')
+  }
+
+  // Check if user can view all permits (not just their own)
+  const canViewAllPermits = () => {
+    if (!user) return false
+    if (user.role === 'ADMIN') return true
+    if (user.role === 'SAFETY_OFFICER') return true
+    return hasPermission('permits.view_all')
+  }
+
   const value = {
     user,
     loading,
@@ -80,10 +113,18 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     updateUser,
+    // Role checks (for backward compatibility with system roles)
     isAdmin: user?.role === 'ADMIN',
     isSafetyOfficer: user?.role === 'SAFETY_OFFICER',
     isRequestor: user?.role === 'REQUESTOR',
     isSiteEngineer: user?.role === 'SITE_ENGINEER',
+    // Permission-based checks (works with custom roles too)
+    hasPermission,
+    canApprove,
+    canManageUsers,
+    canViewAllPermits,
+    // User permissions array
+    permissions: user?.permissions || [],
   }
 
   return (

@@ -4,12 +4,50 @@ const config = require('../config');
 
 const prisma = new PrismaClient();
 
+// ============ LOGGING UTILITY ============
+const LOG_ENABLED = true; // Set to false to disable logging
+
+const log = {
+  auth: (message, data = {}) => {
+    if (LOG_ENABLED) {
+      console.log(`\n🔐 [AUTH] ${message}`);
+      if (Object.keys(data).length > 0) {
+        console.log('   📋 Data:', JSON.stringify(data, null, 2));
+      }
+    }
+  },
+  permission: (message, data = {}) => {
+    if (LOG_ENABLED) {
+      console.log(`\n🛡️  [PERMISSION] ${message}`);
+      if (Object.keys(data).length > 0) {
+        console.log('   📋 Data:', JSON.stringify(data, null, 2));
+      }
+    }
+  },
+  access: (allowed, message, data = {}) => {
+    if (LOG_ENABLED) {
+      const icon = allowed ? '✅' : '❌';
+      console.log(`\n${icon} [ACCESS] ${message}`);
+      if (Object.keys(data).length > 0) {
+        console.log('   📋 Data:', JSON.stringify(data, null, 2));
+      }
+    }
+  },
+  error: (message, error = null) => {
+    console.error(`\n🚨 [ERROR] ${message}`);
+    if (error) {
+      console.error('   Details:', error.message || error);
+    }
+  }
+};
+
 // Verify JWT token
 const authenticate = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      log.auth('No token provided', { path: req.path });
       return res.status(401).json({ message: 'Authentication required' });
     }
 
@@ -26,10 +64,12 @@ const authenticate = async (req, res, next) => {
       });
 
       if (!user) {
+        log.auth('User not found', { userId: decoded.userId });
         return res.status(401).json({ message: 'User not found' });
       }
 
       if (!user.isActive) {
+        log.auth('Account deactivated', { email: user.email });
         return res.status(401).json({ message: 'Account is deactivated' });
       }
 
@@ -51,15 +91,27 @@ const authenticate = async (req, res, next) => {
         uiConfig,
       };
       
+      // Log authenticated user details
+      log.auth('User authenticated', {
+        email: req.user.email,
+        role: req.user.role,
+        roleName: req.user.roleName,
+        permissions: req.user.permissions,
+        path: req.path,
+        method: req.method
+      });
+      
       next();
     } catch (error) {
       if (error.name === 'TokenExpiredError') {
+        log.auth('Token expired');
         return res.status(401).json({ message: 'Token expired' });
       }
+      log.error('Invalid token', error);
       return res.status(401).json({ message: 'Invalid token' });
     }
   } catch (error) {
-    console.error('Auth middleware error:', error);
+    log.error('Auth middleware error', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 };
@@ -68,19 +120,36 @@ const authenticate = async (req, res, next) => {
 const checkPermission = (requiredPermission) => {
   return (req, res, next) => {
     if (!req.user) {
+      log.permission('Check failed - no user', { required: requiredPermission });
       return res.status(401).json({ message: 'Authentication required' });
     }
 
     // Admin has all permissions
     if (req.user.role === 'ADMIN') {
+      log.access(true, 'Admin bypass', { 
+        user: req.user.email, 
+        required: requiredPermission 
+      });
       return next();
     }
 
     // Check if user has the required permission
     if (req.user.permissions && req.user.permissions.includes(requiredPermission)) {
+      log.access(true, 'Permission granted', { 
+        user: req.user.email, 
+        role: req.user.role,
+        required: requiredPermission,
+        userPermissions: req.user.permissions
+      });
       return next();
     }
 
+    log.access(false, 'Permission denied', { 
+      user: req.user.email, 
+      role: req.user.role,
+      required: requiredPermission,
+      userPermissions: req.user.permissions
+    });
     return res.status(403).json({ 
       message: 'Access denied. Insufficient permissions.',
       required: requiredPermission,
@@ -140,12 +209,21 @@ const authorize = (...roles) => {
 
 // Check if user is Admin (now also supports custom roles with admin-level permissions)
 const isAdmin = (req, res, next) => {
+  log.permission('Checking isAdmin', { 
+    path: req.path,
+    user: req.user?.email,
+    role: req.user?.role,
+    permissions: req.user?.permissions
+  });
+
   if (!req.user) {
+    log.access(false, 'isAdmin - No user');
     return res.status(401).json({ message: 'Authentication required' });
   }
 
   // Admin role has all permissions
   if (req.user.role === 'ADMIN') {
+    log.access(true, 'isAdmin - ADMIN role', { user: req.user.email });
     return next();
   }
 
@@ -155,9 +233,21 @@ const isAdmin = (req, res, next) => {
     req.user.permissions.includes('users.edit') ||
     req.user.permissions.includes('users.assign_role')
   )) {
+    log.access(true, 'isAdmin - Has user management permission', { 
+      user: req.user.email,
+      role: req.user.role,
+      matchedPermissions: req.user.permissions.filter(p => 
+        ['users.manage', 'users.edit', 'users.assign_role'].includes(p)
+      )
+    });
     return next();
   }
 
+  log.access(false, 'isAdmin - Access denied', { 
+    user: req.user.email,
+    role: req.user.role,
+    permissions: req.user.permissions
+  });
   return res.status(403).json({ 
     message: 'Access denied. Admin privileges required.',
     current: req.user.role,
@@ -166,17 +256,27 @@ const isAdmin = (req, res, next) => {
 
 // Check if user is Safety Officer (now also supports custom roles with approval permission)
 const isSafetyOfficer = (req, res, next) => {
+  log.permission('Checking isSafetyOfficer', { 
+    path: req.path,
+    user: req.user?.email,
+    role: req.user?.role,
+    permissions: req.user?.permissions
+  });
+
   if (!req.user) {
+    log.access(false, 'isSafetyOfficer - No user');
     return res.status(401).json({ message: 'Authentication required' });
   }
 
   // Admin has all permissions
   if (req.user.role === 'ADMIN') {
+    log.access(true, 'isSafetyOfficer - ADMIN role', { user: req.user.email });
     return next();
   }
 
   // Safety Officer has approval access
   if (req.user.role === 'SAFETY_OFFICER') {
+    log.access(true, 'isSafetyOfficer - SAFETY_OFFICER role', { user: req.user.email });
     return next();
   }
 
@@ -185,9 +285,21 @@ const isSafetyOfficer = (req, res, next) => {
     req.user.permissions.includes('approvals.view') ||
     req.user.permissions.includes('approvals.approve')
   )) {
+    log.access(true, 'isSafetyOfficer - Has approval permission', { 
+      user: req.user.email,
+      role: req.user.role,
+      matchedPermissions: req.user.permissions.filter(p => 
+        ['approvals.view', 'approvals.approve'].includes(p)
+      )
+    });
     return next();
   }
 
+  log.access(false, 'isSafetyOfficer - Access denied', { 
+    user: req.user.email,
+    role: req.user.role,
+    permissions: req.user.permissions
+  });
   return res.status(403).json({ 
     message: 'Access denied. Insufficient permissions.',
     required: ['SAFETY_OFFICER', 'ADMIN', 'or approvals.view permission'],
@@ -197,20 +309,41 @@ const isSafetyOfficer = (req, res, next) => {
 
 // Check if user can approve permits
 const canApprove = (req, res, next) => {
+  log.permission('Checking canApprove', { 
+    path: req.path,
+    user: req.user?.email,
+    role: req.user?.role,
+    permissions: req.user?.permissions
+  });
+
   if (!req.user) {
+    log.access(false, 'canApprove - No user');
     return res.status(401).json({ message: 'Authentication required' });
   }
 
   // Admin and Safety Officer can approve
   if (req.user.role === 'ADMIN' || req.user.role === 'SAFETY_OFFICER') {
+    log.access(true, 'canApprove - System role', { 
+      user: req.user.email, 
+      role: req.user.role 
+    });
     return next();
   }
 
   // Check if custom role has approve permission
   if (req.user.permissions && req.user.permissions.includes('approvals.approve')) {
+    log.access(true, 'canApprove - Has approvals.approve permission', { 
+      user: req.user.email,
+      role: req.user.role
+    });
     return next();
   }
 
+  log.access(false, 'canApprove - Access denied', { 
+    user: req.user.email,
+    role: req.user.role,
+    permissions: req.user.permissions
+  });
   return res.status(403).json({ 
     message: 'Access denied. You do not have permission to approve permits.',
     required: 'approvals.approve',

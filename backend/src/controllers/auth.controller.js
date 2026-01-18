@@ -389,6 +389,19 @@ const login = async (req, res) => {
     const permissions = user.role ? JSON.parse(user.role.permissions || '[]') : [];
     const uiConfig = user.role ? JSON.parse(user.role.uiConfig || '{}') : {};
 
+    // ============ LOGIN LOG ============
+    console.log('\n' + '='.repeat(60));
+    console.log('🔑 USER LOGIN SUCCESS');
+    console.log('='.repeat(60));
+    console.log('📧 Email:', user.email);
+    console.log('👤 Name:', user.firstName, user.lastName);
+    console.log('🏷️  Role Name:', userRole);
+    console.log('🏷️  Role Display:', user.role?.displayName || 'User');
+    console.log('🆔 Role ID:', user.roleId);
+    console.log('🔐 Permissions:', JSON.stringify(permissions, null, 2));
+    console.log('🎨 UI Config:', JSON.stringify(uiConfig, null, 2));
+    console.log('='.repeat(60) + '\n');
+
     res.json({
       message: 'Login successful',
       user: {

@@ -21,13 +21,14 @@ import {
 import { format } from 'date-fns'
 
 const Dashboard = () => {
-  const { user, isAdmin, isSafetyOfficer, hasPermission, canApprove } = useAuth()
+  const { user, canApprove, canViewUsers, canViewStatistics } = useAuth()
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   
   // Permission-based checks for custom roles
   const userCanApprove = canApprove()
-  const userCanViewUsers = isAdmin || hasPermission('users.view')
+  const userCanViewUsers = canViewUsers()
+  const userCanViewStats = canViewStatistics()
 
   useEffect(() => {
     fetchDashboardData()

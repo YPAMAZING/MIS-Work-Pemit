@@ -85,12 +85,23 @@ const idProofTypes = {
 const PermitDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { user, isAdmin, isSafetyOfficer, hasPermission, canApprove } = useAuth()
+  const { 
+    user, 
+    canApprove, 
+    canExtendPermits, 
+    canRevokePermits, 
+    canClosePermits,
+    canDeletePermits,
+    canExportPermitPDF 
+  } = useAuth()
   
-  // Permission-based checks for custom roles
+  // Permission-based checks using the new helpers
   const userCanApprove = canApprove()
-  const userCanExtend = isAdmin || isSafetyOfficer || hasPermission('permits.extend')
-  const userCanRevoke = isAdmin || isSafetyOfficer || hasPermission('permits.revoke')
+  const userCanExtend = canExtendPermits()
+  const userCanRevoke = canRevokePermits()
+  const userCanClose = canClosePermits()
+  const userCanDelete = canDeletePermits()
+  const userCanExportPDF = canExportPermitPDF()
   
   const [permit, setPermit] = useState(null)
   const [loading, setLoading] = useState(true)

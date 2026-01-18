@@ -21,21 +21,21 @@ import {
 } from 'lucide-react'
 
 const Layout = ({ systemType = 'workpermit' }) => {
-  const { user, logout, isAdmin, isSafetyOfficer, hasPermission, canApprove } = useAuth()
+  const { user, logout, isAdmin, hasPermission, canViewApprovals } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [pendingCount, setPendingCount] = useState(0)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
 
-  // Check if user can approve (system roles or custom roles with permission)
-  const userCanApprove = canApprove()
+  // Check if user can view approvals (system roles or custom roles with permission)
+  const userCanViewApprovals = canViewApprovals()
 
   useEffect(() => {
-    if (userCanApprove) {
+    if (userCanViewApprovals) {
       fetchPendingCount()
     }
-  }, [userCanApprove])
+  }, [userCanViewApprovals])
 
   const fetchPendingCount = async () => {
     try {
@@ -262,7 +262,7 @@ const Layout = ({ systemType = 'workpermit' }) => {
 
             <div className="flex items-center gap-3">
               {/* Notifications */}
-              {userCanApprove && pendingCount > 0 && (
+              {userCanViewApprovals && pendingCount > 0 && (
                 <button
                   onClick={() => navigate(`${basePath}/approvals`)}
                   className="relative p-2 rounded-lg hover:bg-gray-100"

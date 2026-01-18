@@ -88,7 +88,7 @@ const defaultRoles = [
   },
   {
     name: 'SAFETY_OFFICER',
-    displayName: 'Safety Officer',
+    displayName: 'Fireman',
     description: 'Can approve/reject permits and manage workers',
     isSystem: true,
     permissions: [

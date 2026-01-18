@@ -82,28 +82,224 @@ export const AuthProvider = ({ children }) => {
     return user.permissions?.includes(permission) || false
   }
 
-  // Check if user can approve permits (Admin or any role with approval permission)
-  const canApprove = () => {
+  // Check if user has any of the specified permissions
+  const hasAnyPermission = (permissions) => {
     if (!user) return false
     if (user.role === 'ADMIN') return true
-    if (user.role === 'SAFETY_OFFICER') return true
-    // Check for approval permission in custom roles
+    return permissions.some(p => user.permissions?.includes(p))
+  }
+
+  // ============ APPROVAL PERMISSIONS ============
+  // Check if user can view approvals
+  const canViewApprovals = () => {
+    if (!user) return false
+    if (user.role === 'ADMIN' || user.role === 'SAFETY_OFFICER') return true
+    return hasPermission('approvals.view')
+  }
+
+  // Check if user can approve/reject permits
+  const canApprove = () => {
+    if (!user) return false
+    if (user.role === 'ADMIN' || user.role === 'SAFETY_OFFICER') return true
     return hasPermission('approvals.approve')
+  }
+
+  // Check if user can sign approvals
+  const canSignApprovals = () => {
+    if (!user) return false
+    if (user.role === 'ADMIN' || user.role === 'SAFETY_OFFICER') return true
+    return hasPermission('approvals.sign')
+  }
+
+  // ============ PERMIT PERMISSIONS ============
+  // Check if user can view all permits
+  const canViewAllPermits = () => {
+    if (!user) return false
+    if (user.role === 'ADMIN' || user.role === 'SAFETY_OFFICER') return true
+    return hasPermission('permits.view_all')
+  }
+
+  // Check if user can create permits
+  const canCreatePermits = () => {
+    if (!user) return false
+    if (user.role === 'ADMIN') return true
+    return hasPermission('permits.create')
+  }
+
+  // Check if user can edit permits
+  const canEditPermits = () => {
+    if (!user) return false
+    if (user.role === 'ADMIN') return true
+    return hasPermission('permits.edit')
+  }
+
+  // Check if user can delete permits
+  const canDeletePermits = () => {
+    if (!user) return false
+    if (user.role === 'ADMIN' || user.role === 'SAFETY_OFFICER') return true
+    return hasPermission('permits.delete')
+  }
+
+  // Check if user can extend permits
+  const canExtendPermits = () => {
+    if (!user) return false
+    if (user.role === 'ADMIN' || user.role === 'SAFETY_OFFICER') return true
+    return hasPermission('permits.extend')
+  }
+
+  // Check if user can revoke permits
+  const canRevokePermits = () => {
+    if (!user) return false
+    if (user.role === 'ADMIN' || user.role === 'SAFETY_OFFICER') return true
+    return hasPermission('permits.revoke')
+  }
+
+  // Check if user can close permits
+  const canClosePermits = () => {
+    if (!user) return false
+    if (user.role === 'ADMIN' || user.role === 'SAFETY_OFFICER') return true
+    return hasPermission('permits.close')
+  }
+
+  // Check if user can export permit PDF
+  const canExportPermitPDF = () => {
+    if (!user) return false
+    if (user.role === 'ADMIN' || user.role === 'SAFETY_OFFICER') return true
+    return hasPermission('permits.export')
+  }
+
+  // ============ USER PERMISSIONS ============
+  // Check if user can view users
+  const canViewUsers = () => {
+    if (!user) return false
+    if (user.role === 'ADMIN') return true
+    return hasPermission('users.view')
   }
 
   // Check if user can manage users
   const canManageUsers = () => {
     if (!user) return false
     if (user.role === 'ADMIN') return true
-    return hasPermission('users.view') || hasPermission('users.edit')
+    return hasAnyPermission(['users.view', 'users.edit', 'users.create', 'users.delete'])
   }
 
-  // Check if user can view all permits (not just their own)
-  const canViewAllPermits = () => {
+  // Check if user can create users
+  const canCreateUsers = () => {
     if (!user) return false
     if (user.role === 'ADMIN') return true
-    if (user.role === 'SAFETY_OFFICER') return true
-    return hasPermission('permits.view_all')
+    return hasPermission('users.create')
+  }
+
+  // Check if user can edit users
+  const canEditUsers = () => {
+    if (!user) return false
+    if (user.role === 'ADMIN') return true
+    return hasPermission('users.edit')
+  }
+
+  // Check if user can delete users
+  const canDeleteUsers = () => {
+    if (!user) return false
+    if (user.role === 'ADMIN') return true
+    return hasPermission('users.delete')
+  }
+
+  // Check if user can assign roles
+  const canAssignRoles = () => {
+    if (!user) return false
+    if (user.role === 'ADMIN') return true
+    return hasPermission('users.assign_role')
+  }
+
+  // ============ ROLE PERMISSIONS ============
+  // Check if user can view roles
+  const canViewRoles = () => {
+    if (!user) return false
+    if (user.role === 'ADMIN') return true
+    return hasPermission('roles.view')
+  }
+
+  // Check if user can create roles
+  const canCreateRoles = () => {
+    if (!user) return false
+    if (user.role === 'ADMIN') return true
+    return hasPermission('roles.create')
+  }
+
+  // Check if user can edit roles
+  const canEditRoles = () => {
+    if (!user) return false
+    if (user.role === 'ADMIN') return true
+    return hasPermission('roles.edit')
+  }
+
+  // Check if user can delete roles
+  const canDeleteRoles = () => {
+    if (!user) return false
+    if (user.role === 'ADMIN') return true
+    return hasPermission('roles.delete')
+  }
+
+  // ============ WORKER PERMISSIONS ============
+  const canViewWorkers = () => {
+    if (!user) return false
+    if (user.role === 'ADMIN' || user.role === 'SAFETY_OFFICER') return true
+    return hasPermission('workers.view')
+  }
+
+  const canCreateWorkers = () => {
+    if (!user) return false
+    if (user.role === 'ADMIN' || user.role === 'SAFETY_OFFICER') return true
+    return hasPermission('workers.create')
+  }
+
+  const canEditWorkers = () => {
+    if (!user) return false
+    if (user.role === 'ADMIN' || user.role === 'SAFETY_OFFICER') return true
+    return hasPermission('workers.edit')
+  }
+
+  const canDeleteWorkers = () => {
+    if (!user) return false
+    if (user.role === 'ADMIN') return true
+    return hasPermission('workers.delete')
+  }
+
+  // ============ SETTINGS PERMISSIONS ============
+  const canViewSettings = () => {
+    if (!user) return false
+    return true // Everyone can view their own settings
+  }
+
+  const canEditSettings = () => {
+    if (!user) return false
+    if (user.role === 'ADMIN') return true
+    return hasPermission('settings.edit')
+  }
+
+  const canEditSystemSettings = () => {
+    if (!user) return false
+    if (user.role === 'ADMIN') return true
+    return hasPermission('settings.system')
+  }
+
+  // ============ AUDIT PERMISSIONS ============
+  const canViewAuditLogs = () => {
+    if (!user) return false
+    if (user.role === 'ADMIN') return true
+    return hasPermission('audit.view')
+  }
+
+  // ============ DASHBOARD PERMISSIONS ============
+  const canViewDashboard = () => {
+    if (!user) return false
+    return hasPermission('dashboard.view') || user.role === 'ADMIN'
+  }
+
+  const canViewStatistics = () => {
+    if (!user) return false
+    if (user.role === 'ADMIN' || user.role === 'SAFETY_OFFICER') return true
+    return hasPermission('dashboard.stats')
   }
 
   const value = {
@@ -120,9 +316,46 @@ export const AuthProvider = ({ children }) => {
     isSiteEngineer: user?.role === 'SITE_ENGINEER',
     // Permission-based checks (works with custom roles too)
     hasPermission,
+    hasAnyPermission,
+    // Approval permissions
+    canViewApprovals,
     canApprove,
-    canManageUsers,
+    canSignApprovals,
+    // Permit permissions
     canViewAllPermits,
+    canCreatePermits,
+    canEditPermits,
+    canDeletePermits,
+    canExtendPermits,
+    canRevokePermits,
+    canClosePermits,
+    canExportPermitPDF,
+    // User permissions
+    canViewUsers,
+    canManageUsers,
+    canCreateUsers,
+    canEditUsers,
+    canDeleteUsers,
+    canAssignRoles,
+    // Role permissions
+    canViewRoles,
+    canCreateRoles,
+    canEditRoles,
+    canDeleteRoles,
+    // Worker permissions
+    canViewWorkers,
+    canCreateWorkers,
+    canEditWorkers,
+    canDeleteWorkers,
+    // Settings permissions
+    canViewSettings,
+    canEditSettings,
+    canEditSystemSettings,
+    // Audit permissions
+    canViewAuditLogs,
+    // Dashboard permissions
+    canViewDashboard,
+    canViewStatistics,
     // User permissions array
     permissions: user?.permissions || [],
   }

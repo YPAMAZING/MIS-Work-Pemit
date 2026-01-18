@@ -27,10 +27,11 @@ import {
 import { format } from 'date-fns'
 
 const Permits = () => {
-  const { user, isAdmin, isSafetyOfficer, hasPermission, canApprove } = useAuth()
+  const { user, canDeletePermits, canCreatePermits } = useAuth()
   
   // Permission-based checks - works with both system roles and custom roles
-  const userCanDelete = isAdmin || isSafetyOfficer || hasPermission('permits.delete')
+  const userCanDelete = canDeletePermits()
+  const userCanCreate = canCreatePermits()
   const [searchParams, setSearchParams] = useSearchParams()
   const [permits, setPermits] = useState([])
   const [loading, setLoading] = useState(true)

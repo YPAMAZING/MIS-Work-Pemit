@@ -28,6 +28,7 @@ const moduleIcons = {
   workers: '👷',
   users: '👥',
   roles: '🔐',
+  meters: '📏',
   settings: '⚙️',
   audit: '📝',
 }

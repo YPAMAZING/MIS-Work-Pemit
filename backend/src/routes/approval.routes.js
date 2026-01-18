@@ -10,7 +10,7 @@ const {
   getPendingRemarks,
   autoCloseExpiredPermits,
 } = require('../controllers/approval.controller');
-const { authenticate, isSafetyOfficer } = require('../middleware/auth.middleware');
+const { authenticate, isSafetyOfficer, canApprove } = require('../middleware/auth.middleware');
 const { validate } = require('../middleware/validate.middleware');
 
 const router = express.Router();
@@ -42,9 +42,10 @@ router.get(
   getApprovalById
 );
 
-// Update approval decision (Approve/Reject)
+// Update approval decision (Approve/Reject) - Requires approvals.approve permission
 router.put(
   '/:id/decision',
+  canApprove, // Additional check for approve permission
   [
     param('id').isUUID().withMessage('Invalid approval ID'),
     body('decision')

@@ -27,12 +27,15 @@ import { format } from 'date-fns'
 const ApprovalDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, isAdmin, isSafetyOfficer, hasPermission } = useAuth()
   const [approval, setApproval] = useState(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [decisionModal, setDecisionModal] = useState({ open: false, type: null })
   const [comment, setComment] = useState('')
+  
+  // Check if user can approve/reject permits
+  const canApprovePermits = isAdmin || isSafetyOfficer || hasPermission('approvals.approve')
 
   useEffect(() => {
     fetchApproval()
@@ -156,7 +159,8 @@ const ApprovalDetail = () => {
             </div>
           </div>
         </div>
-        {isPending && (
+        {/* Only show Approve/Reject buttons if user has approvals.approve permission */}
+        {isPending && canApprovePermits && (
           <div className="flex gap-2">
             <button
               onClick={() => setDecisionModal({ open: true, type: 'REJECTED' })}
@@ -403,8 +407,8 @@ const ApprovalDetail = () => {
             </div>
           </div>
 
-          {/* Quick Actions for Pending */}
-          {isPending && (
+          {/* Quick Actions for Pending - Only show if user can approve */}
+          {isPending && canApprovePermits && (
             <div className="card bg-gradient-to-br from-primary-50 to-primary-100 border-primary-200">
               <div className="card-body text-center">
                 <h3 className="font-semibold text-primary-900 mb-2">Action Required</h3>
@@ -425,6 +429,18 @@ const ApprovalDetail = () => {
                     Approve
                   </button>
                 </div>
+              </div>
+            </div>
+          )}
+          
+          {/* View Only Notice - Show if user can only view but not approve */}
+          {isPending && !canApprovePermits && (
+            <div className="card bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200">
+              <div className="card-body text-center">
+                <h3 className="font-semibold text-gray-700 mb-2">View Only</h3>
+                <p className="text-sm text-gray-500">
+                  You can view this approval but don't have permission to approve or reject permits.
+                </p>
               </div>
             </div>
           )}

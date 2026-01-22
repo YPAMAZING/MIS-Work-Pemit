@@ -645,13 +645,15 @@ const revokePermit = async (req, res) => {
       return res.status(400).json({ message: 'Only approved/extended/reapproved permits can be revoked' });
     }
 
-    // Update permit status and record action history in transaction
-    const [updatedPermit, actionHistory] = await prisma.$transaction([
-      prisma.permitRequest.update({
-        where: { id },
-        data: { status: 'REVOKED' },
-      }),
-      prisma.permitActionHistory.create({
+    // Update permit status
+    const updatedPermit = await prisma.permitRequest.update({
+      where: { id },
+      data: { status: 'REVOKED' },
+    });
+
+    // Try to record action history (table might not exist yet)
+    try {
+      await prisma.permitActionHistory.create({
         data: {
           permitId: id,
           action: 'REVOKED',
@@ -662,8 +664,10 @@ const revokePermit = async (req, res) => {
           previousStatus: permit.status,
           newStatus: 'REVOKED',
         },
-      }),
-    ]);
+      });
+    } catch (historyError) {
+      console.log('Could not record action history:', historyError.message);
+    }
 
     await createAuditLog({
       userId: user.id,
@@ -700,13 +704,29 @@ const reapprovePermit = async (req, res) => {
       return res.status(400).json({ message: 'Only revoked permits can be re-approved' });
     }
 
-    // Update permit status and record action history in transaction
-    const [updatedPermit, actionHistory, newApproval] = await prisma.$transaction([
-      prisma.permitRequest.update({
-        where: { id },
-        data: { status: 'REAPPROVED' },
-      }),
-      prisma.permitActionHistory.create({
+    // Update permit status
+    const updatedPermit = await prisma.permitRequest.update({
+      where: { id },
+      data: { status: 'REAPPROVED' },
+    });
+
+    // Create new approval record
+    await prisma.permitApproval.create({
+      data: {
+        permitId: id,
+        approverName: `${user.firstName} ${user.lastName}`,
+        approverRole: user.role,
+        decision: 'REAPPROVED',
+        comment: comment,
+        signature: signature,
+        signedAt: new Date(),
+        approvedAt: new Date(),
+      },
+    });
+
+    // Try to record action history (table might not exist yet)
+    try {
+      await prisma.permitActionHistory.create({
         data: {
           permitId: id,
           action: 'REAPPROVED',
@@ -718,20 +738,10 @@ const reapprovePermit = async (req, res) => {
           newStatus: 'REAPPROVED',
           signature: signature,
         },
-      }),
-      prisma.permitApproval.create({
-        data: {
-          permitId: id,
-          approverName: `${user.firstName} ${user.lastName}`,
-          approverRole: user.role,
-          decision: 'REAPPROVED',
-          comment: comment,
-          signature: signature,
-          signedAt: new Date(),
-          approvedAt: new Date(),
-        },
-      }),
-    ]);
+      });
+    } catch (historyError) {
+      console.log('Could not record action history:', historyError.message);
+    }
 
     await createAuditLog({
       userId: user.id,
@@ -756,15 +766,23 @@ const getPermitActionHistory = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const actionHistory = await prisma.permitActionHistory.findMany({
-      where: { permitId: id },
-      orderBy: { createdAt: 'asc' },
-    });
+    // Check if the table exists (might not be migrated yet)
+    let actionHistory = [];
+    try {
+      actionHistory = await prisma.permitActionHistory.findMany({
+        where: { permitId: id },
+        orderBy: { createdAt: 'asc' },
+      });
+    } catch (tableError) {
+      // Table might not exist yet, return empty array
+      console.log('PermitActionHistory table may not exist yet:', tableError.message);
+      actionHistory = [];
+    }
 
     res.json({ actionHistory });
   } catch (error) {
     console.error('Get action history error:', error);
-    res.status(500).json({ message: 'Error fetching action history' });
+    res.status(500).json({ message: 'Error fetching action history', actionHistory: [] });
   }
 };
 

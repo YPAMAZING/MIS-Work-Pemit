@@ -98,6 +98,7 @@ model PermitRequest {
   
   user          User            @relation(fields: [createdBy], references: [id])
   approvals     PermitApproval[]
+  actionHistory PermitActionHistory[]
   
   @@map("permit_requests")
 }

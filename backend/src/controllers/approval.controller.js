@@ -373,11 +373,27 @@ const autoCloseExpiredPermits = async (req, res) => {
   try {
     const now = new Date();
     
-    // Auto-close ALL approved permits that have ended (remarks can be added after)
-    const result = await prisma.permitRequest.updateMany({
+    // Auto-close non-extended permits based on endDate
+    const regularResult = await prisma.permitRequest.updateMany({
       where: {
-        status: { in: ['APPROVED', 'EXTENDED'] },
+        status: 'APPROVED',
+        isExtended: false,
         endDate: { lte: now },
+        closedAt: null,
+      },
+      data: {
+        status: 'CLOSED',
+        closedAt: now,
+        autoClosedAt: now,
+      },
+    });
+
+    // Auto-close extended permits based on extendedUntil date
+    const extendedResult = await prisma.permitRequest.updateMany({
+      where: {
+        status: { in: ['EXTENDED', 'REAPPROVED'] },
+        isExtended: true,
+        extendedUntil: { lte: now },
         closedAt: null,
       },
       data: {
@@ -389,7 +405,9 @@ const autoCloseExpiredPermits = async (req, res) => {
 
     res.json({
       message: 'Auto-close check completed',
-      closedCount: result.count,
+      closedCount: regularResult.count + extendedResult.count,
+      regularClosed: regularResult.count,
+      extendedClosed: extendedResult.count,
     });
   } catch (error) {
     console.error('Auto-close permits error:', error);
@@ -402,11 +420,11 @@ const checkPermitStatuses = async () => {
   const now = new Date();
   
   try {
-    // Auto-close ALL approved/extended permits that have ended
-    // Remarks can still be added after closure
-    const result = await prisma.permitRequest.updateMany({
+    // Auto-close non-extended permits based on endDate
+    const regularResult = await prisma.permitRequest.updateMany({
       where: {
-        status: { in: ['APPROVED', 'EXTENDED'] },
+        status: 'APPROVED',
+        isExtended: false,
         endDate: { lte: now },
         closedAt: null,
       },
@@ -417,8 +435,26 @@ const checkPermitStatuses = async () => {
       },
     });
 
-    if (result.count > 0) {
-      console.log(`[Auto-Close] ${result.count} permit(s) auto-closed at`, now.toISOString());
+    // Auto-close extended permits based on extendedUntil date
+    const extendedResult = await prisma.permitRequest.updateMany({
+      where: {
+        status: { in: ['EXTENDED', 'REAPPROVED'] },
+        isExtended: true,
+        extendedUntil: { lte: now },
+        closedAt: null,
+      },
+      data: {
+        status: 'CLOSED',
+        closedAt: now,
+        autoClosedAt: now,
+      },
+    });
+
+    const totalClosed = regularResult.count + extendedResult.count;
+    if (totalClosed > 0) {
+      console.log(`[Auto-Close] ${totalClosed} permit(s) auto-closed at`, now.toISOString());
+      console.log(`  - Regular permits: ${regularResult.count}`);
+      console.log(`  - Extended permits: ${extendedResult.count}`);
     }
   } catch (error) {
     console.error('[Auto-Close] Error checking permit statuses:', error);

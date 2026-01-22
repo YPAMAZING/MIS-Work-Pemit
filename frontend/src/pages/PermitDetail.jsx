@@ -403,9 +403,26 @@ const PermitDetail = () => {
               </div>
             </div>
             {permit.isExtended && (
-              <div className="mt-3 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-2">
-                <Timer className="w-4 h-4 text-blue-600" />
-                <span className="text-sm font-medium text-blue-700">This permit has been extended</span>
+              <div className="mt-3 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <Timer className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-700">This permit has been extended</span>
+                </div>
+                {permit.extendedUntil && (
+                  <div className="flex items-center gap-2 pl-6">
+                    <span className="text-xs text-blue-600">Extended until:</span>
+                    <span className="text-sm font-bold text-blue-800">
+                      {new Date(permit.extendedUntil).toLocaleDateString('en-US', { 
+                        weekday: 'short',
+                        month: 'short', 
+                        day: 'numeric'
+                      })} at {new Date(permit.extendedUntil).toLocaleTimeString('en-US', { 
+                        hour: '2-digit', 
+                        minute: '2-digit'
+                      })}
+                    </span>
+                  </div>
+                )}
               </div>
             )}
           </Section>

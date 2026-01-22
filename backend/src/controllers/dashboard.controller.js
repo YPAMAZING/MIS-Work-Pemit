@@ -9,6 +9,7 @@ const getDashboardStats = async (req, res) => {
     const user = req.user;
     const isAdmin = user.role === 'ADMIN';
     const isFireman = user.role === 'FIREMAN' || user.role === 'SAFETY_OFFICER';
+    const isSafetyOfficer = isFireman; // Alias for backward compatibility
     const isRequestor = user.role === 'REQUESTOR';
 
     // Base where clause for requestor

@@ -526,8 +526,8 @@ const PermitDetail = () => {
         )}
       </Section>
 
-      {/* Hazards, Precautions, Equipment */}
-      <div className="grid md:grid-cols-3 gap-6 mt-6">
+      {/* Hazards and Equipment */}
+      <div className="grid md:grid-cols-2 gap-6 mt-6">
         {/* Hazards */}
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
           <div className="flex items-center gap-3 px-5 py-3 bg-gradient-to-r from-red-500 to-rose-500 text-white">
@@ -548,30 +548,6 @@ const PermitDetail = () => {
               </div>
             ) : (
               <p className="text-gray-400 text-center py-4">No hazards listed</p>
-            )}
-          </div>
-        </div>
-
-        {/* Precautions */}
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-          <div className="flex items-center gap-3 px-5 py-3 bg-gradient-to-r from-emerald-500 to-green-500 text-white">
-            <Shield className="w-5 h-5" />
-            <span className="font-semibold">PRECAUTIONS</span>
-          </div>
-          <div className="p-5">
-            {precautions.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {precautions.map((precaution, idx) => (
-                  <span
-                    key={idx}
-                    className="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-sm font-medium border border-emerald-200"
-                  >
-                    {precaution}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-400 text-center py-4">No precautions listed</p>
             )}
           </div>
         </div>

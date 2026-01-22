@@ -116,7 +116,8 @@ const Layout = ({ systemType = 'workpermit' }) => {
   const getRoleBadge = (role) => {
     const badges = {
       ADMIN: { bg: 'bg-purple-100', text: 'text-purple-700', label: 'Admin' },
-      SAFETY_OFFICER: { bg: 'bg-green-100', text: 'text-green-700', label: 'Fireman' },
+      FIREMAN: { bg: 'bg-green-100', text: 'text-green-700', label: 'Fireman' },
+      SAFETY_OFFICER: { bg: 'bg-green-100', text: 'text-green-700', label: 'Fireman' }, // Backward compatibility
       REQUESTOR: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Requestor' },
       SITE_ENGINEER: { bg: 'bg-orange-100', text: 'text-orange-700', label: 'Site Engineer' },
     }
@@ -231,7 +232,7 @@ const Layout = ({ systemType = 'workpermit' }) => {
                 </p>
                 <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full max-w-full truncate ${
                   user?.role === 'ADMIN' ? 'bg-purple-500/20 text-purple-300' :
-                  user?.role === 'SAFETY_OFFICER' ? 'bg-emerald-500/20 text-emerald-300' :
+                  (user?.role === 'FIREMAN' || user?.role === 'SAFETY_OFFICER') ? 'bg-emerald-500/20 text-emerald-300' :
                   'bg-blue-500/20 text-blue-300'
                 }`}>
                   {roleBadge.label}

@@ -61,8 +61,11 @@ export const permitsAPI = {
   // Workflow actions
   extendPermit: (id, data) => api.post(`/permits/${id}/extend`, data),
   revokePermit: (id, data) => api.post(`/permits/${id}/revoke`, data),
+  reapprovePermit: (id, data) => api.post(`/permits/${id}/reapprove`, data),
   closePermit: (id, data) => api.post(`/permits/${id}/close`, data),
   transferPermit: (id, data) => api.post(`/permits/${id}/transfer`, data),
+  // Action history
+  getActionHistory: (id) => api.get(`/permits/${id}/action-history`),
   // Workers & Measures
   updateMeasures: (id, measures) => api.put(`/permits/${id}/measures`, { measures }),
   addWorkers: (id, workers) => api.post(`/permits/${id}/add-workers`, { workers }),

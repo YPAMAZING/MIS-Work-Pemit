@@ -37,7 +37,7 @@ router.post(
     body('email').isEmail().withMessage('Valid email is required'),
     body('firstName').optional().trim(),
     body('lastName').optional().trim(),
-    body('role').optional().isIn(['ADMIN', 'SAFETY_OFFICER', 'REQUESTOR', 'SITE_ENGINEER']),
+    body('role').optional().isIn(['ADMIN', 'FIREMAN', 'SAFETY_OFFICER', 'REQUESTOR', 'SITE_ENGINEER']),
     body('externalUserId').optional().trim(),
     body('externalSystem').optional().trim(),
   ],

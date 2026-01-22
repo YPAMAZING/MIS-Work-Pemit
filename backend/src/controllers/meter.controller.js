@@ -16,8 +16,8 @@ const getAllReadings = async (req, res) => {
 
     const where = {};
 
-    // Site engineers can only see their own readings unless admin
-    if (req.user.role !== 'ADMIN' && req.user.role !== 'SAFETY_OFFICER') {
+    // Site engineers can only see their own readings unless admin/fireman
+    if (req.user.role !== 'ADMIN' && req.user.role !== 'FIREMAN' && req.user.role !== 'SAFETY_OFFICER') {
       where.siteEngineerId = req.user.id;
     }
 
@@ -75,7 +75,7 @@ const getReadingById = async (req, res) => {
     }
 
     // Check access
-    if (req.user.role !== 'ADMIN' && req.user.role !== 'SAFETY_OFFICER' && reading.siteEngineerId !== req.user.id) {
+    if (req.user.role !== 'ADMIN' && req.user.role !== 'FIREMAN' && req.user.role !== 'SAFETY_OFFICER' && reading.siteEngineerId !== req.user.id) {
       return res.status(403).json({ message: 'Access denied' });
     }
 
@@ -241,8 +241,8 @@ const verifyReading = async (req, res) => {
     const { id } = req.params;
     const { isVerified, notes } = req.body;
 
-    if (req.user.role !== 'ADMIN' && req.user.role !== 'SAFETY_OFFICER') {
-      return res.status(403).json({ message: 'Only admins and safety officers can verify readings' });
+    if (req.user.role !== 'ADMIN' && req.user.role !== 'FIREMAN' && req.user.role !== 'SAFETY_OFFICER') {
+      return res.status(403).json({ message: 'Only admins and firemen can verify readings' });
     }
 
     const reading = await prisma.meterReading.update({
@@ -295,7 +295,7 @@ const getAnalytics = async (req, res) => {
     const { meterType, period = '30d', groupBy = 'day' } = req.query;
 
     const where = {};
-    if (req.user.role !== 'ADMIN' && req.user.role !== 'SAFETY_OFFICER') {
+    if (req.user.role !== 'ADMIN' && req.user.role !== 'FIREMAN' && req.user.role !== 'SAFETY_OFFICER') {
       where.siteEngineerId = req.user.id;
     }
     if (meterType) where.meterType = meterType;
@@ -359,7 +359,7 @@ const getAnalytics = async (req, res) => {
 
     // Recent readings
     const recentReadings = await prisma.meterReading.findMany({
-      where: req.user.role === 'ADMIN' || req.user.role === 'SAFETY_OFFICER'
+      where: req.user.role === 'ADMIN' || req.user.role === 'FIREMAN' || req.user.role === 'SAFETY_OFFICER'
         ? {}
         : { siteEngineerId: req.user.id },
       orderBy: { createdAt: 'desc' },
@@ -402,7 +402,7 @@ const exportReadings = async (req, res) => {
     const { format = 'json', meterType, startDate, endDate } = req.query;
 
     const where = {};
-    if (req.user.role !== 'ADMIN' && req.user.role !== 'SAFETY_OFFICER') {
+    if (req.user.role !== 'ADMIN' && req.user.role !== 'FIREMAN' && req.user.role !== 'SAFETY_OFFICER') {
       where.siteEngineerId = req.user.id;
     }
     if (meterType) where.meterType = meterType;

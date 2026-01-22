@@ -29,6 +29,8 @@ const statusColors = {
   'REJECTED': '#ef4444',
   'CLOSED': '#6b7280',
   'EXTENDED': '#3b82f6',
+  'REVOKED': '#ef4444',
+  'REAPPROVED': '#14b8a6',
   'PENDING_REMARKS': '#f97316',
 };
 
@@ -56,6 +58,7 @@ const sectionColors = {
   approvals: '#334155',         // Dark slate for Approvals
   firemanRemarks: '#7c3aed',    // Purple for Fireman Remarks
   documents: '#0891b2',         // Cyan for Documents
+  actionHistory: '#0d9488',     // Teal for Action History
 };
 
 // General Instructions (as per Reliable Group standards)
@@ -126,6 +129,9 @@ const generatePermitPDF = async (req, res) => {
           },
         },
         approvals: true,
+        actionHistory: {
+          orderBy: { createdAt: 'asc' },
+        },
       },
     });
 
@@ -521,6 +527,86 @@ const generatePermitPDF = async (req, res) => {
         
         yPos += 15; // Spacing between workers
       }
+      
+      yPos += 10;
+    }
+
+    // === ACTION HISTORY TRAIL (Approved -> Revoked -> Re-Approved) ===
+    const actionHistory = permit.actionHistory || [];
+    const approvedActions = permit.approvals?.filter(a => a.decision === 'APPROVED') || [];
+    
+    // Only show section if there's action history (revoke/reapprove events)
+    if (actionHistory.length > 0 || approvedActions.length > 0) {
+      checkPageBreak(120);
+      drawSectionHeader('APPROVAL TRAIL (HISTORY)', sectionColors.actionHistory);
+      
+      // Show initial approval first (from approvals)
+      approvedActions.forEach((approval, idx) => {
+        checkPageBreak(60);
+        
+        // Action badge
+        doc.roundedRect(50, yPos, 80, 18, 3).fill('#10b981');
+        doc.fontSize(8).font('Helvetica-Bold').fillColor('#ffffff')
+           .text('APPROVED', 50, yPos + 4, { width: 80, align: 'center' });
+        
+        // Action details
+        doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e293b')
+           .text(`by ${approval.approverName || 'Authorized Person'}`, 140, yPos + 3);
+        
+        if (approval.approvedAt) {
+          doc.fontSize(8).font('Helvetica').fillColor('#64748b')
+             .text(new Date(approval.approvedAt).toLocaleString(), 380, yPos + 4);
+        }
+        
+        yPos += 22;
+        
+        // Comment if any
+        if (approval.comment) {
+          doc.fontSize(8).font('Helvetica').fillColor('#334155')
+             .text(`Comment: ${approval.comment}`, 60, yPos, { width: 480 });
+          yPos += doc.heightOfString(`Comment: ${approval.comment}`, { width: 480 }) + 5;
+        }
+        
+        yPos += 10;
+      });
+      
+      // Show action history (revoke, reapprove, extend, close)
+      actionHistory.forEach((action, idx) => {
+        checkPageBreak(60);
+        
+        // Action badge with appropriate color
+        const actionColor = action.action === 'REVOKED' ? '#ef4444' : 
+                           action.action === 'REAPPROVED' ? '#14b8a6' :
+                           action.action === 'EXTENDED' ? '#3b82f6' :
+                           action.action === 'CLOSED' ? '#6b7280' : '#f59e0b';
+        
+        doc.roundedRect(50, yPos, 80, 18, 3).fill(actionColor);
+        doc.fontSize(8).font('Helvetica-Bold').fillColor('#ffffff')
+           .text(action.action, 50, yPos + 4, { width: 80, align: 'center' });
+        
+        // Action details
+        doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e293b')
+           .text(`by ${action.performedByName || 'Unknown'}`, 140, yPos + 3);
+        
+        if (action.performedByRole) {
+          doc.fontSize(8).font('Helvetica').fillColor('#64748b')
+             .text(`(${action.performedByRole})`, 250, yPos + 4);
+        }
+        
+        doc.fontSize(8).font('Helvetica').fillColor('#64748b')
+           .text(new Date(action.createdAt).toLocaleString(), 380, yPos + 4);
+        
+        yPos += 22;
+        
+        // Comment if any
+        if (action.comment) {
+          doc.fontSize(8).font('Helvetica').fillColor('#334155')
+             .text(`Comment: ${action.comment}`, 60, yPos, { width: 480 });
+          yPos += doc.heightOfString(`Comment: ${action.comment}`, { width: 480 }) + 5;
+        }
+        
+        yPos += 10;
+      });
       
       yPos += 10;
     }

@@ -26,11 +26,11 @@ router.get('/:id', getWorkerById);
 // Generate QR code for permit
 router.get('/qr/:permitId', generateWorkerQR);
 
-// Create worker (Admin and Safety Officer only)
-router.post('/', authorize(['ADMIN', 'SAFETY_OFFICER']), createWorker);
+// Create worker (Admin and Fireman only)
+router.post('/', authorize(['ADMIN', 'FIREMAN', 'SAFETY_OFFICER']), createWorker);
 
 // Update worker
-router.put('/:id', authorize(['ADMIN', 'SAFETY_OFFICER']), updateWorker);
+router.put('/:id', authorize(['ADMIN', 'FIREMAN', 'SAFETY_OFFICER']), updateWorker);
 
 // Delete worker (Admin only)
 router.delete('/:id', authorize(['ADMIN']), deleteWorker);

@@ -236,7 +236,7 @@ const createPermit = async (req, res) => {
       await tx.permitApproval.create({
         data: {
           permitId: newPermit.id,
-          approverRole: 'SAFETY_OFFICER',
+          approverRole: 'FIREMAN',
           decision: 'PENDING',
         },
       });
@@ -271,11 +271,11 @@ const createPermit = async (req, res) => {
       userAgent: req.headers['user-agent'],
     });
 
-    // Notify all Firemen (SAFETY_OFFICER) about the new permit
+    // Notify all Firemen about the new permit
     try {
       const firemen = await prisma.user.findMany({
         where: {
-          role: { name: 'SAFETY_OFFICER' },
+          role: { name: 'FIREMAN' },
           isActive: true,
           isApproved: true,
         },
@@ -430,7 +430,7 @@ const deletePermit = async (req, res) => {
       return res.status(404).json({ message: 'Permit not found' });
     }
 
-    // Admin and Fireman (SAFETY_OFFICER) can delete any permit
+    // Admin and Fireman can delete any permit
     // Requestor can only delete their own pending permits
     if (user.role === 'REQUESTOR') {
       if (existingPermit.createdBy !== user.id) {
@@ -443,8 +443,8 @@ const deletePermit = async (req, res) => {
       }
     }
     
-    // For roles other than Admin and SAFETY_OFFICER, restrict deletion
-    if (!['ADMIN', 'SAFETY_OFFICER'].includes(user.role) && user.role !== 'REQUESTOR') {
+    // For roles other than Admin and FIREMAN, restrict deletion
+    if (!['ADMIN', 'FIREMAN'].includes(user.role) && user.role !== 'REQUESTOR') {
       return res.status(403).json({ message: 'Access denied' });
     }
 
@@ -632,7 +632,7 @@ const extendPermit = async (req, res) => {
 const revokePermit = async (req, res) => {
   try {
     const { id } = req.params;
-    const { reason } = req.body;
+    const { reason, comment } = req.body;
     const user = req.user;
 
     const permit = await prisma.permitRequest.findUnique({ where: { id } });
@@ -641,14 +641,29 @@ const revokePermit = async (req, res) => {
       return res.status(404).json({ message: 'Permit not found' });
     }
 
-    if (!['APPROVED', 'EXTENDED'].includes(permit.status)) {
-      return res.status(400).json({ message: 'Only approved/extended permits can be revoked' });
+    if (!['APPROVED', 'EXTENDED', 'REAPPROVED'].includes(permit.status)) {
+      return res.status(400).json({ message: 'Only approved/extended/reapproved permits can be revoked' });
     }
 
-    const updatedPermit = await prisma.permitRequest.update({
-      where: { id },
-      data: { status: 'REVOKED' },
-    });
+    // Update permit status and record action history in transaction
+    const [updatedPermit, actionHistory] = await prisma.$transaction([
+      prisma.permitRequest.update({
+        where: { id },
+        data: { status: 'REVOKED' },
+      }),
+      prisma.permitActionHistory.create({
+        data: {
+          permitId: id,
+          action: 'REVOKED',
+          performedBy: user.id,
+          performedByName: `${user.firstName} ${user.lastName}`,
+          performedByRole: user.roleName || user.role,
+          comment: comment || reason,
+          previousStatus: permit.status,
+          newStatus: 'REVOKED',
+        },
+      }),
+    ]);
 
     await createAuditLog({
       userId: user.id,
@@ -656,7 +671,7 @@ const revokePermit = async (req, res) => {
       entity: 'PermitRequest',
       entityId: id,
       oldValue: { status: permit.status },
-      newValue: { status: 'REVOKED', reason },
+      newValue: { status: 'REVOKED', reason, comment },
       ipAddress: req.ip,
       userAgent: req.headers['user-agent'],
     });
@@ -665,6 +680,91 @@ const revokePermit = async (req, res) => {
   } catch (error) {
     console.error('Revoke permit error:', error);
     res.status(500).json({ message: 'Error revoking permit' });
+  }
+};
+
+// Re-approve revoked permit
+const reapprovePermit = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { comment, signature } = req.body;
+    const user = req.user;
+
+    const permit = await prisma.permitRequest.findUnique({ where: { id } });
+
+    if (!permit) {
+      return res.status(404).json({ message: 'Permit not found' });
+    }
+
+    if (permit.status !== 'REVOKED') {
+      return res.status(400).json({ message: 'Only revoked permits can be re-approved' });
+    }
+
+    // Update permit status and record action history in transaction
+    const [updatedPermit, actionHistory, newApproval] = await prisma.$transaction([
+      prisma.permitRequest.update({
+        where: { id },
+        data: { status: 'REAPPROVED' },
+      }),
+      prisma.permitActionHistory.create({
+        data: {
+          permitId: id,
+          action: 'REAPPROVED',
+          performedBy: user.id,
+          performedByName: `${user.firstName} ${user.lastName}`,
+          performedByRole: user.roleName || user.role,
+          comment: comment,
+          previousStatus: permit.status,
+          newStatus: 'REAPPROVED',
+          signature: signature,
+        },
+      }),
+      prisma.permitApproval.create({
+        data: {
+          permitId: id,
+          approverName: `${user.firstName} ${user.lastName}`,
+          approverRole: user.role,
+          decision: 'REAPPROVED',
+          comment: comment,
+          signature: signature,
+          signedAt: new Date(),
+          approvedAt: new Date(),
+        },
+      }),
+    ]);
+
+    await createAuditLog({
+      userId: user.id,
+      action: 'PERMIT_REAPPROVED',
+      entity: 'PermitRequest',
+      entityId: id,
+      oldValue: { status: permit.status },
+      newValue: { status: 'REAPPROVED', comment },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+
+    res.json({ message: 'Permit re-approved successfully', permit: updatedPermit });
+  } catch (error) {
+    console.error('Re-approve permit error:', error);
+    res.status(500).json({ message: 'Error re-approving permit' });
+  }
+};
+
+// Get permit action history
+const getPermitActionHistory = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const actionHistory = await prisma.permitActionHistory.findMany({
+      where: { permitId: id },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    res.json({ actionHistory });
+  } catch (error) {
+    console.error('Get action history error:', error);
+    res.status(500).json({ message: 'Error fetching action history' });
   }
 };
 
@@ -842,8 +942,10 @@ module.exports = {
   registerWorkers,
   extendPermit,
   revokePermit,
+  reapprovePermit,
   transferPermit,
   closePermit,
   updateMeasures,
   addWorkers,
+  getPermitActionHistory,
 };

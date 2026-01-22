@@ -11,13 +11,15 @@ const {
   registerWorkers,
   extendPermit,
   revokePermit,
+  reapprovePermit,
   transferPermit,
   closePermit,
   updateMeasures,
   addWorkers,
+  getPermitActionHistory,
 } = require('../controllers/permit.controller');
 const { generatePermitPDF } = require('../controllers/pdf.controller');
-const { authenticate, isRequestor, authorize } = require('../middleware/auth.middleware');
+const { authenticate, isRequestor, authorize, checkPermission, checkAnyPermission } = require('../middleware/auth.middleware');
 const { validate } = require('../middleware/validate.middleware');
 
 const router = express.Router();
@@ -118,11 +120,11 @@ router.delete(
   deletePermit
 );
 
-// Workflow actions (Safety Officer and Admin only)
+// Workflow actions (Fireman and Admin, or users with appropriate permissions)
 // Extend permit
 router.post(
   '/:id/extend',
-  authorize(['SAFETY_OFFICER', 'ADMIN']),
+  checkAnyPermission(['permits.extend', 'permits.view_all']),
   [
     param('id').isUUID().withMessage('Invalid permit ID'),
     body('extendedUntil').isISO8601().withMessage('Valid extension date required'),
@@ -134,13 +136,35 @@ router.post(
 // Revoke permit
 router.post(
   '/:id/revoke',
-  authorize(['SAFETY_OFFICER', 'ADMIN']),
+  checkPermission('permits.revoke'),
   [
     param('id').isUUID().withMessage('Invalid permit ID'),
-    body('reason').notEmpty().withMessage('Reason is required'),
+    body('reason').optional(),
+    body('comment').optional(),
   ],
   validate,
   revokePermit
+);
+
+// Re-approve revoked permit
+router.post(
+  '/:id/reapprove',
+  checkAnyPermission(['permits.reapprove', 'approvals.reapprove']),
+  [
+    param('id').isUUID().withMessage('Invalid permit ID'),
+    body('comment').optional(),
+    body('signature').optional(),
+  ],
+  validate,
+  reapprovePermit
+);
+
+// Get permit action history
+router.get(
+  '/:id/action-history',
+  [param('id').isUUID().withMessage('Invalid permit ID')],
+  validate,
+  getPermitActionHistory
 );
 
 // Transfer permit
@@ -158,7 +182,7 @@ router.post(
 // Close permit with checklist
 router.post(
   '/:id/close',
-  authorize(['SAFETY_OFFICER', 'ADMIN']),
+  checkPermission('permits.close'),
   [param('id').isUUID().withMessage('Invalid permit ID')],
   validate,
   closePermit

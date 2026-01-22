@@ -268,7 +268,8 @@ const Users = () => {
     const role = typeof roleName === 'object' ? roleName?.name : roleName
     const badges = {
       ADMIN: { bg: 'bg-purple-100', text: 'text-purple-700', label: 'Admin', icon: Shield },
-      SAFETY_OFFICER: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Fireman', icon: HardHat },
+      FIREMAN: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Fireman', icon: HardHat },
+      SAFETY_OFFICER: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Fireman', icon: HardHat }, // Backward compatibility
       REQUESTOR: { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Requestor', icon: ClipboardCheck },
       SITE_ENGINEER: { bg: 'bg-orange-100', text: 'text-orange-700', label: 'Site Engineer', icon: Wrench },
     }
@@ -499,7 +500,7 @@ const Users = () => {
               ) : (
                 <>
                   <option value="ADMIN">Admin</option>
-                  <option value="SAFETY_OFFICER">Fireman</option>
+                  <option value="FIREMAN">Fireman</option>
                   <option value="SITE_ENGINEER">Site Engineer</option>
                   <option value="REQUESTOR">Requestor</option>
                 </>
@@ -846,7 +847,7 @@ const Users = () => {
                     ) : (
                       <>
                         <option value="REQUESTOR">Requestor</option>
-                        <option value="SAFETY_OFFICER">Fireman</option>
+                        <option value="FIREMAN">Fireman</option>
                         <option value="SITE_ENGINEER">Site Engineer</option>
                         <option value="ADMIN">Admin</option>
                       </>

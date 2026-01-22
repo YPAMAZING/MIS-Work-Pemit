@@ -38,18 +38,18 @@ async function main() {
   });
   console.log('✅ Admin role created');
 
-  const safetyRole = await prisma.role.upsert({
-    where: { name: 'SAFETY_OFFICER' },
+  const firemanRole = await prisma.role.upsert({
+    where: { name: 'FIREMAN' },
     update: {},
     create: {
-      name: 'SAFETY_OFFICER',
-      displayName: 'Safety Officer',
-      description: 'Can approve/reject permits and manage workers',
+      name: 'FIREMAN',
+      displayName: 'Fireman',
+      description: 'Can approve/reject permits, re-approve revoked permits, and manage workers',
       isSystem: true,
       permissions: JSON.stringify([
         'dashboard.view', 'dashboard.stats',
-        'permits.view', 'permits.view_all', 'permits.export', 'permits.extend', 'permits.revoke', 'permits.close',
-        'approvals.view', 'approvals.approve', 'approvals.sign',
+        'permits.view', 'permits.view_all', 'permits.export', 'permits.extend', 'permits.revoke', 'permits.close', 'permits.reapprove',
+        'approvals.view', 'approvals.approve', 'approvals.sign', 'approvals.reapprove',
         'workers.view', 'workers.create', 'workers.edit', 'workers.qr',
         'meters.view', 'meters.view_all', 'meters.verify', 'meters.analytics',
         'settings.view',
@@ -61,7 +61,7 @@ async function main() {
       }),
     },
   });
-  console.log('✅ Safety Officer role created');
+  console.log('✅ Fireman role created');
 
   const requestorRole = await prisma.role.upsert({
     where: { name: 'REQUESTOR' },
@@ -130,23 +130,23 @@ async function main() {
   });
   console.log('✅ Admin user created:', admin.email);
 
-  // Safety Officer
-  const safetyPassword = await bcrypt.hash('safety123', 10);
-  const safetyOfficer = await prisma.user.upsert({
-    where: { email: 'safety@permitmanager.com' },
-    update: { roleId: safetyRole.id, isApproved: true, approvedAt: new Date() },
+  // Fireman
+  const firemanPassword = await bcrypt.hash('fireman123', 10);
+  const fireman = await prisma.user.upsert({
+    where: { email: 'fireman@permitmanager.com' },
+    update: { roleId: firemanRole.id, isApproved: true, approvedAt: new Date() },
     create: {
-      email: 'safety@permitmanager.com',
-      password: safetyPassword,
+      email: 'fireman@permitmanager.com',
+      password: firemanPassword,
       firstName: 'John',
-      lastName: 'Safety',
-      roleId: safetyRole.id,
+      lastName: 'Fireman',
+      roleId: firemanRole.id,
       department: 'HSE',
       isApproved: true,
       approvedAt: new Date(),
     },
   });
-  console.log('✅ Safety Officer created:', safetyOfficer.email);
+  console.log('✅ Fireman created:', fireman.email);
 
   // Requestor users
   const requestorPassword = await bcrypt.hash('user123', 10);
@@ -223,7 +223,7 @@ async function main() {
   await prisma.permitApproval.create({
     data: {
       permitId: permit1.id,
-      approverRole: 'SAFETY_OFFICER',
+      approverRole: 'FIREMAN',
       decision: 'PENDING',
     },
   });
@@ -249,7 +249,7 @@ async function main() {
   await prisma.permitApproval.create({
     data: {
       permitId: permit2.id,
-      approverRole: 'SAFETY_OFFICER',
+      approverRole: 'FIREMAN',
       decision: 'PENDING',
     },
   });
@@ -276,7 +276,7 @@ async function main() {
     data: {
       permitId: permit3.id,
       approverName: 'John Safety',
-      approverRole: 'SAFETY_OFFICER',
+      approverRole: 'FIREMAN',
       decision: 'APPROVED',
       comment: 'All safety requirements verified. Proceed with caution.',
       approvedAt: new Date('2025-01-14T10:30:00Z'),
@@ -367,7 +367,7 @@ async function main() {
   console.log('');
   console.log('📋 Demo Credentials:');
   console.log('   Admin:          admin@permitmanager.com / admin123');
-  console.log('   Safety Officer: safety@permitmanager.com / safety123');
+  console.log('   Fireman:        fireman@permitmanager.com / fireman123');
   console.log('   Requestor:      requestor@permitmanager.com / user123');
   console.log('   Site Engineer:  engineer@permitmanager.com / engineer123');
   console.log('');

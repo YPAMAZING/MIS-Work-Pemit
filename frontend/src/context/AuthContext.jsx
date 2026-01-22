@@ -93,21 +93,29 @@ export const AuthProvider = ({ children }) => {
   // Check if user can view approvals
   const canViewApprovals = () => {
     if (!user) return false
-    if (user.role === 'ADMIN' || user.role === 'SAFETY_OFFICER') return true
+    // Support both FIREMAN and SAFETY_OFFICER for backward compatibility
+    if (user.role === 'ADMIN' || user.role === 'FIREMAN' || user.role === 'SAFETY_OFFICER') return true
     return hasPermission('approvals.view')
   }
 
   // Check if user can approve/reject permits
   const canApprove = () => {
     if (!user) return false
-    if (user.role === 'ADMIN' || user.role === 'SAFETY_OFFICER') return true
+    if (user.role === 'ADMIN' || user.role === 'FIREMAN' || user.role === 'SAFETY_OFFICER') return true
     return hasPermission('approvals.approve')
+  }
+
+  // Check if user can re-approve revoked permits
+  const canReapprove = () => {
+    if (!user) return false
+    if (user.role === 'ADMIN' || user.role === 'FIREMAN' || user.role === 'SAFETY_OFFICER') return true
+    return hasPermission('approvals.reapprove') || hasPermission('permits.reapprove')
   }
 
   // Check if user can sign approvals
   const canSignApprovals = () => {
     if (!user) return false
-    if (user.role === 'ADMIN' || user.role === 'SAFETY_OFFICER') return true
+    if (user.role === 'ADMIN' || user.role === 'FIREMAN' || user.role === 'SAFETY_OFFICER') return true
     return hasPermission('approvals.sign')
   }
 
@@ -115,7 +123,7 @@ export const AuthProvider = ({ children }) => {
   // Check if user can view all permits
   const canViewAllPermits = () => {
     if (!user) return false
-    if (user.role === 'ADMIN' || user.role === 'SAFETY_OFFICER') return true
+    if (user.role === 'ADMIN' || user.role === 'FIREMAN' || user.role === 'SAFETY_OFFICER') return true
     return hasPermission('permits.view_all')
   }
 
@@ -136,35 +144,42 @@ export const AuthProvider = ({ children }) => {
   // Check if user can delete permits
   const canDeletePermits = () => {
     if (!user) return false
-    if (user.role === 'ADMIN' || user.role === 'SAFETY_OFFICER') return true
+    if (user.role === 'ADMIN' || user.role === 'FIREMAN' || user.role === 'SAFETY_OFFICER') return true
     return hasPermission('permits.delete')
   }
 
   // Check if user can extend permits
   const canExtendPermits = () => {
     if (!user) return false
-    if (user.role === 'ADMIN' || user.role === 'SAFETY_OFFICER') return true
+    if (user.role === 'ADMIN' || user.role === 'FIREMAN' || user.role === 'SAFETY_OFFICER') return true
     return hasPermission('permits.extend')
   }
 
   // Check if user can revoke permits
   const canRevokePermits = () => {
     if (!user) return false
-    if (user.role === 'ADMIN' || user.role === 'SAFETY_OFFICER') return true
+    if (user.role === 'ADMIN' || user.role === 'FIREMAN' || user.role === 'SAFETY_OFFICER') return true
     return hasPermission('permits.revoke')
+  }
+
+  // Check if user can re-approve revoked permits
+  const canReapprovePermits = () => {
+    if (!user) return false
+    if (user.role === 'ADMIN' || user.role === 'FIREMAN' || user.role === 'SAFETY_OFFICER') return true
+    return hasPermission('permits.reapprove')
   }
 
   // Check if user can close permits
   const canClosePermits = () => {
     if (!user) return false
-    if (user.role === 'ADMIN' || user.role === 'SAFETY_OFFICER') return true
+    if (user.role === 'ADMIN' || user.role === 'FIREMAN' || user.role === 'SAFETY_OFFICER') return true
     return hasPermission('permits.close')
   }
 
   // Check if user can export permit PDF
   const canExportPermitPDF = () => {
     if (!user) return false
-    if (user.role === 'ADMIN' || user.role === 'SAFETY_OFFICER') return true
+    if (user.role === 'ADMIN' || user.role === 'FIREMAN' || user.role === 'SAFETY_OFFICER') return true
     return hasPermission('permits.export')
   }
 
@@ -243,19 +258,19 @@ export const AuthProvider = ({ children }) => {
   // ============ WORKER PERMISSIONS ============
   const canViewWorkers = () => {
     if (!user) return false
-    if (user.role === 'ADMIN' || user.role === 'SAFETY_OFFICER') return true
+    if (user.role === 'ADMIN' || user.role === 'FIREMAN' || user.role === 'SAFETY_OFFICER') return true
     return hasPermission('workers.view')
   }
 
   const canCreateWorkers = () => {
     if (!user) return false
-    if (user.role === 'ADMIN' || user.role === 'SAFETY_OFFICER') return true
+    if (user.role === 'ADMIN' || user.role === 'FIREMAN' || user.role === 'SAFETY_OFFICER') return true
     return hasPermission('workers.create')
   }
 
   const canEditWorkers = () => {
     if (!user) return false
-    if (user.role === 'ADMIN' || user.role === 'SAFETY_OFFICER') return true
+    if (user.role === 'ADMIN' || user.role === 'FIREMAN' || user.role === 'SAFETY_OFFICER') return true
     return hasPermission('workers.edit')
   }
 
@@ -298,7 +313,7 @@ export const AuthProvider = ({ children }) => {
 
   const canViewStatistics = () => {
     if (!user) return false
-    if (user.role === 'ADMIN' || user.role === 'SAFETY_OFFICER') return true
+    if (user.role === 'ADMIN' || user.role === 'FIREMAN' || user.role === 'SAFETY_OFFICER') return true
     return hasPermission('dashboard.stats')
   }
 
@@ -311,7 +326,8 @@ export const AuthProvider = ({ children }) => {
     updateUser,
     // Role checks (for backward compatibility with system roles)
     isAdmin: user?.role === 'ADMIN',
-    isSafetyOfficer: user?.role === 'SAFETY_OFFICER',
+    isFireman: user?.role === 'FIREMAN' || user?.role === 'SAFETY_OFFICER',
+    isSafetyOfficer: user?.role === 'FIREMAN' || user?.role === 'SAFETY_OFFICER', // Alias for backward compatibility
     isRequestor: user?.role === 'REQUESTOR',
     isSiteEngineer: user?.role === 'SITE_ENGINEER',
     // Permission-based checks (works with custom roles too)
@@ -320,6 +336,7 @@ export const AuthProvider = ({ children }) => {
     // Approval permissions
     canViewApprovals,
     canApprove,
+    canReapprove,
     canSignApprovals,
     // Permit permissions
     canViewAllPermits,
@@ -328,6 +345,7 @@ export const AuthProvider = ({ children }) => {
     canDeletePermits,
     canExtendPermits,
     canRevokePermits,
+    canReapprovePermits,
     canClosePermits,
     canExportPermitPDF,
     // User permissions

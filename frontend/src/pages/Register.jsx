@@ -56,7 +56,7 @@ const Register = () => {
       showCompanyName: true, // Show Company Name field instead of Department
     },
     {
-      id: 'SAFETY_OFFICER',
+      id: 'FIREMAN',
       name: 'Fireman',
       description: 'Review and approve permits',
       icon: HardHat,

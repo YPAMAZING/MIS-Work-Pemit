@@ -254,9 +254,9 @@ const isAdmin = (req, res, next) => {
   });
 };
 
-// Check if user is Safety Officer (now also supports custom roles with approval permission)
-const isSafetyOfficer = (req, res, next) => {
-  log.permission('Checking isSafetyOfficer', { 
+// Check if user is Fireman (now also supports custom roles with approval permission)
+const isFireman = (req, res, next) => {
+  log.permission('Checking isFireman', { 
     path: req.path,
     user: req.user?.email,
     role: req.user?.role,
@@ -264,19 +264,19 @@ const isSafetyOfficer = (req, res, next) => {
   });
 
   if (!req.user) {
-    log.access(false, 'isSafetyOfficer - No user');
+    log.access(false, 'isFireman - No user');
     return res.status(401).json({ message: 'Authentication required' });
   }
 
   // Admin has all permissions
   if (req.user.role === 'ADMIN') {
-    log.access(true, 'isSafetyOfficer - ADMIN role', { user: req.user.email });
+    log.access(true, 'isFireman - ADMIN role', { user: req.user.email });
     return next();
   }
 
-  // Safety Officer has approval access
-  if (req.user.role === 'SAFETY_OFFICER') {
-    log.access(true, 'isSafetyOfficer - SAFETY_OFFICER role', { user: req.user.email });
+  // Fireman has approval access (support both old SAFETY_OFFICER and new FIREMAN names)
+  if (req.user.role === 'FIREMAN' || req.user.role === 'SAFETY_OFFICER') {
+    log.access(true, 'isFireman - FIREMAN role', { user: req.user.email });
     return next();
   }
 
@@ -285,7 +285,7 @@ const isSafetyOfficer = (req, res, next) => {
     req.user.permissions.includes('approvals.view') ||
     req.user.permissions.includes('approvals.approve')
   )) {
-    log.access(true, 'isSafetyOfficer - Has approval permission', { 
+    log.access(true, 'isFireman - Has approval permission', { 
       user: req.user.email,
       role: req.user.role,
       matchedPermissions: req.user.permissions.filter(p => 
@@ -295,17 +295,20 @@ const isSafetyOfficer = (req, res, next) => {
     return next();
   }
 
-  log.access(false, 'isSafetyOfficer - Access denied', { 
+  log.access(false, 'isFireman - Access denied', { 
     user: req.user.email,
     role: req.user.role,
     permissions: req.user.permissions
   });
   return res.status(403).json({ 
     message: 'Access denied. Insufficient permissions.',
-    required: ['SAFETY_OFFICER', 'ADMIN', 'or approvals.view permission'],
+    required: ['FIREMAN', 'ADMIN', 'or approvals.view permission'],
     current: req.user.role,
   });
 };
+
+// Alias for backward compatibility
+const isSafetyOfficer = isFireman;
 
 // Check if user can approve permits
 const canApprove = (req, res, next) => {
@@ -321,8 +324,8 @@ const canApprove = (req, res, next) => {
     return res.status(401).json({ message: 'Authentication required' });
   }
 
-  // Admin and Safety Officer can approve
-  if (req.user.role === 'ADMIN' || req.user.role === 'SAFETY_OFFICER') {
+  // Admin and Fireman can approve (support both old SAFETY_OFFICER and new FIREMAN names)
+  if (req.user.role === 'ADMIN' || req.user.role === 'FIREMAN' || req.user.role === 'SAFETY_OFFICER') {
     log.access(true, 'canApprove - System role', { 
       user: req.user.email, 
       role: req.user.role 
@@ -350,8 +353,54 @@ const canApprove = (req, res, next) => {
   });
 };
 
-// Check if user is Requestor
-const isRequestor = authorize('REQUESTOR', 'SAFETY_OFFICER', 'ADMIN');
+// Check if user can re-approve permits
+const canReapprove = (req, res, next) => {
+  log.permission('Checking canReapprove', { 
+    path: req.path,
+    user: req.user?.email,
+    role: req.user?.role,
+    permissions: req.user?.permissions
+  });
+
+  if (!req.user) {
+    log.access(false, 'canReapprove - No user');
+    return res.status(401).json({ message: 'Authentication required' });
+  }
+
+  // Admin and Fireman can re-approve
+  if (req.user.role === 'ADMIN' || req.user.role === 'FIREMAN' || req.user.role === 'SAFETY_OFFICER') {
+    log.access(true, 'canReapprove - System role', { 
+      user: req.user.email, 
+      role: req.user.role 
+    });
+    return next();
+  }
+
+  // Check if custom role has re-approve permission
+  if (req.user.permissions && (
+    req.user.permissions.includes('approvals.reapprove') ||
+    req.user.permissions.includes('permits.reapprove')
+  )) {
+    log.access(true, 'canReapprove - Has re-approve permission', { 
+      user: req.user.email,
+      role: req.user.role
+    });
+    return next();
+  }
+
+  log.access(false, 'canReapprove - Access denied', { 
+    user: req.user.email,
+    role: req.user.role,
+    permissions: req.user.permissions
+  });
+  return res.status(403).json({ 
+    message: 'Access denied. You do not have permission to re-approve permits.',
+    required: 'approvals.reapprove',
+  });
+};
+
+// Check if user is Requestor (also includes Fireman and Admin)
+const isRequestor = authorize('REQUESTOR', 'FIREMAN', 'SAFETY_OFFICER', 'ADMIN');
 
 module.exports = {
   authenticate,
@@ -359,7 +408,9 @@ module.exports = {
   checkPermission,
   checkAnyPermission,
   isAdmin,
-  isSafetyOfficer,
+  isFireman,
+  isSafetyOfficer, // Alias for backward compatibility
   canApprove,
+  canReapprove,
   isRequestor,
 };

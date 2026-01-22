@@ -188,7 +188,7 @@ function App() {
         <Route
           path="approvals"
           element={
-            <ProtectedRoute roles={['SAFETY_OFFICER', 'ADMIN']} permission="approvals.view">
+            <ProtectedRoute roles={['FIREMAN', 'SAFETY_OFFICER', 'ADMIN']} permission="approvals.view">
               <Approvals />
             </ProtectedRoute>
           }
@@ -196,7 +196,7 @@ function App() {
         <Route
           path="approvals/:id"
           element={
-            <ProtectedRoute roles={['SAFETY_OFFICER', 'ADMIN']} permission="approvals.view">
+            <ProtectedRoute roles={['FIREMAN', 'SAFETY_OFFICER', 'ADMIN']} permission="approvals.view">
               <ApprovalDetail />
             </ProtectedRoute>
           }
@@ -230,7 +230,7 @@ function App() {
       <Route
         path="/mis"
         element={
-          <ProtectedRoute roles={['ADMIN', 'SAFETY_OFFICER', 'SITE_ENGINEER']}>
+          <ProtectedRoute roles={['ADMIN', 'FIREMAN', 'SAFETY_OFFICER', 'SITE_ENGINEER']}>
             <MISDashboard />
           </ProtectedRoute>
         }
@@ -240,7 +240,7 @@ function App() {
       <Route
         path="/mis/dashboard"
         element={
-          <ProtectedRoute roles={['ADMIN', 'SAFETY_OFFICER', 'SITE_ENGINEER']}>
+          <ProtectedRoute roles={['ADMIN', 'FIREMAN', 'SAFETY_OFFICER', 'SITE_ENGINEER']}>
             <MISDashboard />
           </ProtectedRoute>
         }

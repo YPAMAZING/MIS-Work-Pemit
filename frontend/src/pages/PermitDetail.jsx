@@ -20,6 +20,7 @@ import {
   Phone,
   Play,
   RotateCcw,
+  RefreshCw,
   X,
   MessageSquare,
   User,
@@ -27,6 +28,7 @@ import {
   CreditCard,
   Timer,
   Hash,
+  History,
 } from 'lucide-react'
 
 // Work type configurations
@@ -69,6 +71,7 @@ const statusConfig = {
   'CLOSED': { bg: 'bg-gray-100', text: 'text-gray-700', border: 'border-gray-300', gradient: 'from-gray-400 to-slate-400' },
   'EXTENDED': { bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-300', gradient: 'from-blue-400 to-cyan-400' },
   'REVOKED': { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-300', gradient: 'from-red-400 to-rose-400' },
+  'REAPPROVED': { bg: 'bg-teal-100', text: 'text-teal-700', border: 'border-teal-300', gradient: 'from-teal-400 to-emerald-400' },
   'PENDING_REMARKS': { bg: 'bg-orange-100', text: 'text-orange-700', border: 'border-orange-300', gradient: 'from-orange-400 to-amber-400' },
 }
 
@@ -88,6 +91,7 @@ const PermitDetail = () => {
   const { 
     user, 
     canApprove, 
+    canReapprovePermits,
     canExtendPermits, 
     canRevokePermits, 
     canClosePermits,
@@ -97,6 +101,7 @@ const PermitDetail = () => {
   
   // Permission-based checks using the new helpers
   const userCanApprove = canApprove()
+  const userCanReapprove = canReapprovePermits()
   const userCanExtend = canExtendPermits()
   const userCanRevoke = canRevokePermits()
   const userCanClose = canClosePermits()
@@ -106,6 +111,7 @@ const PermitDetail = () => {
   const [permit, setPermit] = useState(null)
   const [loading, setLoading] = useState(true)
   const [measures, setMeasures] = useState([])
+  const [actionHistory, setActionHistory] = useState([])
   const [showWorkflowModal, setShowWorkflowModal] = useState(false)
   const [workflowAction, setWorkflowAction] = useState(null)
   const [workflowData, setWorkflowData] = useState({})
@@ -113,6 +119,7 @@ const PermitDetail = () => {
 
   useEffect(() => {
     fetchPermit()
+    fetchActionHistory()
   }, [id])
 
   const fetchPermit = async () => {
@@ -135,6 +142,15 @@ const PermitDetail = () => {
       navigate('/workpermit/permits')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchActionHistory = async () => {
+    try {
+      const response = await permitsAPI.getActionHistory(id)
+      setActionHistory(response.data.actionHistory || [])
+    } catch (error) {
+      console.error('Error fetching action history:', error)
     }
   }
 
@@ -185,6 +201,10 @@ const PermitDetail = () => {
           await permitsAPI.revokePermit(id, workflowData)
           toast.success('Permit revoked successfully')
           break
+        case 'reapprove':
+          await permitsAPI.reapprovePermit(id, workflowData)
+          toast.success('Permit re-approved successfully')
+          break
         case 'close':
           await permitsAPI.closePermit(id, workflowData)
           toast.success('Permit closed successfully')
@@ -194,6 +214,7 @@ const PermitDetail = () => {
       }
       setShowWorkflowModal(false)
       fetchPermit()
+      fetchActionHistory()
     } catch (error) {
       toast.error(error.response?.data?.message || 'Action failed')
     } finally {
@@ -678,8 +699,85 @@ const PermitDetail = () => {
         </Section>
       </div>
 
+      {/* Action History Trail */}
+      {actionHistory.length > 0 && (
+        <div className="mt-6">
+          <Section icon={History} title="APPROVAL TRAIL">
+            <div className="space-y-4">
+              {/* Initial Approval from approvals */}
+              {permit.approvals?.filter(a => a.decision === 'APPROVED').map((approval, idx) => (
+                <div key={`approval-${idx}`} className="flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-xs font-bold">APPROVED</span>
+                      <span className="text-sm text-gray-600">by {approval.approverName || 'Authorized Person'}</span>
+                      <span className="text-xs text-gray-400">
+                        {approval.approvedAt ? new Date(approval.approvedAt).toLocaleString() : ''}
+                      </span>
+                    </div>
+                    {approval.comment && (
+                      <p className="mt-2 text-gray-600 text-sm bg-gray-50 p-3 rounded-lg border border-gray-100">
+                        <span className="font-medium">Comment:</span> {approval.comment}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+              
+              {/* Action History (Revoke, Re-Approve, etc.) */}
+              {actionHistory.map((action, idx) => (
+                <div key={idx} className="flex items-start gap-4">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                    action.action === 'REVOKED' ? 'bg-red-100' :
+                    action.action === 'REAPPROVED' ? 'bg-teal-100' :
+                    action.action === 'EXTENDED' ? 'bg-blue-100' :
+                    action.action === 'CLOSED' ? 'bg-gray-100' :
+                    'bg-amber-100'
+                  }`}>
+                    {action.action === 'REVOKED' && <RotateCcw className="w-5 h-5 text-red-600" />}
+                    {action.action === 'REAPPROVED' && <RefreshCw className="w-5 h-5 text-teal-600" />}
+                    {action.action === 'EXTENDED' && <Play className="w-5 h-5 text-blue-600" />}
+                    {action.action === 'CLOSED' && <XCircle className="w-5 h-5 text-gray-600" />}
+                    {!['REVOKED', 'REAPPROVED', 'EXTENDED', 'CLOSED'].includes(action.action) && <Clock className="w-5 h-5 text-amber-600" />}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`px-2 py-1 rounded-lg text-xs font-bold ${
+                        action.action === 'REVOKED' ? 'bg-red-100 text-red-700' :
+                        action.action === 'REAPPROVED' ? 'bg-teal-100 text-teal-700' :
+                        action.action === 'EXTENDED' ? 'bg-blue-100 text-blue-700' :
+                        action.action === 'CLOSED' ? 'bg-gray-100 text-gray-700' :
+                        'bg-amber-100 text-amber-700'
+                      }`}>
+                        {action.action}
+                      </span>
+                      <span className="text-sm text-gray-600">
+                        by {action.performedByName || 'Unknown'}
+                        {action.performedByRole && <span className="text-gray-400"> ({action.performedByRole})</span>}
+                      </span>
+                      <span className="text-xs text-gray-400">
+                        {new Date(action.createdAt).toLocaleString()}
+                      </span>
+                    </div>
+                    {action.comment && (
+                      <p className="mt-2 text-gray-600 text-sm bg-gray-50 p-3 rounded-lg border border-gray-100">
+                        <span className="font-medium">Comment:</span> {action.comment}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Section>
+        </div>
+      )}
+
       {/* Workflow Actions - Permission based */}
-      {(userCanExtend || userCanRevoke) && ['APPROVED', 'EXTENDED'].includes(permit.status) && (
+      {((userCanExtend || userCanRevoke) && ['APPROVED', 'EXTENDED', 'REAPPROVED'].includes(permit.status)) || 
+       (userCanReapprove && permit.status === 'REVOKED') ? (
         <div className="mt-6 bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-2">
@@ -687,7 +785,7 @@ const PermitDetail = () => {
               <span className="font-semibold text-gray-700">Workflow Actions</span>
             </div>
             <div className="flex items-center gap-3">
-              {userCanExtend && (
+              {userCanExtend && ['APPROVED', 'EXTENDED', 'REAPPROVED'].includes(permit.status) && (
                 <button
                   onClick={() => handleWorkflowAction('extend')}
                   className="flex items-center gap-2 px-4 py-2.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-xl font-medium hover:bg-blue-100 transition-colors"
@@ -696,7 +794,7 @@ const PermitDetail = () => {
                   Extend Permit
                 </button>
               )}
-              {userCanRevoke && (
+              {userCanRevoke && ['APPROVED', 'EXTENDED', 'REAPPROVED'].includes(permit.status) && (
                 <button
                   onClick={() => handleWorkflowAction('revoke')}
                   className="flex items-center gap-2 px-4 py-2.5 bg-red-50 text-red-700 border border-red-200 rounded-xl font-medium hover:bg-red-100 transition-colors"
@@ -705,10 +803,19 @@ const PermitDetail = () => {
                   Revoke Permit
                 </button>
               )}
+              {userCanReapprove && permit.status === 'REVOKED' && (
+                <button
+                  onClick={() => handleWorkflowAction('reapprove')}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-teal-50 text-teal-700 border border-teal-200 rounded-xl font-medium hover:bg-teal-100 transition-colors"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Re-Approve Permit
+                </button>
+              )}
             </div>
           </div>
         </div>
-      )}
+      ) : null}
       
       {/* Workflow Action Modal */}
       {showWorkflowModal && (
@@ -717,6 +824,7 @@ const PermitDetail = () => {
             <div className={`px-6 py-4 ${
               workflowAction === 'extend' ? 'bg-gradient-to-r from-blue-500 to-cyan-500' :
               workflowAction === 'revoke' ? 'bg-gradient-to-r from-red-500 to-rose-500' :
+              workflowAction === 'reapprove' ? 'bg-gradient-to-r from-teal-500 to-emerald-500' :
               'bg-gradient-to-r from-gray-500 to-slate-500'
             }`}>
               <div className="flex items-center justify-between">
@@ -755,13 +863,36 @@ const PermitDetail = () => {
 
               {workflowAction === 'revoke' && (
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Reason for Revocation *</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Reason/Comment for Revocation</label>
                   <textarea
                     className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-200 focus:border-red-500 resize-none"
                     rows={4}
-                    placeholder="Enter reason for revoking this permit..."
-                    onChange={(e) => setWorkflowData({ ...workflowData, reason: e.target.value })}
+                    placeholder="Enter reason or comment for revoking this permit..."
+                    onChange={(e) => setWorkflowData({ ...workflowData, reason: e.target.value, comment: e.target.value })}
                   />
+                </div>
+              )}
+
+              {workflowAction === 'reapprove' && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Comment for Re-Approval</label>
+                    <textarea
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-200 focus:border-teal-500 resize-none"
+                      rows={3}
+                      placeholder="Enter comment for re-approving this permit..."
+                      onChange={(e) => setWorkflowData({ ...workflowData, comment: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Digital Signature (optional)</label>
+                    <input
+                      type="text"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-200 focus:border-teal-500"
+                      placeholder="Enter your signature..."
+                      onChange={(e) => setWorkflowData({ ...workflowData, signature: e.target.value })}
+                    />
+                  </div>
                 </div>
               )}
 
@@ -790,6 +921,7 @@ const PermitDetail = () => {
                   className={`px-5 py-2.5 rounded-xl font-medium text-white transition-all ${
                     workflowAction === 'extend' ? 'bg-blue-600 hover:bg-blue-700' :
                     workflowAction === 'revoke' ? 'bg-red-600 hover:bg-red-700' :
+                    workflowAction === 'reapprove' ? 'bg-teal-600 hover:bg-teal-700' :
                     'bg-gray-600 hover:bg-gray-700'
                   } ${actionLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >

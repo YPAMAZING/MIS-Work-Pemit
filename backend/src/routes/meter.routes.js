@@ -119,10 +119,10 @@ router.put(
   updateReading
 );
 
-// Verify reading (admin/safety officer only)
+// Verify reading (admin/fireman only)
 router.patch(
   '/:id/verify',
-  authorize('ADMIN', 'SAFETY_OFFICER'),
+  authorize('ADMIN', 'FIREMAN', 'SAFETY_OFFICER'),
   [
     param('id').isUUID(),
     body('isVerified').isBoolean(),

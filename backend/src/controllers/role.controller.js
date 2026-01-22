@@ -21,12 +21,14 @@ const defaultPermissions = [
   { key: 'permits.extend', name: 'Extend Permits', module: 'permits', action: 'edit' },
   { key: 'permits.revoke', name: 'Revoke Permits', module: 'permits', action: 'edit' },
   { key: 'permits.close', name: 'Close Permits', module: 'permits', action: 'edit' },
+  { key: 'permits.reapprove', name: 'Re-Approve Revoked Permits', module: 'permits', action: 'edit' },
   { key: 'permits.transfer', name: 'Transfer Permits', module: 'permits', action: 'edit' },
   
   // Approvals
   { key: 'approvals.view', name: 'View Approvals', module: 'approvals', action: 'view' },
   { key: 'approvals.approve', name: 'Approve/Reject Permits', module: 'approvals', action: 'approve' },
   { key: 'approvals.sign', name: 'Sign Approvals', module: 'approvals', action: 'approve' },
+  { key: 'approvals.reapprove', name: 'Re-Approve Revoked Permits', module: 'approvals', action: 'approve' },
   
   // Workers
   { key: 'workers.view', name: 'View Workers', module: 'workers', action: 'view' },
@@ -87,14 +89,14 @@ const defaultRoles = [
     },
   },
   {
-    name: 'SAFETY_OFFICER',
+    name: 'FIREMAN',
     displayName: 'Fireman',
-    description: 'Can approve/reject permits and manage workers',
+    description: 'Can approve/reject permits, re-approve revoked permits, and manage workers',
     isSystem: true,
     permissions: [
       'dashboard.view', 'dashboard.stats',
-      'permits.view', 'permits.view_all', 'permits.export', 'permits.extend', 'permits.revoke', 'permits.close',
-      'approvals.view', 'approvals.approve', 'approvals.sign',
+      'permits.view', 'permits.view_all', 'permits.export', 'permits.extend', 'permits.revoke', 'permits.close', 'permits.reapprove',
+      'approvals.view', 'approvals.approve', 'approvals.sign', 'approvals.reapprove',
       'workers.view', 'workers.create', 'workers.edit', 'workers.qr',
       'settings.view',
     ],

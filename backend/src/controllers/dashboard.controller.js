@@ -8,7 +8,7 @@ const getDashboardStats = async (req, res) => {
   try {
     const user = req.user;
     const isAdmin = user.role === 'ADMIN';
-    const isSafetyOfficer = user.role === 'SAFETY_OFFICER';
+    const isFireman = user.role === 'FIREMAN' || user.role === 'SAFETY_OFFICER';
     const isRequestor = user.role === 'REQUESTOR';
 
     // Base where clause for requestor

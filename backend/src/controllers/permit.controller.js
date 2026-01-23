@@ -17,39 +17,40 @@ const generatePermitNumber = async (tx) => {
   const month = monthAbbreviations[now.getMonth()];
   const year = now.getFullYear();
   
-  // Get the prefix for this month
-  const prefix = `RGDGTLWP ${month} ${year} -`;
-  
-  // Find the highest permit number for this month/year
-  const lastPermit = await tx.permitRequest.findFirst({
+  // Find ALL permits for this month (both old format and new format)
+  // Old format: RGDGTLWP JAN - 0001
+  // New format: RGDGTLWP JAN 2026 - 0001
+  const allPermitsThisMonth = await tx.permitRequest.findMany({
     where: {
       permitNumber: {
-        startsWith: prefix,
+        contains: `RGDGTLWP ${month}`,
       },
-    },
-    orderBy: {
-      permitNumber: 'desc',
     },
     select: {
       permitNumber: true,
     },
   });
   
-  let nextNumber = 1;
+  let maxNumber = 0;
   
-  if (lastPermit && lastPermit.permitNumber) {
-    // Extract the number from the last permit number
-    const match = lastPermit.permitNumber.match(/- (\d+)$/);
+  // Find the highest number from all permits this month
+  for (const permit of allPermitsThisMonth) {
+    const match = permit.permitNumber.match(/- (\d+)$/);
     if (match) {
-      nextNumber = parseInt(match[1], 10) + 1;
+      const num = parseInt(match[1], 10);
+      if (num > maxNumber) {
+        maxNumber = num;
+      }
     }
   }
+  
+  const nextNumber = maxNumber + 1;
   
   // Generate sequential number (padded to 4 digits)
   const sequentialNumber = String(nextNumber).padStart(4, '0');
   
   // Format: RGDGTLWP JAN 2026 - 0001
-  return `${prefix} ${sequentialNumber}`;
+  return `RGDGTLWP ${month} ${year} - ${sequentialNumber}`;
 };
 
 // Get all permits

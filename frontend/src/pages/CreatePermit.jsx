@@ -166,6 +166,18 @@ const CreatePermit = () => {
     }
   }, [id])
 
+  // Ensure work type is set after workTypes are loaded (for pre-selected type from URL)
+  useEffect(() => {
+    if (preSelectedType && workTypes.length > 0 && !isEdit) {
+      // Verify the preSelectedType exists in workTypes
+      const validType = workTypes.find(t => t.value === preSelectedType)
+      if (validType) {
+        // Always set the formData.workType when we have a valid preSelectedType
+        setFormData(prev => ({ ...prev, workType: preSelectedType }))
+      }
+    }
+  }, [workTypes, preSelectedType, isEdit])
+
   const fetchWorkTypes = async () => {
     try {
       const response = await permitsAPI.getWorkTypes()

@@ -1,5 +1,43 @@
 import { Routes, Route, Navigate, useParams } from 'react-router-dom'
+import { lazy, Suspense } from 'react'
 import { useAuth } from './context/AuthContext'
+import LoadingSpinner from './components/LoadingSpinner'
+
+// Lazy load all page components for better performance
+const Layout = lazy(() => import('./components/Layout'))
+const Login = lazy(() => import('./pages/Login'))
+const Register = lazy(() => import('./pages/Register'))
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const Permits = lazy(() => import('./pages/Permits'))
+const PermitDetail = lazy(() => import('./pages/PermitDetail'))
+const CreatePermit = lazy(() => import('./pages/CreatePermit'))
+const SelectPermitType = lazy(() => import('./pages/SelectPermitType'))
+const Approvals = lazy(() => import('./pages/Approvals'))
+const ApprovalDetail = lazy(() => import('./pages/ApprovalDetail'))
+const Users = lazy(() => import('./pages/Users'))
+const Settings = lazy(() => import('./pages/Settings'))
+const WorkerRegister = lazy(() => import('./pages/WorkerRegister'))
+const MeterReadings = lazy(() => import('./pages/MeterReadings'))
+const RoleManagement = lazy(() => import('./pages/RoleManagement'))
+const SSOCallback = lazy(() => import('./pages/SSOCallback'))
+
+// MIS pages - lazy loaded
+const SystemSelector = lazy(() => import('./pages/SystemSelector'))
+const MISLayout = lazy(() => import('./components/MISLayout'))
+const MISDashboard = lazy(() => import('./pages/mis/MISDashboard'))
+const MISAnalytics = lazy(() => import('./pages/mis/MISAnalytics'))
+const MISExport = lazy(() => import('./pages/mis/MISExport'))
+const MISSettings = lazy(() => import('./pages/mis/MISSettings'))
+
+// Page loading fallback
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="flex flex-col items-center gap-4">
+      <div className="w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin" />
+      <p className="text-gray-500 text-sm">Loading...</p>
+    </div>
+  </div>
+)
 
 // Legacy redirect components to preserve IDs
 const LegacyPermitRedirect = () => {
@@ -16,31 +54,6 @@ const LegacyApprovalRedirect = () => {
   const { id } = useParams()
   return <Navigate to={`/workpermit/approvals/${id}`} replace />
 }
-import Layout from './components/Layout'
-import Login from './pages/Login'
-import Register from './pages/Register'
-import Dashboard from './pages/Dashboard'
-import Permits from './pages/Permits'
-import PermitDetail from './pages/PermitDetail'
-import CreatePermit from './pages/CreatePermit'
-import SelectPermitType from './pages/SelectPermitType'
-import Approvals from './pages/Approvals'
-import ApprovalDetail from './pages/ApprovalDetail'
-import Users from './pages/Users'
-import Settings from './pages/Settings'
-import WorkerRegister from './pages/WorkerRegister'
-import MeterReadings from './pages/MeterReadings'
-import RoleManagement from './pages/RoleManagement'
-import SSOCallback from './pages/SSOCallback'
-import LoadingSpinner from './components/LoadingSpinner'
-
-// New System Selector and MIS pages
-import SystemSelector from './pages/SystemSelector'
-import MISLayout from './components/MISLayout'
-import MISDashboard from './pages/mis/MISDashboard'
-import MISAnalytics from './pages/mis/MISAnalytics'
-import MISExport from './pages/mis/MISExport'
-import MISSettings from './pages/mis/MISSettings'
 
 // Protected route wrapper with role and permission support
 const ProtectedRoute = ({ children, roles, permission }) => {
@@ -134,6 +147,7 @@ const SystemSelectorRoute = ({ children }) => {
 
 function App() {
   return (
+    <Suspense fallback={<PageLoader />}>
     <Routes>
       {/* Public routes */}
       <Route
@@ -291,6 +305,7 @@ function App() {
       {/* 404 */}
       <Route path="*" element={<Navigate to="/select-system" replace />} />
     </Routes>
+    </Suspense>
   )
 }
 

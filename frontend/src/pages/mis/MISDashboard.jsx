@@ -206,31 +206,19 @@ const MISDashboard = () => {
       setAnalytics(response.data)
     } catch (error) {
       console.error('Error fetching analytics:', error)
-      // Set demo data if API fails
+      // Set empty state data when API fails - no fake data
       setAnalytics({
         stats: {
-          totalReadings: 247,
-          totalConsumption: 15842.5,
-          avgConsumption: 64.13,
-          maxReading: 1250.8,
-          verifiedCount: 198,
-          pendingVerification: 49
+          totalReadings: 0,
+          totalConsumption: 0,
+          avgConsumption: 0,
+          maxReading: 0,
+          verifiedCount: 0,
+          pendingVerification: 0
         },
-        byMeterType: {
-          electricity: { count: 89, totalConsumption: 8520.3 },
-          water: { count: 72, totalConsumption: 3240.8 },
-          gas: { count: 45, totalConsumption: 2180.4 },
-          temperature: { count: 28, totalConsumption: 1420.5 },
-          pressure: { count: 13, totalConsumption: 480.5 }
-        },
-        chartData: Array.from({ length: 14 }, (_, i) => ({
-          date: new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000).toISOString(),
-          totalConsumption: Math.random() * 500 + 300
-        })),
-        alerts: [
-          { meterName: 'Meter A-101', type: 'HIGH_CONSUMPTION', consumption: 285.5, location: 'Building A' },
-          { meterName: 'Meter B-205', type: 'LOW_CONSUMPTION', consumption: -45.2, location: 'Building B' }
-        ],
+        byMeterType: {},
+        chartData: [],
+        alerts: [],
         recentReadings: []
       })
     } finally {
@@ -308,6 +296,9 @@ const MISDashboard = () => {
     )
   }
 
+  // Check if there's no data
+  const hasNoData = !analytics?.stats?.totalReadings || analytics.stats.totalReadings === 0
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Hero Welcome Banner */}
@@ -374,6 +365,39 @@ const MISDashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Empty State Banner */}
+      {hasNoData && (
+        <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">No Meter Readings Yet</h3>
+                <p className="text-gray-600 text-sm">Start by uploading meter readings or add demo data to explore the dashboard</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Link
+                to="/mis/readings"
+                className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium text-sm"
+              >
+                <Camera className="w-4 h-4" />
+                Upload Reading
+              </Link>
+              <Link
+                to="/mis/readings"
+                className="flex items-center gap-2 px-4 py-2 border border-amber-300 text-amber-700 rounded-lg hover:bg-amber-100 transition-colors font-medium text-sm"
+              >
+                <Plus className="w-4 h-4" />
+                Add Demo Data
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

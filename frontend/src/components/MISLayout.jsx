@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
@@ -25,7 +25,7 @@ import {
 } from 'lucide-react'
 
 const MISLayout = () => {
-  const { user, logout } = useAuth()
+  const { user, logout, isAdmin, hasPermission } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -57,6 +57,13 @@ const MISLayout = () => {
       href: '/mis/export', 
       icon: Download,
       description: 'Export to CSV/Excel'
+    },
+    { 
+      name: 'Settings', 
+      href: '/mis/settings', 
+      icon: Settings,
+      description: 'User Access & Roles',
+      adminOnly: true
     },
   ]
 
@@ -111,7 +118,13 @@ const MISLayout = () => {
 
         {/* Navigation */}
         <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-          {navigation.map((item) => {
+          {navigation.filter(item => {
+            // Filter out admin-only items for non-admins
+            if (item.adminOnly && !isAdmin && !hasPermission('mis.settings')) {
+              return false
+            }
+            return true
+          }).map((item) => {
             const Icon = item.icon
             const isActive = isActivePath(item.href)
             return (

@@ -40,6 +40,7 @@ import MISLayout from './components/MISLayout'
 import MISDashboard from './pages/mis/MISDashboard'
 import MISAnalytics from './pages/mis/MISAnalytics'
 import MISExport from './pages/mis/MISExport'
+import MISSettings from './pages/mis/MISSettings'
 
 // Protected route wrapper with role and permission support
 const ProtectedRoute = ({ children, roles, permission }) => {
@@ -243,6 +244,31 @@ function App() {
         <Route path="readings" element={<MeterReadings />} />
         <Route path="analytics" element={<MISAnalytics />} />
         <Route path="export" element={<MISExport />} />
+        {/* MIS Settings & User Access - Admin only */}
+        <Route
+          path="settings"
+          element={
+            <ProtectedRoute roles={['ADMIN']} permission="mis.settings">
+              <MISSettings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="users"
+          element={
+            <ProtectedRoute roles={['ADMIN']} permission="mis.settings">
+              <MISSettings initialTab="users" />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="roles"
+          element={
+            <ProtectedRoute roles={['ADMIN']} permission="mis.settings">
+              <MISSettings initialTab="roles" />
+            </ProtectedRoute>
+          }
+        />
       </Route>
 
       {/* Legacy routes - redirect to new structure */}

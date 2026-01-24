@@ -36,7 +36,10 @@ import LoadingSpinner from './components/LoadingSpinner'
 
 // New System Selector and MIS pages
 import SystemSelector from './pages/SystemSelector'
+import MISLayout from './components/MISLayout'
 import MISDashboard from './pages/mis/MISDashboard'
+import MISAnalytics from './pages/mis/MISAnalytics'
+import MISExport from './pages/mis/MISExport'
 
 // Protected route wrapper with role and permission support
 const ProtectedRoute = ({ children, roles, permission }) => {
@@ -231,20 +234,16 @@ function App() {
         path="/mis"
         element={
           <ProtectedRoute roles={['ADMIN', 'FIREMAN', 'SAFETY_OFFICER', 'SITE_ENGINEER']}>
-            <MISDashboard />
+            <MISLayout />
           </ProtectedRoute>
         }
       >
         <Route index element={<Navigate to="/mis/dashboard" replace />} />
+        <Route path="dashboard" element={<MISDashboard />} />
+        <Route path="readings" element={<MeterReadings />} />
+        <Route path="analytics" element={<MISAnalytics />} />
+        <Route path="export" element={<MISExport />} />
       </Route>
-      <Route
-        path="/mis/dashboard"
-        element={
-          <ProtectedRoute roles={['ADMIN', 'FIREMAN', 'SAFETY_OFFICER', 'SITE_ENGINEER']}>
-            <MISDashboard />
-          </ProtectedRoute>
-        }
-      />
 
       {/* Legacy routes - redirect to new structure */}
       <Route path="/dashboard" element={<Navigate to="/workpermit/dashboard" replace />} />

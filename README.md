@@ -17,11 +17,21 @@ A production-ready **Management Information System (MIS)** for industrial work p
 - **Audit Logging** - Complete audit trail for compliance
 
 ### User Roles
+
+#### Work Permit System Roles
 | Role | Permissions |
 |------|-------------|
-| **Admin** | Full system access, user management, all permits |
-| **Safety Officer** | View all permits, approve/reject requests |
+| **Admin** | Full system access, user management, all permits, MIS access |
+| **Fireman (Safety Officer)** | View all permits, approve/reject requests, verify MIS readings |
 | **Requestor** | Create permits, view own permits only |
+
+#### MIS System Roles
+| Role | Permissions |
+|------|-------------|
+| **MIS Admin** | Full MIS access, user/role management, settings |
+| **Site Engineer** | Upload OCR readings, view own data, export |
+| **MIS Verifier** | View all readings, verify readings |
+| **MIS Viewer** | Read-only access to MIS data and reports |
 
 ### Permit Types Supported
 - 🔥 Hot Work
@@ -142,6 +152,47 @@ After seeding, use these demo accounts:
 | Requestor | requestor@permitmanager.com | user123 |
 
 ⚠️ **Change these passwords immediately in production!**
+
+## 📊 MIS (Management Information System)
+
+### Features
+- **OCR Meter Readings** - Upload photos and auto-extract readings with Tesseract.js
+- **Real-time Dashboard** - Analytics, consumption trends, and alerts
+- **Data Export** - CSV, JSON export for Power BI integration
+- **Role-based Access** - Admin, Verifier, Site Engineer, Viewer roles
+- **Verification Workflow** - Site Engineers upload, Verifiers approve
+
+### MIS Routes
+| Route | Access | Description |
+|-------|--------|-------------|
+| `/mis/dashboard` | All MIS users | Overview & Quick Stats |
+| `/mis/readings` | Site Engineer+ | Upload & Manage Readings |
+| `/mis/analytics` | All MIS users | Reports & Insights |
+| `/mis/export` | MIS Admin/Verifier | Export to CSV/JSON |
+| `/mis/settings` | MIS Admin only | User Access & Roles |
+
+### MIS API Endpoints
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/meters` | List meter readings |
+| GET | `/api/meters/:id` | Get reading details |
+| POST | `/api/meters` | Create meter reading |
+| PUT | `/api/meters/:id` | Update reading |
+| DELETE | `/api/meters/:id` | Delete reading |
+| POST | `/api/meters/:id/verify` | Verify reading |
+| GET | `/api/meters/analytics` | Get analytics data |
+| GET | `/api/meters/export` | Export readings (CSV/JSON) |
+| POST | `/api/meters/bulk-import` | Bulk import readings |
+| GET | `/api/meters/types` | Get meter types |
+
+### MIS Permissions
+| Category | Permissions |
+|----------|-------------|
+| **MIS Access** | `mis.access`, `mis.dashboard`, `mis.settings` |
+| **Meters** | `meters.view`, `meters.view_all`, `meters.create`, `meters.edit`, `meters.delete`, `meters.verify`, `meters.ocr`, `meters.export`, `meters.import`, `meters.analytics` |
+| **Reports** | `reports.view`, `reports.create`, `reports.export` |
+| **MIS Users** | `mis_users.view`, `mis_users.create`, `mis_users.edit`, `mis_users.delete`, `mis_users.assign_role` |
+| **MIS Roles** | `mis_roles.view`, `mis_roles.create`, `mis_roles.edit`, `mis_roles.delete` |
 
 ## 📡 API Endpoints
 

@@ -36,6 +36,7 @@ import {
   Users,
   Building,
   MapPin,
+  Camera,
 } from 'lucide-react'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
@@ -476,41 +477,21 @@ const MISAnalytics = () => {
       setAnalytics(response.data)
     } catch (error) {
       console.error('Error fetching analytics:', error)
-      // Set mock data for demo
+      // Set empty state data when API fails or no data
       setAnalytics({
         stats: {
-          totalReadings: 247,
-          totalConsumption: 15842.5,
-          avgConsumption: 64.13,
-          maxReading: 1250.8,
-          minReading: 12.3,
-          verifiedCount: 198,
-          pendingVerification: 49
+          totalReadings: 0,
+          totalConsumption: 0,
+          avgConsumption: 0,
+          maxReading: 0,
+          minReading: 0,
+          verifiedCount: 0,
+          pendingVerification: 0
         },
-        byMeterType: {
-          electricity: { count: 89, totalConsumption: 8520.3 },
-          water: { count: 72, totalConsumption: 3240.8 },
-          gas: { count: 45, totalConsumption: 2180.4 },
-          temperature: { count: 28, totalConsumption: 1420.5 },
-          pressure: { count: 13, totalConsumption: 480.5 }
-        },
-        chartData: Array.from({ length: 30 }, (_, i) => ({
-          date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          totalConsumption: Math.random() * 500 + 300,
-          count: Math.floor(Math.random() * 15) + 5
-        })),
-        byLocation: {
-          'Building A': { count: 65, consumption: 4520.3 },
-          'Building B': { count: 58, consumption: 3890.2 },
-          'Building C': { count: 52, consumption: 3250.8 },
-          'Warehouse': { count: 42, consumption: 2180.4 },
-          'Main Office': { count: 30, consumption: 2000.8 }
-        },
-        alerts: [
-          { meterName: 'Meter A-101', type: 'HIGH_CONSUMPTION', consumption: 285.5, location: 'Building A' },
-          { meterName: 'Meter B-205', type: 'LOW_CONSUMPTION', consumption: -45.2, location: 'Building B' },
-          { meterName: 'Meter C-103', type: 'HIGH_CONSUMPTION', consumption: 198.3, location: 'Building C' }
-        ],
+        byMeterType: {},
+        chartData: [],
+        byLocation: {},
+        alerts: [],
         recentReadings: []
       })
     } finally {
@@ -521,18 +502,18 @@ const MISAnalytics = () => {
   const handleExport = async (format) => {
     try {
       const token = localStorage.getItem('token')
-      const params = new URLSearchParams({ format })
+      const params = new URLSearchParams({ format: format === 'xlsx' ? 'csv' : format })
       if (meterType) params.append('meterType', meterType)
 
       const response = await axios.get(`${API_URL}/meters/export?${params}`, {
         headers: { Authorization: `Bearer ${token}` },
-        responseType: format === 'csv' ? 'blob' : 'json',
+        responseType: format === 'json' ? 'json' : 'blob',
       })
 
       const filename = `mis_analytics_${period}_${new Date().toISOString().split('T')[0]}`
       
       if (format === 'csv') {
-        const blob = new Blob([response.data], { type: 'text/csv' })
+        const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8' })
         const url = window.URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
@@ -540,6 +521,18 @@ const MISAnalytics = () => {
         a.click()
         window.URL.revokeObjectURL(url)
         toast.success('CSV exported successfully!')
+      } else if (format === 'xlsx') {
+        // Add BOM for Excel compatibility
+        const BOM = '\uFEFF'
+        const csvText = await response.data.text()
+        const blob = new Blob([BOM + csvText], { type: 'application/vnd.ms-excel;charset=utf-8' })
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `${filename}.xlsx`
+        a.click()
+        window.URL.revokeObjectURL(url)
+        toast.success('Excel file exported successfully!')
       } else {
         const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: 'application/json' })
         const url = window.URL.createObjectURL(blob)
@@ -551,7 +544,13 @@ const MISAnalytics = () => {
         toast.success('JSON exported successfully!')
       }
     } catch (error) {
-      toast.error('Error exporting data')
+      console.error('Export error:', error)
+      // If no data, show friendly message
+      if (error.response?.status === 404 || !analytics?.stats?.totalReadings) {
+        toast.error('No data available to export')
+      } else {
+        toast.error('Error exporting data')
+      }
     }
   }
 
@@ -620,6 +619,117 @@ const MISAnalytics = () => {
     )
   }
 
+  // Check if there's no data
+  const hasNoData = !analytics?.stats?.totalReadings || analytics.stats.totalReadings === 0
+
+  if (hasNoData) {
+    return (
+      <div className="space-y-6 animate-fade-in pb-8">
+        {/* Header Banner - Even with no data */}
+        <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-2xl p-6 text-white relative overflow-hidden">
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute inset-0" style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23fff' fill-opacity='0.4' fill-rule='evenodd'%3E%3Cpath d='M0 20L20 0l20 20-20 20z'/%3E%3C/g%3E%3C/svg%3E")`,
+            }} />
+          </div>
+          <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center">
+                  <BarChart3 className="w-6 h-6" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold">Analytics & Reports</h1>
+                  <p className="text-blue-100">Real-time insights and consumption analytics</p>
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <select
+                value={period}
+                onChange={(e) => setPeriod(e.target.value)}
+                className="px-4 py-2.5 bg-white/20 border border-white/30 rounded-xl text-white text-sm font-medium focus:ring-2 focus:ring-white/50"
+              >
+                {periods.map((p) => (
+                  <option key={p.value} value={p.value} className="text-gray-900">{p.label}</option>
+                ))}
+              </select>
+              <button
+                onClick={fetchAnalytics}
+                className="p-2.5 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
+              >
+                <RefreshCw className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Empty State Card */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="p-12 text-center">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-indigo-50 rounded-full mb-6">
+              <BarChart3 className="w-10 h-10 text-indigo-400" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">No Data Available</h2>
+            <p className="text-gray-500 max-w-md mx-auto mb-6">
+              Start uploading meter readings to see analytics and insights. Your data will be visualized here with charts, trends, and consumption patterns.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Link
+                to="/mis/readings"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-medium"
+              >
+                <FileText className="w-5 h-5" />
+                Upload First Reading
+              </Link>
+              <button
+                onClick={fetchAnalytics}
+                className="inline-flex items-center gap-2 px-6 py-3 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+              >
+                <RefreshCw className="w-5 h-5" />
+                Refresh Data
+              </button>
+            </div>
+          </div>
+
+          {/* Quick Tips */}
+          <div className="bg-gray-50 border-t border-gray-100 p-6">
+            <h3 className="text-sm font-semibold text-gray-900 mb-4">Quick Tips</h3>
+            <div className="grid md:grid-cols-3 gap-4">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Camera className="w-4 h-4 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Upload Photos</p>
+                  <p className="text-xs text-gray-500">Use AI OCR to automatically extract meter readings</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <CheckCircle className="w-4 h-4 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Verify Readings</p>
+                  <p className="text-xs text-gray-500">Ensure data accuracy by verifying submitted readings</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Download className="w-4 h-4 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Export Reports</p>
+                  <p className="text-xs text-gray-500">Download data as Excel, CSV or JSON</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6 animate-fade-in pb-8">
       {/* Analytics Header Banner */}
@@ -673,19 +783,26 @@ const MISAnalytics = () => {
               Export
               <ChevronDown className="w-4 h-4" />
             </button>
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-10 hidden group-hover:block">
+            <div className="absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-10 hidden group-hover:block">
+              <button
+                onClick={() => handleExport('xlsx')}
+                className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              >
+                <FileText className="w-4 h-4 text-green-600" />
+                Export as Excel (.xlsx)
+              </button>
               <button
                 onClick={() => handleExport('csv')}
                 className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
               >
-                <FileText className="w-4 h-4" />
+                <FileText className="w-4 h-4 text-blue-600" />
                 Export as CSV
               </button>
               <button
                 onClick={() => handleExport('json')}
                 className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
               >
-                <FileText className="w-4 h-4" />
+                <FileText className="w-4 h-4 text-purple-600" />
                 Export as JSON
               </button>
             </div>

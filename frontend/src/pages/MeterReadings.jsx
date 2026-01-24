@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
 import axios from 'axios'
@@ -56,12 +56,12 @@ const meterIcons = {
 
 const MeterReadings = () => {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [readings, setReadings] = useState([])
   const [meterTypes, setMeterTypes] = useState([])
   const [loading, setLoading] = useState(true)
   const [showUploadModal, setShowUploadModal] = useState(false)
-  const [showAnalytics, setShowAnalytics] = useState(false)
-  const [analytics, setAnalytics] = useState(null)
+  const [fetchError, setFetchError] = useState(null)
   const [filters, setFilters] = useState({
     meterType: '',
     search: '',
@@ -92,6 +92,7 @@ const MeterReadings = () => {
   const fetchReadings = async () => {
     try {
       setLoading(true)
+      setFetchError(null)
       const token = localStorage.getItem('token')
       const params = new URLSearchParams({
         page: pagination.page,
@@ -106,28 +107,28 @@ const MeterReadings = () => {
         headers: { Authorization: `Bearer ${token}` },
       })
 
-      setReadings(response.data.readings)
-      setPagination(prev => ({ ...prev, ...response.data.pagination }))
+      setReadings(response.data.readings || [])
+      setPagination(prev => ({ 
+        ...prev, 
+        ...response.data.pagination,
+        total: response.data.pagination?.total || 0,
+        pages: response.data.pagination?.pages || 0
+      }))
     } catch (error) {
-      toast.error('Error fetching readings')
-      console.error('Error:', error)
+      console.error('Error fetching readings:', error)
+      // Don't show toast for empty data - handle gracefully
+      if (error.response?.status === 404 || error.response?.status === 500) {
+        setFetchError('Could not load readings. Please try again later.')
+      }
+      setReadings([])
+      setPagination(prev => ({ ...prev, total: 0, pages: 0 }))
     } finally {
       setLoading(false)
     }
   }
 
-  const fetchAnalytics = async () => {
-    try {
-      const token = localStorage.getItem('token')
-      const response = await axios.get(`${API_URL}/meters/analytics?period=30d`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      setAnalytics(response.data)
-      setShowAnalytics(true)
-    } catch (error) {
-      toast.error('Error fetching analytics')
-      console.error('Error:', error)
-    }
+  const goToAnalytics = () => {
+    navigate('/mis/analytics')
   }
 
   const handleExport = async (format = 'csv') => {
@@ -240,7 +241,7 @@ const MeterReadings = () => {
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={fetchAnalytics}
+            onClick={goToAnalytics}
             className="btn btn-outline flex items-center gap-2"
           >
             <BarChart3 className="w-4 h-4" />
@@ -400,17 +401,46 @@ const MeterReadings = () => {
             <tbody className="divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan="7" className="px-4 py-8 text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      <RefreshCw className="w-5 h-5 animate-spin text-primary-600" />
-                      Loading readings...
+                  <td colSpan="7" className="px-4 py-12 text-center">
+                    <div className="flex flex-col items-center justify-center gap-3">
+                      <RefreshCw className="w-8 h-8 animate-spin text-primary-600" />
+                      <p className="text-gray-500">Loading meter readings...</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : fetchError ? (
+                <tr>
+                  <td colSpan="7" className="px-4 py-12 text-center">
+                    <div className="flex flex-col items-center justify-center gap-3">
+                      <AlertTriangle className="w-12 h-12 text-yellow-500" />
+                      <p className="text-gray-700 font-medium">{fetchError}</p>
+                      <button 
+                        onClick={() => fetchReadings()} 
+                        className="btn btn-outline btn-sm flex items-center gap-2"
+                      >
+                        <RefreshCw className="w-4 h-4" />
+                        Try Again
+                      </button>
                     </div>
                   </td>
                 </tr>
               ) : readings.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-4 py-8 text-center text-gray-500">
-                    No readings found. Click "New Reading" to add one.
+                  <td colSpan="7" className="px-4 py-12 text-center">
+                    <div className="flex flex-col items-center justify-center gap-3">
+                      <Gauge className="w-12 h-12 text-gray-300" />
+                      <div>
+                        <p className="text-gray-700 font-medium">No Meter Readings Found</p>
+                        <p className="text-gray-500 text-sm">Start by uploading your first meter reading</p>
+                      </div>
+                      <button 
+                        onClick={() => setShowUploadModal(true)} 
+                        className="btn btn-primary flex items-center gap-2"
+                      >
+                        <Camera className="w-4 h-4" />
+                        Upload First Reading
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ) : (
@@ -513,14 +543,6 @@ const MeterReadings = () => {
             setShowUploadModal(false)
             fetchReadings()
           }}
-        />
-      )}
-
-      {/* Analytics Modal */}
-      {showAnalytics && analytics && (
-        <AnalyticsModal
-          analytics={analytics}
-          onClose={() => setShowAnalytics(false)}
         />
       )}
     </div>
@@ -887,123 +909,6 @@ const MeterUploadModal = ({ meterTypes, onClose, onSuccess }) => {
   )
 }
 
-// Analytics Modal Component
-const AnalyticsModal = ({ analytics, onClose }) => {
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <BarChart3 className="w-5 h-5" />
-            Meter Analytics Dashboard
-          </h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
 
-        <div className="p-6 space-y-6">
-          {/* Stats Overview */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-blue-50 rounded-xl p-4">
-              <p className="text-sm text-blue-600">Total Readings</p>
-              <p className="text-2xl font-bold text-blue-700">{analytics.stats.totalReadings}</p>
-            </div>
-            <div className="bg-green-50 rounded-xl p-4">
-              <p className="text-sm text-green-600">Total Consumption</p>
-              <p className="text-2xl font-bold text-green-700">{analytics.stats.totalConsumption.toFixed(2)}</p>
-            </div>
-            <div className="bg-purple-50 rounded-xl p-4">
-              <p className="text-sm text-purple-600">Avg Consumption</p>
-              <p className="text-2xl font-bold text-purple-700">{analytics.stats.avgConsumption.toFixed(2)}</p>
-            </div>
-            <div className="bg-yellow-50 rounded-xl p-4">
-              <p className="text-sm text-yellow-600">Pending Verification</p>
-              <p className="text-2xl font-bold text-yellow-700">{analytics.stats.pendingVerification}</p>
-            </div>
-          </div>
-
-          {/* By Meter Type */}
-          <div className="bg-gray-50 rounded-xl p-6">
-            <h3 className="font-medium text-gray-900 mb-4">Consumption by Meter Type</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {Object.entries(analytics.byMeterType).map(([type, data]) => (
-                <div key={type} className="bg-white rounded-lg p-4 border border-gray-200">
-                  <p className="text-sm text-gray-500 capitalize">{type}</p>
-                  <p className="text-lg font-bold text-gray-900">{data.count} readings</p>
-                  <p className="text-sm text-gray-600">
-                    Total: {data.totalConsumption.toFixed(2)}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Alerts */}
-          {analytics.alerts.length > 0 && (
-            <div className="bg-red-50 rounded-xl p-6">
-              <h3 className="font-medium text-red-900 mb-4 flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5" />
-                Consumption Alerts
-              </h3>
-              <div className="space-y-2">
-                {analytics.alerts.slice(0, 5).map((alert, idx) => (
-                  <div key={idx} className="bg-white rounded-lg p-3 border border-red-200">
-                    <p className="text-sm font-medium text-red-800">{alert.meterName}</p>
-                    <p className="text-xs text-red-600">
-                      {alert.type === 'HIGH_CONSUMPTION' ? 'High consumption detected' : 'Unusual low consumption'} - 
-                      {alert.consumption.toFixed(2)} at {alert.location}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Recent Readings */}
-          <div>
-            <h3 className="font-medium text-gray-900 mb-4">Recent Readings</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-100">
-                  <tr>
-                    <th className="px-3 py-2 text-left">Meter</th>
-                    <th className="px-3 py-2 text-left">Location</th>
-                    <th className="px-3 py-2 text-right">Value</th>
-                    <th className="px-3 py-2 text-right">Consumption</th>
-                    <th className="px-3 py-2 text-left">Date</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {analytics.recentReadings.map((reading) => (
-                    <tr key={reading.id}>
-                      <td className="px-3 py-2 font-medium">{reading.meterName}</td>
-                      <td className="px-3 py-2 text-gray-600">{reading.location}</td>
-                      <td className="px-3 py-2 text-right font-mono">{reading.readingValue.toFixed(2)} {reading.unit}</td>
-                      <td className="px-3 py-2 text-right">
-                        {reading.consumption !== null ? (
-                          <span className={reading.consumption > 0 ? 'text-red-600' : 'text-green-600'}>
-                            {reading.consumption > 0 ? '+' : ''}{reading.consumption.toFixed(2)}
-                          </span>
-                        ) : '-'}
-                      </td>
-                      <td className="px-3 py-2 text-gray-600">
-                        {new Date(reading.readingDate).toLocaleDateString()}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div className="text-center text-sm text-gray-500 pt-4 border-t border-gray-200">
-            <p>For advanced analytics, export data to Power BI using the JSON export option.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 export default MeterReadings

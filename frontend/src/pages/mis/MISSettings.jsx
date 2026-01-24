@@ -238,9 +238,9 @@ const MISSettings = ({ initialTab = 'roles' }) => {
           </div>
         </div>
         
-        {/* Show current user info */}
+        {/* Show current user info for debugging */}
         <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <h3 className="font-medium text-gray-900 mb-3">Your Account</h3>
+          <h3 className="font-medium text-gray-900 mb-3">Your Account (Debug Info)</h3>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-gray-500">Name:</span>
@@ -251,9 +251,32 @@ const MISSettings = ({ initialTab = 'roles' }) => {
               <span className="font-medium">{user?.email}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-500">Role:</span>
-              <span className="font-medium">{user?.role || 'Unknown'}</span>
+              <span className="text-gray-500">Role (from context):</span>
+              <span className="font-medium text-purple-600">{user?.role || 'Unknown'}</span>
             </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">Role Name:</span>
+              <span className="font-medium">{user?.roleName || 'Unknown'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">Is Admin (context):</span>
+              <span className={`font-medium ${isAdmin ? 'text-green-600' : 'text-red-600'}`}>
+                {isAdmin ? 'Yes' : 'No'}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">Permissions:</span>
+              <span className="font-medium text-xs">
+                {user?.permissions?.length || 0} permissions
+              </span>
+            </div>
+          </div>
+          <div className="mt-3 pt-3 border-t">
+            <p className="text-xs text-gray-500">
+              <strong>Note:</strong> The Settings page requires <code className="bg-gray-100 px-1 rounded">roles.view</code> permission, 
+              or the ADMIN role. If your role is 'ADMIN' but you still see this error, 
+              please try logging out and logging back in.
+            </p>
           </div>
         </div>
       </div>

@@ -622,48 +622,35 @@ const MISAnalytics = () => {
 
   return (
     <div className="space-y-6 animate-fade-in pb-8">
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
-              <BarChart3 className="w-5 h-5 text-white" />
-            </div>
-            Analytics Dashboard
-          </h1>
-          <p className="text-gray-500 mt-1">Real-time insights and consumption analytics</p>
+      {/* Analytics Header Banner */}
+      <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-2xl p-6 text-white relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23fff' fill-opacity='0.4' fill-rule='evenodd'%3E%3Cpath d='M0 20L20 0l20 20-20 20z'/%3E%3C/g%3E%3C/svg%3E")`,
+          }} />
         </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          {/* View Mode Toggle */}
-          <div className="flex items-center bg-gray-100 rounded-xl p-1">
-            {[
-              { value: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-              { value: 'detailed', icon: BarChart3, label: 'Detailed' },
-            ].map(mode => (
-              <button
-                key={mode.value}
-                onClick={() => setViewMode(mode.value)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  viewMode === mode.value
-                    ? 'bg-white text-purple-600 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <mode.icon className="w-4 h-4" />
-                <span className="hidden sm:inline">{mode.label}</span>
-              </button>
-            ))}
+        <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center">
+                <BarChart3 className="w-6 h-6" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold">Analytics & Reports</h1>
+                <p className="text-blue-100">Real-time insights and consumption analytics</p>
+              </div>
+            </div>
           </div>
 
+        <div className="flex flex-wrap items-center gap-3">
           {/* Period Selector */}
           <select
             value={period}
             onChange={(e) => setPeriod(e.target.value)}
-            className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm font-medium"
+            className="px-4 py-2.5 bg-white/20 border border-white/30 rounded-xl text-white text-sm font-medium focus:ring-2 focus:ring-white/50"
           >
             {periods.map((p) => (
-              <option key={p.value} value={p.value}>{p.label}</option>
+              <option key={p.value} value={p.value} className="text-gray-900">{p.label}</option>
             ))}
           </select>
 
@@ -671,17 +658,17 @@ const MISAnalytics = () => {
           <select
             value={meterType}
             onChange={(e) => setMeterType(e.target.value)}
-            className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm font-medium"
+            className="px-4 py-2.5 bg-white/20 border border-white/30 rounded-xl text-white text-sm font-medium focus:ring-2 focus:ring-white/50"
           >
-            <option value="">All Meter Types</option>
+            <option value="" className="text-gray-900">All Meter Types</option>
             {Object.entries(meterConfigs).map(([key, config]) => (
-              <option key={key} value={key}>{config.label}</option>
+              <option key={key} value={key} className="text-gray-900">{config.label}</option>
             ))}
           </select>
 
           {/* Export Dropdown */}
           <div className="relative group">
-            <button className="flex items-center gap-2 px-4 py-2.5 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors text-sm font-medium">
+            <button className="flex items-center gap-2 px-4 py-2.5 bg-white text-indigo-600 rounded-xl hover:bg-indigo-50 transition-colors text-sm font-medium shadow-lg">
               <Download className="w-4 h-4" />
               Export
               <ChevronDown className="w-4 h-4" />
@@ -706,11 +693,38 @@ const MISAnalytics = () => {
 
           <button
             onClick={fetchAnalytics}
-            className="p-2.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
+            className="p-2.5 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
           >
             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
+        </div>
+      </div>
+
+      {/* View Mode Toggle */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center bg-gray-100 rounded-xl p-1">
+          {[
+            { value: 'dashboard', icon: LayoutDashboard, label: 'Overview' },
+            { value: 'detailed', icon: BarChart3, label: 'Detailed Charts' },
+          ].map(mode => (
+            <button
+              key={mode.value}
+              onClick={() => setViewMode(mode.value)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                viewMode === mode.value
+                  ? 'bg-white text-indigo-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <mode.icon className="w-4 h-4" />
+              <span>{mode.label}</span>
+            </button>
+          ))}
+        </div>
+        <p className="text-sm text-gray-500">
+          Showing data for: <span className="font-medium text-gray-700">{periods.find(p => p.value === period)?.label}</span>
+        </p>
       </div>
 
       {/* KPI Cards Row */}

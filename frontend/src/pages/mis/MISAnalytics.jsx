@@ -459,6 +459,7 @@ const MISAnalytics = () => {
   const [meterType, setMeterType] = useState('')
   const [viewMode, setViewMode] = useState('dashboard') // dashboard, detailed, comparison
   const [selectedMeters, setSelectedMeters] = useState([])
+  const [showExportMenu, setShowExportMenu] = useState(false)
 
   useEffect(() => {
     fetchAnalytics()
@@ -776,36 +777,51 @@ const MISAnalytics = () => {
             ))}
           </select>
 
-          {/* Export Dropdown */}
-          <div className="relative group">
-            <button className="flex items-center gap-2 px-4 py-2.5 bg-white text-indigo-600 rounded-xl hover:bg-indigo-50 transition-colors text-sm font-medium shadow-lg">
+          {/* Export Dropdown - Click to toggle */}
+          <div className="relative">
+            <button 
+              onClick={() => setShowExportMenu(!showExportMenu)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-white text-indigo-600 rounded-xl hover:bg-indigo-50 transition-colors text-sm font-medium shadow-lg"
+            >
               <Download className="w-4 h-4" />
               Export
-              <ChevronDown className="w-4 h-4" />
+              <ChevronDown className={`w-4 h-4 transition-transform ${showExportMenu ? 'rotate-180' : ''}`} />
             </button>
-            <div className="absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-10 hidden group-hover:block">
-              <button
-                onClick={() => handleExport('xlsx')}
-                className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-              >
-                <FileText className="w-4 h-4 text-green-600" />
-                Export as Excel (.xlsx)
-              </button>
-              <button
-                onClick={() => handleExport('csv')}
-                className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-              >
-                <FileText className="w-4 h-4 text-blue-600" />
-                Export as CSV
-              </button>
-              <button
-                onClick={() => handleExport('json')}
-                className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-              >
-                <FileText className="w-4 h-4 text-purple-600" />
-                Export as JSON
-              </button>
-            </div>
+            {showExportMenu && (
+              <>
+                {/* Backdrop to close menu */}
+                <div 
+                  className="fixed inset-0 z-10" 
+                  onClick={() => setShowExportMenu(false)}
+                />
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-200 py-2 z-20">
+                  <div className="px-4 py-2 border-b border-gray-100">
+                    <p className="text-xs font-semibold text-gray-500 uppercase">Export Analytics Data</p>
+                  </div>
+                  <button
+                    onClick={() => { handleExport('xlsx'); setShowExportMenu(false); }}
+                    className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    <FileText className="w-4 h-4 text-green-600" />
+                    Export as Excel (.xlsx)
+                  </button>
+                  <button
+                    onClick={() => { handleExport('csv'); setShowExportMenu(false); }}
+                    className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    <FileText className="w-4 h-4 text-blue-600" />
+                    Export as CSV
+                  </button>
+                  <button
+                    onClick={() => { handleExport('json'); setShowExportMenu(false); }}
+                    className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    <FileText className="w-4 h-4 text-purple-600" />
+                    Export as JSON
+                  </button>
+                </div>
+              </>
+            )}
           </div>
 
           <button

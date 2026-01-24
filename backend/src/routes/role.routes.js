@@ -21,6 +21,7 @@ router.use(authenticate);
 router.get('/permissions', checkPermission('roles.view'), getAllPermissions);
 
 // Get all roles
+// Note: This requires 'roles.view' permission, but ADMIN role bypasses this check
 router.get('/', checkPermission('roles.view'), getAllRoles);
 
 // Get role by ID

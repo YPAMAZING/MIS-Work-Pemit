@@ -3,7 +3,6 @@ import { useAuth } from '../../context/AuthContext'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import {
-  Settings,
   Users,
   Shield,
   Save,
@@ -11,24 +10,24 @@ import {
   Plus,
   Edit,
   Trash2,
-  ChevronDown,
-  ChevronRight,
   AlertTriangle,
+  Info,
+  CheckCircle,
 } from 'lucide-react'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
-// Simple MIS Permission categories
+// Simple MIS Permission list
 const misPermissions = [
-  { key: 'mis.access', name: 'Access MIS', desc: 'Access MIS system' },
-  { key: 'mis.dashboard', name: 'View Dashboard', desc: 'View MIS dashboard' },
-  { key: 'meters.view', name: 'View Readings', desc: 'View meter readings' },
-  { key: 'meters.create', name: 'Create Readings', desc: 'Create meter readings' },
-  { key: 'meters.edit', name: 'Edit Readings', desc: 'Edit meter readings' },
-  { key: 'meters.delete', name: 'Delete Readings', desc: 'Delete meter readings' },
-  { key: 'meters.verify', name: 'Verify Readings', desc: 'Verify meter readings' },
-  { key: 'meters.analytics', name: 'View Analytics', desc: 'View analytics' },
-  { key: 'meters.export', name: 'Export Data', desc: 'Export meter data' },
+  { key: 'mis.access', name: 'Access MIS' },
+  { key: 'mis.dashboard', name: 'View Dashboard' },
+  { key: 'meters.view', name: 'View Readings' },
+  { key: 'meters.create', name: 'Create Readings' },
+  { key: 'meters.edit', name: 'Edit Readings' },
+  { key: 'meters.delete', name: 'Delete Readings' },
+  { key: 'meters.verify', name: 'Verify Readings' },
+  { key: 'meters.analytics', name: 'View Analytics' },
+  { key: 'meters.export', name: 'Export Data' },
 ]
 
 const MISSettings = ({ initialTab = 'roles' }) => {
@@ -50,53 +49,93 @@ const MISSettings = ({ initialTab = 'roles' }) => {
   const fetchData = async () => {
     setLoading(true)
     setError(null)
-    await Promise.all([fetchRoles(), fetchUsers()])
+    
+    const token = localStorage.getItem('token')
+    if (!token) {
+      setError('Not authenticated')
+      setLoading(false)
+      return
+    }
+
+    // Fetch roles and users in parallel
+    const results = await Promise.allSettled([
+      fetchRoles(token),
+      fetchUsers(token)
+    ])
+    
+    // Check if both failed
+    const rolesFailed = results[0].status === 'rejected'
+    const usersFailed = results[1].status === 'rejected'
+    
+    if (rolesFailed && usersFailed) {
+      setError('Unable to access settings. You may not have the required permissions.')
+    }
+    
     setLoading(false)
   }
 
-  const fetchRoles = async () => {
+  const fetchRoles = async (token) => {
     try {
-      const token = localStorage.getItem('token')
       const response = await axios.get(`${API_URL}/roles`, {
         headers: { Authorization: `Bearer ${token}` },
+        timeout: 10000, // 10 second timeout
       })
+      
       const allRoles = Array.isArray(response.data) ? response.data : (response.data.roles || [])
+      
       // Filter to MIS-related roles
-      const misRoles = allRoles.filter(r => 
-        r.name?.includes('MIS') || 
-        r.name === 'SITE_ENGINEER' || 
-        r.name === 'ADMIN' ||
-        r.name === 'FIREMAN' ||
-        (Array.isArray(r.permissions) && r.permissions.some(p => p.startsWith?.('mis.') || p.startsWith?.('meters.')))
-      )
+      const misRoles = allRoles.filter(r => {
+        const name = r.name || ''
+        const perms = Array.isArray(r.permissions) ? r.permissions : 
+                      (typeof r.permissions === 'string' ? JSON.parse(r.permissions || '[]') : [])
+        return name.includes('MIS') || 
+               name === 'SITE_ENGINEER' || 
+               name === 'ADMIN' ||
+               name === 'FIREMAN' ||
+               perms.some(p => typeof p === 'string' && (p.startsWith('mis.') || p.startsWith('meters.')))
+      })
+      
       setRoles(misRoles.length > 0 ? misRoles : allRoles.slice(0, 10))
+      return true
     } catch (err) {
-      console.error('Error fetching roles:', err)
+      console.error('Error fetching roles:', err.response?.status, err.message)
+      
+      // If 403 Forbidden - user doesn't have roles.view permission
       if (err.response?.status === 403) {
-        setError('You do not have permission to view roles. Contact an administrator.')
+        // Don't set error here - we might still be able to show users
+        setRoles([])
       } else {
-        setError('Failed to load roles. Please try again.')
+        throw err
       }
-      setRoles([])
+      return false
     }
   }
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (token) => {
     try {
-      const token = localStorage.getItem('token')
       const response = await axios.get(`${API_URL}/users`, {
         headers: { Authorization: `Bearer ${token}` },
+        timeout: 10000,
       })
+      
       const allUsers = response.data.users || []
+      
+      // Filter to MIS-related users
       const misUsers = allUsers.filter(u => {
         const perms = u.permissions || []
         const role = u.role || u.roleName || ''
-        return role.includes('MIS') || role === 'SITE_ENGINEER' || role === 'ADMIN' ||
-               perms.some(p => p.startsWith?.('mis.') || p.startsWith?.('meters.'))
+        return role.includes('MIS') || 
+               role === 'SITE_ENGINEER' || 
+               role === 'ADMIN' ||
+               (Array.isArray(perms) && perms.some(p => typeof p === 'string' && (p.startsWith('mis.') || p.startsWith('meters.'))))
       })
+      
       setUsers(misUsers.length > 0 ? misUsers : allUsers.slice(0, 20))
+      return true
     } catch (err) {
-      console.error('Error fetching users:', err)
+      console.error('Error fetching users:', err.response?.status, err.message)
+      setUsers([])
+      return false
     }
   }
 
@@ -119,7 +158,7 @@ const MISSettings = ({ initialTab = 'roles' }) => {
         toast.success('Role updated')
         setEditingRole(null)
       }
-      fetchRoles()
+      fetchData()
     } catch (err) {
       toast.error(err.response?.data?.message || 'Error saving role')
     } finally {
@@ -135,7 +174,7 @@ const MISSettings = ({ initialTab = 'roles' }) => {
         headers: { Authorization: `Bearer ${token}` },
       })
       toast.success('Role deleted')
-      fetchRoles()
+      fetchData()
     } catch (err) {
       toast.error(err.response?.data?.message || 'Error deleting role')
     }
@@ -169,17 +208,53 @@ const MISSettings = ({ initialTab = 'roles' }) => {
     )
   }
 
-  // Error State (Permission Denied)
-  if (error) {
+  // Full Error State (both roles and users failed)
+  if (error && roles.length === 0 && users.length === 0) {
     return (
       <div className="space-y-6">
-        <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-          <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-yellow-500" />
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">Access Restricted</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <button onClick={fetchData} className="px-4 py-2 bg-purple-600 text-white rounded-lg">
-            Try Again
-          </button>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">MIS Settings</h1>
+          <p className="text-gray-500">Manage MIS roles and user access</p>
+        </div>
+        
+        <div className="bg-yellow-50 rounded-xl border border-yellow-200 p-6">
+          <div className="flex items-start gap-4">
+            <AlertTriangle className="w-6 h-6 text-yellow-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h2 className="font-semibold text-gray-900">Limited Access</h2>
+              <p className="text-gray-600 mt-1">{error}</p>
+              <p className="text-sm text-gray-500 mt-2">
+                This usually happens when your role doesn't include the <code className="bg-yellow-100 px-1 rounded">roles.view</code> permission.
+              </p>
+              <div className="mt-4 flex gap-3">
+                <button 
+                  onClick={fetchData} 
+                  className="px-4 py-2 bg-yellow-600 text-white rounded-lg text-sm font-medium hover:bg-yellow-700"
+                >
+                  Try Again
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Show current user info */}
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <h3 className="font-medium text-gray-900 mb-3">Your Account</h3>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-gray-500">Name:</span>
+              <span className="font-medium">{user?.firstName} {user?.lastName}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">Email:</span>
+              <span className="font-medium">{user?.email}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">Role:</span>
+              <span className="font-medium">{user?.role || 'Unknown'}</span>
+            </div>
+          </div>
         </div>
       </div>
     )
@@ -193,191 +268,214 @@ const MISSettings = ({ initialTab = 'roles' }) => {
         <p className="text-gray-500">Manage MIS roles and user access</p>
       </div>
 
+      {/* Partial Access Warning */}
+      {roles.length === 0 && users.length > 0 && (
+        <div className="bg-blue-50 rounded-lg border border-blue-200 p-3 flex items-center gap-3">
+          <Info className="w-5 h-5 text-blue-600 flex-shrink-0" />
+          <p className="text-sm text-blue-800">
+            You don't have permission to manage roles. Showing MIS users only.
+          </p>
+        </div>
+      )}
+
       {/* Tabs */}
       <div className="flex gap-1 border-b border-gray-200">
         <button
           onClick={() => setActiveTab('roles')}
-          className={`px-4 py-2 text-sm font-medium border-b-2 ${
-            activeTab === 'roles' ? 'border-purple-600 text-purple-600' : 'border-transparent text-gray-500'
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === 'roles' ? 'border-purple-600 text-purple-600' : 'border-transparent text-gray-500 hover:text-gray-700'
           }`}
         >
-          <Shield className="w-4 h-4 inline mr-1" />
-          Roles
+          <Shield className="w-4 h-4 inline mr-1.5" />
+          Roles ({roles.length})
         </button>
         <button
           onClick={() => setActiveTab('users')}
-          className={`px-4 py-2 text-sm font-medium border-b-2 ${
-            activeTab === 'users' ? 'border-purple-600 text-purple-600' : 'border-transparent text-gray-500'
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === 'users' ? 'border-purple-600 text-purple-600' : 'border-transparent text-gray-500 hover:text-gray-700'
           }`}
         >
-          <Users className="w-4 h-4 inline mr-1" />
-          Users
+          <Users className="w-4 h-4 inline mr-1.5" />
+          Users ({users.length})
         </button>
       </div>
 
       {/* Roles Tab */}
       {activeTab === 'roles' && (
         <div className="space-y-4">
-          {/* Create Role Button */}
-          {isAdmin && (
-            <div className="flex justify-end">
-              <button
-                onClick={() => setShowNewRoleForm(!showNewRoleForm)}
-                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm"
-              >
-                <Plus className="w-4 h-4" />
-                Create Role
-              </button>
+          {roles.length === 0 ? (
+            <div className="bg-gray-50 rounded-xl p-8 text-center">
+              <Shield className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+              <p className="text-gray-600 font-medium">No roles to display</p>
+              <p className="text-gray-500 text-sm mt-1">You may not have permission to view roles</p>
             </div>
-          )}
+          ) : (
+            <>
+              {/* Create Role Button */}
+              {isAdmin && (
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => setShowNewRoleForm(!showNewRoleForm)}
+                    className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm hover:bg-purple-700"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Create Role
+                  </button>
+                </div>
+              )}
 
-          {/* New Role Form */}
-          {showNewRoleForm && (
-            <div className="bg-purple-50 rounded-xl border border-purple-200 p-4">
-              <h3 className="font-semibold mb-3">New MIS Role</h3>
-              <div className="grid sm:grid-cols-2 gap-3 mb-3">
-                <input
-                  type="text"
-                  value={newRole.name}
-                  onChange={(e) => setNewRole(p => ({ ...p, name: e.target.value }))}
-                  placeholder="Role Name (e.g., MIS_SUPERVISOR)"
-                  className="px-3 py-2 border rounded-lg text-sm"
-                />
-                <input
-                  type="text"
-                  value={newRole.displayName}
-                  onChange={(e) => setNewRole(p => ({ ...p, displayName: e.target.value }))}
-                  placeholder="Display Name"
-                  className="px-3 py-2 border rounded-lg text-sm"
-                />
-              </div>
-              <div className="flex flex-wrap gap-2 mb-3">
-                {misPermissions.map(p => (
-                  <label key={p.key} className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs cursor-pointer ${
-                    newRole.permissions.includes(p.key) ? 'bg-purple-200' : 'bg-white border'
-                  }`}>
+              {/* New Role Form */}
+              {showNewRoleForm && (
+                <div className="bg-purple-50 rounded-xl border border-purple-200 p-4">
+                  <h3 className="font-semibold mb-3">New MIS Role</h3>
+                  <div className="grid sm:grid-cols-2 gap-3 mb-3">
                     <input
-                      type="checkbox"
-                      checked={newRole.permissions.includes(p.key)}
-                      onChange={() => togglePermission(p.key, true)}
-                      className="w-3 h-3"
+                      type="text"
+                      value={newRole.name}
+                      onChange={(e) => setNewRole(p => ({ ...p, name: e.target.value }))}
+                      placeholder="Role Name (e.g., MIS_SUPERVISOR)"
+                      className="px-3 py-2 border rounded-lg text-sm"
                     />
-                    {p.name}
-                  </label>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => { setShowNewRoleForm(false); setNewRole({ name: '', displayName: '', description: '', permissions: [] }) }}
-                  className="px-3 py-1.5 border rounded-lg text-sm"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => handleSaveRole(newRole, true)}
-                  disabled={saving || !newRole.name || !newRole.displayName}
-                  className="px-3 py-1.5 bg-purple-600 text-white rounded-lg text-sm disabled:opacity-50"
-                >
-                  {saving ? 'Saving...' : 'Create'}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Roles List */}
-          <div className="grid md:grid-cols-2 gap-4">
-            {roles.map(role => {
-              const perms = typeof role.permissions === 'string' ? JSON.parse(role.permissions) : (role.permissions || [])
-              const isEditing = editingRole?.id === role.id
-              
-              return (
-                <div key={role.id} className={`bg-white rounded-xl border p-4 ${isEditing ? 'border-purple-400' : 'border-gray-200'}`}>
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <Shield className={`w-5 h-5 ${role.isSystem ? 'text-blue-600' : 'text-purple-600'}`} />
-                      <div>
-                        <h3 className="font-semibold text-gray-900">{role.displayName}</h3>
-                        <p className="text-xs text-gray-500">{role.name}</p>
-                      </div>
-                    </div>
-                    {!role.isSystem && isAdmin && (
-                      <div className="flex gap-1">
-                        <button
-                          onClick={() => setEditingRole(isEditing ? null : { ...role, permissions: perms })}
-                          className={`p-1.5 rounded ${isEditing ? 'bg-purple-100' : 'hover:bg-gray-100'}`}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => handleDeleteRole(role.id)} className="p-1.5 hover:bg-red-100 rounded">
-                          <Trash2 className="w-4 h-4 text-red-500" />
-                        </button>
-                      </div>
-                    )}
-                    {role.isSystem && (
-                      <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">System</span>
-                    )}
+                    <input
+                      type="text"
+                      value={newRole.displayName}
+                      onChange={(e) => setNewRole(p => ({ ...p, displayName: e.target.value }))}
+                      placeholder="Display Name"
+                      className="px-3 py-2 border rounded-lg text-sm"
+                    />
                   </div>
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {misPermissions.map(p => (
+                      <label key={p.key} className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs cursor-pointer transition-colors ${
+                        newRole.permissions.includes(p.key) ? 'bg-purple-200 text-purple-800' : 'bg-white border text-gray-700'
+                      }`}>
+                        <input
+                          type="checkbox"
+                          checked={newRole.permissions.includes(p.key)}
+                          onChange={() => togglePermission(p.key, true)}
+                          className="w-3 h-3"
+                        />
+                        {p.name}
+                      </label>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => { setShowNewRoleForm(false); setNewRole({ name: '', displayName: '', description: '', permissions: [] }) }}
+                      className="px-3 py-1.5 border rounded-lg text-sm hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => handleSaveRole(newRole, true)}
+                      disabled={saving || !newRole.name || !newRole.displayName}
+                      className="px-3 py-1.5 bg-purple-600 text-white rounded-lg text-sm disabled:opacity-50"
+                    >
+                      {saving ? 'Saving...' : 'Create'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Roles Grid */}
+              <div className="grid md:grid-cols-2 gap-4">
+                {roles.map(role => {
+                  const perms = typeof role.permissions === 'string' 
+                    ? JSON.parse(role.permissions || '[]') 
+                    : (role.permissions || [])
+                  const isEditing = editingRole?.id === role.id
                   
-                  {isEditing ? (
-                    <div className="space-y-3 mt-3">
-                      <input
-                        type="text"
-                        value={editingRole.displayName}
-                        onChange={(e) => setEditingRole(p => ({ ...p, displayName: e.target.value }))}
-                        className="w-full px-3 py-2 border rounded-lg text-sm"
-                      />
-                      <div className="flex flex-wrap gap-1.5">
-                        {misPermissions.map(p => (
-                          <label key={p.key} className={`flex items-center gap-1 px-2 py-1 rounded text-xs cursor-pointer ${
-                            editingRole.permissions.includes(p.key) ? 'bg-purple-200' : 'bg-gray-100'
-                          }`}>
-                            <input
-                              type="checkbox"
-                              checked={editingRole.permissions.includes(p.key)}
-                              onChange={() => togglePermission(p.key)}
-                              className="w-3 h-3"
-                            />
-                            {p.name}
-                          </label>
-                        ))}
+                  return (
+                    <div key={role.id} className={`bg-white rounded-xl border p-4 transition-shadow ${
+                      isEditing ? 'border-purple-400 shadow-md' : 'border-gray-200 hover:shadow-sm'
+                    }`}>
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Shield className={`w-5 h-5 ${role.isSystem ? 'text-blue-600' : 'text-purple-600'}`} />
+                          <div>
+                            <h3 className="font-semibold text-gray-900">{role.displayName}</h3>
+                            <p className="text-xs text-gray-500">{role.name}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {role.isSystem && (
+                            <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">System</span>
+                          )}
+                          {!role.isSystem && isAdmin && (
+                            <>
+                              <button
+                                onClick={() => setEditingRole(isEditing ? null : { ...role, permissions: perms })}
+                                className={`p-1.5 rounded transition-colors ${isEditing ? 'bg-purple-100 text-purple-600' : 'hover:bg-gray-100 text-gray-500'}`}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button 
+                                onClick={() => handleDeleteRole(role.id)} 
+                                className="p-1.5 hover:bg-red-50 rounded text-gray-500 hover:text-red-500"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex gap-2">
-                        <button onClick={() => setEditingRole(null)} className="px-3 py-1.5 border rounded-lg text-sm">
-                          Cancel
-                        </button>
-                        <button
-                          onClick={() => handleSaveRole(editingRole)}
-                          disabled={saving}
-                          className="px-3 py-1.5 bg-purple-600 text-white rounded-lg text-sm"
-                        >
-                          {saving ? 'Saving...' : 'Save'}
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {perms.slice(0, 4).map(p => (
-                        <span key={p} className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">
-                          {p.split('.')[1]}
-                        </span>
-                      ))}
-                      {perms.length > 4 && (
-                        <span className="px-2 py-0.5 bg-purple-100 text-purple-600 text-xs rounded-full">
-                          +{perms.length - 4}
-                        </span>
+                      
+                      {isEditing ? (
+                        <div className="space-y-3 mt-3 pt-3 border-t">
+                          <input
+                            type="text"
+                            value={editingRole.displayName}
+                            onChange={(e) => setEditingRole(p => ({ ...p, displayName: e.target.value }))}
+                            className="w-full px-3 py-2 border rounded-lg text-sm"
+                          />
+                          <div className="flex flex-wrap gap-1.5">
+                            {misPermissions.map(p => (
+                              <label key={p.key} className={`flex items-center gap-1 px-2 py-1 rounded text-xs cursor-pointer transition-colors ${
+                                editingRole.permissions.includes(p.key) ? 'bg-purple-200 text-purple-800' : 'bg-gray-100 text-gray-600'
+                              }`}>
+                                <input
+                                  type="checkbox"
+                                  checked={editingRole.permissions.includes(p.key)}
+                                  onChange={() => togglePermission(p.key)}
+                                  className="w-3 h-3"
+                                />
+                                {p.name}
+                              </label>
+                            ))}
+                          </div>
+                          <div className="flex gap-2 pt-2">
+                            <button onClick={() => setEditingRole(null)} className="px-3 py-1.5 border rounded-lg text-sm">
+                              Cancel
+                            </button>
+                            <button
+                              onClick={() => handleSaveRole(editingRole)}
+                              disabled={saving}
+                              className="px-3 py-1.5 bg-purple-600 text-white rounded-lg text-sm disabled:opacity-50 flex items-center gap-1.5"
+                            >
+                              {saving ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                              Save
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {perms.slice(0, 4).map(p => (
+                            <span key={p} className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">
+                              {typeof p === 'string' ? p.split('.')[1] : p}
+                            </span>
+                          ))}
+                          {perms.length > 4 && (
+                            <span className="px-2 py-0.5 bg-purple-100 text-purple-600 text-xs rounded-full">
+                              +{perms.length - 4}
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-          
-          {roles.length === 0 && !error && (
-            <div className="text-center py-8 text-gray-500">
-              <Shield className="w-10 h-10 mx-auto mb-2 opacity-30" />
-              <p>No roles found</p>
-            </div>
+                  )
+                })}
+              </div>
+            </>
           )}
         </div>
       )}
@@ -385,15 +483,22 @@ const MISSettings = ({ initialTab = 'roles' }) => {
       {/* Users Tab */}
       {activeTab === 'users' && (
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="p-4 bg-gray-50 border-b">
-            <h3 className="font-semibold">MIS Users ({users.length})</h3>
+          <div className="p-4 bg-gray-50 border-b flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold">MIS Users</h3>
+              <p className="text-sm text-gray-500">Users with MIS system access</p>
+            </div>
+            <span className="px-2 py-1 bg-purple-100 text-purple-700 text-sm font-medium rounded-full">
+              {users.length} users
+            </span>
           </div>
+          
           {users.length > 0 ? (
             <div className="divide-y">
               {users.map(u => (
-                <div key={u.id} className="p-4 flex items-center justify-between hover:bg-gray-50">
+                <div key={u.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-medium text-sm">
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white font-medium text-sm">
                       {u.firstName?.[0]}{u.lastName?.[0]}
                     </div>
                     <div>
@@ -401,20 +506,27 @@ const MISSettings = ({ initialTab = 'roles' }) => {
                       <p className="text-xs text-gray-500">{u.email}</p>
                     </div>
                   </div>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    u.role === 'ADMIN' ? 'bg-purple-100 text-purple-700' :
-                    u.role === 'SITE_ENGINEER' ? 'bg-orange-100 text-orange-700' :
-                    'bg-gray-100 text-gray-700'
-                  }`}>
-                    {u.roleName || u.role?.replace('_', ' ')}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {u.isActive !== false && (
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                    )}
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                      u.role === 'ADMIN' ? 'bg-purple-100 text-purple-700' :
+                      u.role === 'SITE_ENGINEER' ? 'bg-orange-100 text-orange-700' :
+                      u.role === 'FIREMAN' ? 'bg-blue-100 text-blue-700' :
+                      'bg-gray-100 text-gray-700'
+                    }`}>
+                      {u.roleName || u.role?.replace(/_/g, ' ')}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>
           ) : (
             <div className="p-8 text-center text-gray-500">
-              <Users className="w-10 h-10 mx-auto mb-2 opacity-30" />
-              <p>No MIS users found</p>
+              <Users className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+              <p className="font-medium">No MIS users found</p>
+              <p className="text-sm mt-1">Users with MIS permissions will appear here</p>
             </div>
           )}
         </div>

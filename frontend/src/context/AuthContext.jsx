@@ -463,7 +463,8 @@ export const AuthProvider = ({ children }) => {
     logout,
     updateUser,
     // Role checks (for backward compatibility with system roles)
-    isAdmin: user?.role === 'ADMIN',
+    // isAdmin now includes MIS_ADMIN for administrative privileges across the system
+    isAdmin: user?.role === 'ADMIN' || user?.role === 'MIS_ADMIN',
     isFireman: user?.role === 'FIREMAN' || user?.role === 'SAFETY_OFFICER',
     isSafetyOfficer: user?.role === 'FIREMAN' || user?.role === 'SAFETY_OFFICER', // Alias for backward compatibility
     isRequestor: user?.role === 'REQUESTOR',

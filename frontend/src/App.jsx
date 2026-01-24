@@ -248,7 +248,7 @@ function App() {
       <Route
         path="/mis"
         element={
-          <ProtectedRoute roles={['ADMIN', 'FIREMAN', 'SAFETY_OFFICER', 'SITE_ENGINEER']}>
+          <ProtectedRoute roles={['ADMIN', 'MIS_ADMIN', 'MIS_VERIFIER', 'MIS_VIEWER', 'FIREMAN', 'SAFETY_OFFICER', 'SITE_ENGINEER']}>
             <MISLayout />
           </ProtectedRoute>
         }
@@ -258,11 +258,11 @@ function App() {
         <Route path="readings" element={<MeterReadings />} />
         <Route path="analytics" element={<MISAnalytics />} />
         <Route path="export" element={<MISExport />} />
-        {/* MIS Settings & User Access - Admin only */}
+        {/* MIS Settings & User Access - Admin and MIS_ADMIN only */}
         <Route
           path="settings"
           element={
-            <ProtectedRoute roles={['ADMIN']} permission="mis.settings">
+            <ProtectedRoute roles={['ADMIN', 'MIS_ADMIN']} permission="mis.settings">
               <MISSettings />
             </ProtectedRoute>
           }
@@ -270,7 +270,7 @@ function App() {
         <Route
           path="users"
           element={
-            <ProtectedRoute roles={['ADMIN']} permission="mis.settings">
+            <ProtectedRoute roles={['ADMIN', 'MIS_ADMIN']} permission="mis.settings">
               <MISSettings initialTab="users" />
             </ProtectedRoute>
           }
@@ -278,7 +278,7 @@ function App() {
         <Route
           path="roles"
           element={
-            <ProtectedRoute roles={['ADMIN']} permission="mis.settings">
+            <ProtectedRoute roles={['ADMIN', 'MIS_ADMIN']} permission="mis.settings">
               <MISSettings initialTab="roles" />
             </ProtectedRoute>
           }

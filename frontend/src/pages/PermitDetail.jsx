@@ -296,6 +296,22 @@ const PermitDetail = () => {
 
       {/* Main Permit Card Header */}
       <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden mb-6">
+        {/* Company Branding Banner */}
+        <div className="bg-gradient-to-r from-slate-800 to-slate-900 px-6 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+              <span className="text-slate-800 font-black text-lg">R</span>
+            </div>
+            <div>
+              <h2 className="text-white font-bold text-lg tracking-wide">RELIABLE GROUP</h2>
+              <p className="text-slate-300 text-xs tracking-widest">CREATING LIFESTYLE</p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-slate-400 text-xs">Work Permit System</p>
+          </div>
+        </div>
+        
         {/* Header with gradient */}
         <div className={`bg-gradient-to-r ${config.bg} p-6 text-white`}>
           <div className="flex items-start justify-between">
@@ -309,11 +325,15 @@ const PermitDetail = () => {
                 </span>
               </div>
               <h1 className="text-2xl font-bold mb-1">{config.label}</h1>
-              <p className="text-white/80">{permit.companyName || 'RELIABLE GROUP MEP'}</p>
+              <p className="text-white/80">{permit.companyName || 'Zat Pat Kaam Pvt. Ltd.'}</p>
             </div>
             
-            <div className="w-24 h-24 bg-white rounded-xl flex items-center justify-center shadow-lg">
-              <Download className="w-12 h-12 text-gray-400" />
+            {/* Company Branding instead of Download Icon */}
+            <div className="w-28 h-24 bg-white/10 backdrop-blur-sm rounded-xl flex flex-col items-center justify-center border border-white/20">
+              <span className="text-white font-black text-sm tracking-wide">RELIABLE</span>
+              <span className="text-white font-black text-sm tracking-wide">GROUP</span>
+              <div className="w-12 h-0.5 bg-white/60 my-1"></div>
+              <span className="text-white/80 text-[8px] tracking-widest">CREATING LIFESTYLE</span>
             </div>
           </div>
         </div>

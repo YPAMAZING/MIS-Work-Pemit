@@ -191,10 +191,26 @@ const generatePermitPDF = async (req, res) => {
          .text(headerText, x, y + 5, { width: width, align: 'center' });
     };
 
-    // === HEADER ===
-    // Company name
+    // === HEADER WITH BRANDING ===
+    
+    // RELIABLE GROUP branding (right side)
+    // Draw branding box background
+    doc.rect(440, yPos, 115, 50).fill('#1e293b');
+    
+    // RELIABLE GROUP text
+    doc.fontSize(11).font('Helvetica-Bold').fillColor('#ffffff')
+       .text('RELIABLE GROUP', 440, yPos + 10, { width: 115, align: 'center' });
+    
+    // Divider line
+    doc.rect(460, yPos + 26, 75, 1).fill('#64748b');
+    
+    // CREATING LIFESTYLE motto
+    doc.fontSize(7).font('Helvetica').fillColor('#94a3b8')
+       .text('CREATING LIFESTYLE', 440, yPos + 32, { width: 115, align: 'center' });
+    
+    // Company name (left side - vendor/contractor)
     doc.fontSize(16).font('Helvetica-Bold').fillColor('#1e293b')
-       .text(permit.companyName || 'RELIABLE GROUP MEP', 40, yPos);
+       .text(permit.companyName || 'Zat Pat Kaam Pvt. Ltd.', 40, yPos);
     
     yPos += 24;
     
@@ -217,13 +233,13 @@ const generatePermitPDF = async (req, res) => {
     doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e293b')
        .text(`Permit No: ${permit.permitNumber}`, 40, yPos);
 
-    // Status badge (top right) - Handle long status text
+    // Status badge (below branding box)
     const statusColor = statusColors[permit.status] || '#6b7280';
     const statusText = permit.status.replace('_', ' '); // Replace underscore with space
     const statusWidth = permit.status.length > 10 ? 90 : 70;
-    doc.roundedRect(555 - statusWidth, 40, statusWidth, 22, 3).fill(statusColor);
+    doc.roundedRect(555 - statusWidth, 95, statusWidth, 22, 3).fill(statusColor);
     doc.fontSize(8).font('Helvetica-Bold').fillColor('#ffffff')
-       .text(statusText, 555 - statusWidth, 46, { width: statusWidth, align: 'center' });
+       .text(statusText, 555 - statusWidth, 101, { width: statusWidth, align: 'center' });
 
     yPos += 25;
 

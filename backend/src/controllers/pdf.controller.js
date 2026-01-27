@@ -1,7 +1,12 @@
 const { PrismaClient } = require('@prisma/client');
 const PDFDocument = require('pdfkit');
+const path = require('path');
+const fs = require('fs');
 
 const prisma = new PrismaClient();
+
+// Logo path - relative to backend directory
+const LOGO_PATH = path.join(__dirname, '../../public/logo.png');
 
 // Work type labels
 const workTypeLabels = {
@@ -193,20 +198,28 @@ const generatePermitPDF = async (req, res) => {
 
     // === HEADER WITH BRANDING ===
     
-    // RELIABLE GROUP branding (right side)
+    // RELIABLE GROUP branding with logo (right side)
     // Draw branding box background
-    doc.rect(440, yPos, 115, 50).fill('#1e293b');
+    doc.rect(430, yPos, 125, 55).fill('#1e293b');
     
-    // RELIABLE GROUP text
-    doc.fontSize(11).font('Helvetica-Bold').fillColor('#ffffff')
-       .text('RELIABLE GROUP', 440, yPos + 10, { width: 115, align: 'center' });
+    // Add logo if it exists
+    try {
+      if (fs.existsSync(LOGO_PATH)) {
+        doc.image(LOGO_PATH, 440, yPos + 5, { width: 45, height: 45 });
+      }
+    } catch (logoError) {
+      console.log('Logo not found, using text fallback');
+    }
     
-    // Divider line
-    doc.rect(460, yPos + 26, 75, 1).fill('#64748b');
+    // RELIABLE GROUP text (next to logo)
+    doc.fontSize(9).font('Helvetica-Bold').fillColor('#ffffff')
+       .text('RELIABLE', 488, yPos + 12);
+    doc.fontSize(9).font('Helvetica-Bold').fillColor('#ffffff')
+       .text('GROUP', 488, yPos + 23);
     
     // CREATING LIFESTYLE motto
-    doc.fontSize(7).font('Helvetica').fillColor('#94a3b8')
-       .text('CREATING LIFESTYLE', 440, yPos + 32, { width: 115, align: 'center' });
+    doc.fontSize(6).font('Helvetica').fillColor('#94a3b8')
+       .text('CREATING LIFESTYLE', 488, yPos + 38);
     
     // Company name (left side - vendor/contractor)
     doc.fontSize(16).font('Helvetica-Bold').fillColor('#1e293b')

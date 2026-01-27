@@ -299,9 +299,11 @@ const PermitDetail = () => {
         {/* Company Branding Banner */}
         <div className="bg-gradient-to-r from-slate-800 to-slate-900 px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-              <span className="text-slate-800 font-black text-lg">R</span>
-            </div>
+            <img 
+              src="/logo.png" 
+              alt="Reliable Group Logo" 
+              className="w-12 h-12 object-contain"
+            />
             <div>
               <h2 className="text-white font-bold text-lg tracking-wide">RELIABLE GROUP</h2>
               <p className="text-slate-300 text-xs tracking-widest">CREATING LIFESTYLE</p>
@@ -328,12 +330,13 @@ const PermitDetail = () => {
               <p className="text-white/80">{permit.companyName || 'Zat Pat Kaam Pvt. Ltd.'}</p>
             </div>
             
-            {/* Company Branding instead of Download Icon */}
-            <div className="w-28 h-24 bg-white/10 backdrop-blur-sm rounded-xl flex flex-col items-center justify-center border border-white/20">
-              <span className="text-white font-black text-sm tracking-wide">RELIABLE</span>
-              <span className="text-white font-black text-sm tracking-wide">GROUP</span>
-              <div className="w-12 h-0.5 bg-white/60 my-1"></div>
-              <span className="text-white/80 text-[8px] tracking-widest">CREATING LIFESTYLE</span>
+            {/* Company Branding with Logo */}
+            <div className="w-28 h-24 bg-white rounded-xl flex flex-col items-center justify-center shadow-lg p-2">
+              <img 
+                src="/logo.png" 
+                alt="Reliable Group Logo" 
+                className="w-20 h-20 object-contain"
+              />
             </div>
           </div>
         </div>

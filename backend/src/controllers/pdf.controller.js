@@ -5,8 +5,44 @@ const fs = require('fs');
 
 const prisma = new PrismaClient();
 
-// Logo path - relative to backend directory
-const LOGO_PATH = path.join(__dirname, '../../public/logo.png');
+// Logo path - try multiple locations
+const getLogoPath = () => {
+  const possiblePaths = [
+    path.join(__dirname, '../../public/logo.png'),
+    path.join(__dirname, '../../../frontend/public/logo.png'),
+    path.join(process.cwd(), 'public/logo.png'),
+    path.join(process.cwd(), 'backend/public/logo.png'),
+    path.join(process.cwd(), 'frontend/public/logo.png'),
+  ];
+  
+  for (const logoPath of possiblePaths) {
+    if (fs.existsSync(logoPath)) {
+      console.log('Logo found at:', logoPath);
+      return logoPath;
+    }
+  }
+  console.log('Logo not found in any location');
+  return null;
+};
+
+// Helper function to format date in specific timezone
+const formatDateInTimezone = (dateString, timezone = 'Asia/Kolkata') => {
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleString('en-IN', {
+      timeZone: timezone,
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+  } catch (err) {
+    // Fallback if timezone is not supported
+    return new Date(dateString).toLocaleString('en-IN');
+  }
+};
 
 // Work type labels
 const workTypeLabels = {
@@ -165,6 +201,9 @@ const generatePermitPDF = async (req, res) => {
     // Pipe PDF to response
     doc.pipe(res);
 
+    // Define permit timezone for all date formatting (use Asia/Kolkata as default)
+    const permitTimezone = permit.timezone || 'Asia/Kolkata';
+    
     // Helper function to check and add new page
     let yPos = 40;
     const checkPageBreak = (requiredSpace = 100) => {
@@ -203,12 +242,13 @@ const generatePermitPDF = async (req, res) => {
     doc.rect(430, yPos, 125, 55).fill('#1e293b');
     
     // Add logo if it exists
+    const logoPath = getLogoPath();
     try {
-      if (fs.existsSync(LOGO_PATH)) {
-        doc.image(LOGO_PATH, 440, yPos + 5, { width: 45, height: 45 });
+      if (logoPath) {
+        doc.image(logoPath, 440, yPos + 5, { width: 45, height: 45 });
       }
     } catch (logoError) {
-      console.log('Logo not found, using text fallback');
+      console.log('Logo error:', logoError.message);
     }
     
     // RELIABLE GROUP text (next to logo)
@@ -338,8 +378,8 @@ const generatePermitPDF = async (req, res) => {
     doc.text('End Date & Time', 435, locationBoxY + 28);
     
     doc.fontSize(8).font('Helvetica').fillColor('#1e293b');
-    doc.text(new Date(permit.startDate).toLocaleString(), 315, locationBoxY + 42, { width: 115 });
-    doc.text(new Date(permit.endDate).toLocaleString(), 435, locationBoxY + 42, { width: 115 });
+    doc.text(formatDateInTimezone(permit.startDate, permitTimezone), 315, locationBoxY + 42, { width: 115 });
+    doc.text(formatDateInTimezone(permit.endDate, permitTimezone), 435, locationBoxY + 42, { width: 115 });
     
     doc.fontSize(8).font('Helvetica-Bold').fillColor('#64748b').text('Extended:', 315, locationBoxY + 58);
     doc.font('Helvetica').fillColor(permit.isExtended ? '#3b82f6' : '#1e293b')
@@ -584,7 +624,7 @@ const generatePermitPDF = async (req, res) => {
         
         if (approval.approvedAt) {
           doc.fontSize(8).font('Helvetica').fillColor('#64748b')
-             .text(new Date(approval.approvedAt).toLocaleString(), 380, yPos + 4);
+             .text(formatDateInTimezone(approval.approvedAt, permitTimezone), 380, yPos + 4);
         }
         
         yPos += 22;
@@ -623,7 +663,7 @@ const generatePermitPDF = async (req, res) => {
         }
         
         doc.fontSize(8).font('Helvetica').fillColor('#64748b')
-           .text(new Date(action.createdAt).toLocaleString(), 380, yPos + 4);
+           .text(formatDateInTimezone(action.createdAt, permitTimezone), 380, yPos + 4);
         
         yPos += 22;
         
@@ -654,7 +694,7 @@ const generatePermitPDF = async (req, res) => {
         doc.fontSize(8).fillColor('#64748b')
            .text(`Added by: ${permit.remarksAddedBy}`, 50, yPos);
         if (permit.remarksAddedAt) {
-          doc.text(` on ${new Date(permit.remarksAddedAt).toLocaleString()}`, 180, yPos);
+          doc.text(` on ${formatDateInTimezone(permit.remarksAddedAt, permitTimezone)}`, 180, yPos);
         }
         yPos += 20;
       }
@@ -685,7 +725,7 @@ const generatePermitPDF = async (req, res) => {
       // Approval date
       if (approvedApproval.approvedAt) {
         doc.fontSize(9).font('Helvetica').fillColor('#64748b')
-           .text(`Date: ${new Date(approvedApproval.approvedAt).toLocaleString()}`, 50, yPos + 40);
+           .text(`Date: ${formatDateInTimezone(approvedApproval.approvedAt, permitTimezone)}`, 50, yPos + 40);
       }
       
       // Remarks/Comment (if any)
@@ -729,7 +769,7 @@ const generatePermitPDF = async (req, res) => {
     if (permit.autoClosedAt) {
       checkPageBreak(30);
       doc.fontSize(8).fillColor('#64748b')
-         .text(`Auto-closed on: ${new Date(permit.autoClosedAt).toLocaleString()}`, 50, yPos);
+         .text(`Auto-closed on: ${formatDateInTimezone(permit.autoClosedAt, permitTimezone)}`, 50, yPos);
       yPos += 20;
     }
 
@@ -748,7 +788,7 @@ const generatePermitPDF = async (req, res) => {
        .text('This is a computer generated document. No signature is required.', 40, yPos + 5, { width: 515, align: 'center' });
     
     doc.fontSize(7).font('Helvetica').fillColor('#94a3b8')
-       .text(`Generated on ${new Date().toLocaleString()} | Permit ID: ${permit.id}`, 40, yPos + 20, { width: 515, align: 'center' });
+       .text(`Generated on ${formatDateInTimezone(new Date(), permitTimezone)} | Permit ID: ${permit.id}`, 40, yPos + 20, { width: 515, align: 'center' });
 
     // Finalize PDF
     doc.end();

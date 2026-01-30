@@ -259,7 +259,7 @@ const generatePermitPDF = async (req, res) => {
     // "Reliable Group" text - positioned to the right of logo
     doc.fontSize(11).font('Helvetica-Bold').fillColor('#1e293b')
        .text('Reliable ', brandingStartX + 42, brandingY + 6, { continued: true });
-    doc.fontSize(11).font('Helvetica-Bold').fillColor('#dc2626')
+    doc.fontSize(11).font('Helvetica-Bold').fillColor('#1e293b')
        .text('Group', { continued: false });
     
     // Horizontal line under "Reliable Group"  

@@ -237,64 +237,68 @@ const generatePermitPDF = async (req, res) => {
 
     // === HEADER WITH BRANDING ===
     
-    // Company name (left side - vendor/contractor)
+    // LEFT SIDE: Company name and permit details
     doc.fontSize(16).font('Helvetica-Bold').fillColor('#1e293b')
        .text(permit.companyName || 'Zat Pat Kaam Pvt. Ltd.', 40, yPos);
     
-    // RELIABLE GROUP branding with logo (right side) - Clean white background
+    // RIGHT SIDE: RELIABLE GROUP branding with logo
     // Add logo if it exists
     const logoPath = getLogoPath();
-    const brandingStartX = 420;
+    const brandingStartX = 430;
+    const brandingY = yPos;
+    
     try {
       if (logoPath) {
         // Draw logo (the logo already has the banner/flag design)
-        doc.image(logoPath, brandingStartX, yPos - 5, { width: 45, height: 47 });
+        doc.image(logoPath, brandingStartX, brandingY, { width: 40, height: 42 });
       }
     } catch (logoError) {
       console.log('Logo error:', logoError.message);
     }
     
-    // "Reliable Group" text in elegant style (matching the branding image)
-    doc.fontSize(14).font('Helvetica-Bold').fillColor('#1e293b')
-       .text('Reliable Group', brandingStartX + 48, yPos);
+    // "Reliable Group" text - positioned to the right of logo
+    doc.fontSize(12).font('Helvetica-Bold').fillColor('#1e293b')
+       .text('Reliable', brandingStartX + 44, brandingY + 5);
+    doc.fontSize(12).font('Helvetica-Bold').fillColor('#dc2626')
+       .text('Group', brandingStartX + 44 + 48, brandingY + 5);
     
-    // Horizontal line under "Reliable Group"
-    doc.moveTo(brandingStartX + 48, yPos + 15).lineTo(555, yPos + 15).strokeColor('#1e293b').lineWidth(0.5).stroke();
+    // Horizontal line under "Reliable Group"  
+    doc.moveTo(brandingStartX + 44, brandingY + 19).lineTo(555, brandingY + 19).strokeColor('#1e293b').lineWidth(0.5).stroke();
     
     // "Creating Lifestyle" motto in italic style
-    doc.fontSize(9).font('Helvetica-Oblique').fillColor('#333333')
-       .text('Creating Lifestyle', brandingStartX + 48, yPos + 18);
+    doc.fontSize(8).font('Helvetica-Oblique').fillColor('#333333')
+       .text('Creating Lifestyle', brandingStartX + 44, brandingY + 22);
     
-    yPos += 32;
+    yPos += 28;
     
-    // Permit type
+    // Permit type (left side)
     doc.fontSize(13).font('Helvetica-Bold').fillColor('#334155')
        .text(workTypeLabels[permit.workType] || 'WORK PERMIT', 40, yPos);
 
-    // Status badge (right side, same line as permit type)
-    const statusColor = statusColors[permit.status] || '#6b7280';
-    const statusText = permit.status.replace('_', ' '); // Replace underscore with space
-    const statusWidth = permit.status.length > 10 ? 90 : 70;
-    doc.roundedRect(555 - statusWidth, yPos - 2, statusWidth, 20, 3).fill(statusColor);
-    doc.fontSize(8).font('Helvetica-Bold').fillColor('#ffffff')
-       .text(statusText, 555 - statusWidth, yPos + 3, { width: statusWidth, align: 'center' });
-
-    yPos += 22;
+    yPos += 18;
     
-    // Requested by info (on separate line to avoid overlap)
+    // Requested by info
     doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e293b')
        .text(`Requested by: ${permit.user.firstName} ${permit.user.lastName}`, 40, yPos);
-    yPos += 14;
+    yPos += 12;
     doc.fontSize(8).font('Helvetica').fillColor('#64748b')
        .text(`Date: ${new Date(permit.createdAt).toLocaleDateString()}`, 40, yPos);
 
-    yPos += 14;
+    yPos += 12;
     
-    // Permit number (same font size)
+    // Permit number
     doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e293b')
        .text(`Permit No: ${permit.permitNumber}`, 40, yPos);
 
-    yPos += 20;
+    // Status badge (right side, aligned with permit number line)
+    const statusColor = statusColors[permit.status] || '#6b7280';
+    const statusText = permit.status.replace('_', ' '); // Replace underscore with space
+    const statusWidth = permit.status.length > 10 ? 90 : 70;
+    doc.roundedRect(555 - statusWidth, yPos - 3, statusWidth, 20, 3).fill(statusColor);
+    doc.fontSize(8).font('Helvetica-Bold').fillColor('#ffffff')
+       .text(statusText, 555 - statusWidth, yPos + 2, { width: statusWidth, align: 'center' });
+
+    yPos += 25;
 
     // === BASIC PERMIT DETAILS (VENDOR) SECTION ===
     drawSectionHeader('BASIC PERMIT DETAILS (VENDOR)', sectionColors.vendorDetails);

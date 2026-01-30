@@ -244,30 +244,30 @@ const generatePermitPDF = async (req, res) => {
     // RIGHT SIDE: RELIABLE GROUP branding with logo
     // Add logo if it exists
     const logoPath = getLogoPath();
-    const brandingStartX = 430;
+    const brandingStartX = 395;  // Shifted left for more space
     const brandingY = yPos;
     
     try {
       if (logoPath) {
         // Draw logo (the logo already has the banner/flag design)
-        doc.image(logoPath, brandingStartX, brandingY, { width: 40, height: 42 });
+        doc.image(logoPath, brandingStartX, brandingY, { width: 38, height: 40 });
       }
     } catch (logoError) {
       console.log('Logo error:', logoError.message);
     }
     
     // "Reliable Group" text - positioned to the right of logo
-    doc.fontSize(12).font('Helvetica-Bold').fillColor('#1e293b')
-       .text('Reliable', brandingStartX + 44, brandingY + 5);
-    doc.fontSize(12).font('Helvetica-Bold').fillColor('#dc2626')
-       .text('Group', brandingStartX + 44 + 48, brandingY + 5);
+    doc.fontSize(11).font('Helvetica-Bold').fillColor('#1e293b')
+       .text('Reliable ', brandingStartX + 42, brandingY + 6, { continued: true });
+    doc.fontSize(11).font('Helvetica-Bold').fillColor('#dc2626')
+       .text('Group', { continued: false });
     
     // Horizontal line under "Reliable Group"  
-    doc.moveTo(brandingStartX + 44, brandingY + 19).lineTo(555, brandingY + 19).strokeColor('#1e293b').lineWidth(0.5).stroke();
+    doc.moveTo(brandingStartX + 42, brandingY + 19).lineTo(555, brandingY + 19).strokeColor('#1e293b').lineWidth(0.5).stroke();
     
     // "Creating Lifestyle" motto in italic style
     doc.fontSize(8).font('Helvetica-Oblique').fillColor('#333333')
-       .text('Creating Lifestyle', brandingStartX + 44, brandingY + 22);
+       .text('Creating Lifestyle', brandingStartX + 42, brandingY + 22);
     
     yPos += 28;
     

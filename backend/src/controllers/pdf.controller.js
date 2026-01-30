@@ -237,29 +237,28 @@ const generatePermitPDF = async (req, res) => {
 
     // === HEADER WITH BRANDING ===
     
-    // RELIABLE GROUP branding with logo (right side)
-    // Draw branding box background
-    doc.rect(430, yPos, 125, 55).fill('#1e293b');
-    
+    // RELIABLE GROUP branding with logo (right side) - Clean white background
     // Add logo if it exists
     const logoPath = getLogoPath();
     try {
       if (logoPath) {
-        doc.image(logoPath, 440, yPos + 5, { width: 45, height: 45 });
+        // Draw logo (the logo already has the banner/flag design)
+        doc.image(logoPath, 400, yPos - 5, { width: 50, height: 52 });
       }
     } catch (logoError) {
       console.log('Logo error:', logoError.message);
     }
     
-    // RELIABLE GROUP text (next to logo)
-    doc.fontSize(9).font('Helvetica-Bold').fillColor('#ffffff')
-       .text('RELIABLE', 488, yPos + 12);
-    doc.fontSize(9).font('Helvetica-Bold').fillColor('#ffffff')
-       .text('GROUP', 488, yPos + 23);
+    // "Reliable Group" text in elegant style (matching the branding image)
+    doc.fontSize(16).font('Helvetica-Bold').fillColor('#1e293b')
+       .text('Reliable Group', 455, yPos + 5);
     
-    // CREATING LIFESTYLE motto
-    doc.fontSize(6).font('Helvetica').fillColor('#94a3b8')
-       .text('CREATING LIFESTYLE', 488, yPos + 38);
+    // "Creating Lifestyle" motto in italic style
+    doc.fontSize(10).font('Helvetica-Oblique').fillColor('#333333')
+       .text('Creating Lifestyle', 455, yPos + 24);
+    
+    // Horizontal line under the branding
+    doc.moveTo(455, yPos + 22).lineTo(555, yPos + 22).strokeColor('#1e293b').lineWidth(0.5).stroke();
     
     // Company name (left side - vendor/contractor)
     doc.fontSize(16).font('Helvetica-Bold').fillColor('#1e293b')
@@ -286,13 +285,13 @@ const generatePermitPDF = async (req, res) => {
     doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e293b')
        .text(`Permit No: ${permit.permitNumber}`, 40, yPos);
 
-    // Status badge (below branding box)
+    // Status badge (top right corner, below branding)
     const statusColor = statusColors[permit.status] || '#6b7280';
     const statusText = permit.status.replace('_', ' '); // Replace underscore with space
     const statusWidth = permit.status.length > 10 ? 90 : 70;
-    doc.roundedRect(555 - statusWidth, 95, statusWidth, 22, 3).fill(statusColor);
+    doc.roundedRect(555 - statusWidth, 50, statusWidth, 22, 3).fill(statusColor);
     doc.fontSize(8).font('Helvetica-Bold').fillColor('#ffffff')
-       .text(statusText, 555 - statusWidth, 101, { width: statusWidth, align: 'center' });
+       .text(statusText, 555 - statusWidth, 56, { width: statusWidth, align: 'center' });
 
     yPos += 25;
 
